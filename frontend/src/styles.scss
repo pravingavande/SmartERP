@@ -1,0 +1,62 @@
+:root {
+  --epr-navy: #1e3a6e;
+  --epr-navy-dark: #152a52;
+  --epr-orange: #e85d04;
+  --epr-orange-hover: #d35400;
+  --epr-green: #2d6a4f;
+  --epr-saffron: #ff9933;
+  --epr-white: #ffffff;
+  --epr-bg: #f4f6f9;
+  --epr-border: #dee2e6;
+  --epr-text: #212529;
+  --epr-muted: #6c757d;
+  --epr-sidebar: #2c3340;
+  --epr-sidebar-deep: #1e3a6e;
+  --epr-sidebar-hover: #3d4654;
+  --epr-sidebar-active: rgba(232, 93, 4, 0.18);
+  --epr-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --epr-radius: 8px;
+  --epr-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--epr-font);
+  font-size: 14px;
+  color: var(--epr-text);
+  background: var(--epr-bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+app-root {
+  display: block;
+  min-height: 100%;
+}
+
+a {
+  color: var(--epr-navy);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+button {
+  font-size: 14px;
+}

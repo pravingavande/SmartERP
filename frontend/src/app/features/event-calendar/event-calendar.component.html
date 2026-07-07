@@ -1,0 +1,194 @@
+<section class="calendar-page">
+  <header class="page-header">
+    <div>
+      <h1>Event Calendar</h1>
+      <p>Schedule school programmes, meetings, visits and activities</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openNew()">+ New Event</button>
+  </header>
+
+  <div class="calendar-layout">
+    <aside class="sidebar-panel">
+      <div class="panel-card">
+        <h3>Quick Stats</h3>
+        <div class="stats">
+          <div class="stat"><span>{{ events().length }}</span><small>This month</small></div>
+          <div class="stat"><span>{{ eventTypes().length }}</span><small>Event types</small></div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <h3>Priority Legend</h3>
+        <ul class="legend-list">
+          @for (p of priorities; track p.value) {
+            <li><span class="dot" [style.background]="p.color"></span>{{ p.label }}</li>
+          }
+        </ul>
+      </div>
+
+      <div class="panel-card">
+        <h3>Upcoming Events</h3>
+        <ul class="entry-list">
+          @for (ev of events(); track ev.eventId) {
+            <li>
+              <button type="button" class="entry-btn" (click)="editEvent(ev)">
+                <span class="date">{{ ev.eventDate | date:'dd MMM' }} {{ ev.startTime }}</span>
+                <span class="name">{{ ev.title }}</span>
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">No events this month</li>
+          }
+        </ul>
+      </div>
+    </aside>
+
+    <div class="main-panel">
+      <div class="search-bar">
+        <input type="search" placeholder="Search events, location, organizer..." [ngModel]="searchText()" (ngModelChange)="searchText.set($event)" (keyup.enter)="onSearch()" name="search">
+        <button type="button" class="btn btn-outline" (click)="onSearch()">Search</button>
+        <button type="button" class="btn btn-outline" (click)="searchText.set(''); onSearch()">Clear</button>
+      </div>
+
+      <div class="toolbar">
+        <button type="button" class="btn btn-outline" (click)="prevMonth()">‹ Prev</button>
+        <h2>{{ monthLabel() }}</h2>
+        <button type="button" class="btn btn-outline" (click)="nextMonth()">Next ›</button>
+        <button type="button" class="btn btn-text" (click)="goToday()">Today</button>
+      </div>
+
+      @if (loading()) {
+        <p class="loading">Loading events...</p>
+      }
+
+      <div class="month-grid">
+        @for (day of weekDays; track day) {
+          <div class="dow">{{ day }}</div>
+        }
+        @for (day of monthDays(); track day.iso) {
+          <button
+            type="button"
+            class="day-cell"
+            [class.outside]="!day.inMonth"
+            [class.today]="isToday(day.iso)"
+            (click)="openNew(day.iso)"
+          >
+            <span class="day-num">{{ day.date.getDate() }}</span>
+            @for (ev of eventsForDay(day.iso); track ev.eventId) {
+              <span
+                class="chip event"
+                [style.border-left-color]="eventColor(ev)"
+                (click)="$event.stopPropagation(); editEvent(ev)"
+              >{{ ev.title }}</span>
+            }
+          </button>
+        }
+      </div>
+      <p class="hint">Click a date to add an event · Click an event chip to edit</p>
+    </div>
+  </div>
+</section>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-box wide" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ form().eventId ? 'Edit Event' : 'New Event' }}</h2>
+        <button type="button" class="icon-btn" (click)="closeModal()">×</button>
+      </header>
+
+      <form class="modal-form" (ngSubmit)="saveEvent()">
+        <div class="form-row">
+          <label>
+            Date *
+            <input type="date" required [ngModel]="form().eventDate" (ngModelChange)="updateFormField('eventDate', $event)" name="eventDate">
+          </label>
+          <label>
+            Start Time
+            <input type="time" [ngModel]="form().startTime" (ngModelChange)="updateFormField('startTime', $event)" name="startTime">
+          </label>
+          <label>
+            End Time
+            <input type="time" [ngModel]="form().endTime" (ngModelChange)="updateFormField('endTime', $event)" name="endTime">
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            Event Type
+            <select class="mr-text" [ngModel]="form().eventTypeId" (ngModelChange)="updateFormField('eventTypeId', $event ? +$event : null)" name="eventTypeId">
+              <option [ngValue]="null">-- निवडा --</option>
+              @for (t of eventTypes(); track t.eventTypeId) {
+                <option [ngValue]="t.eventTypeId">{{ t.nameMr }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Location *
+            <select required [ngModel]="form().location" (ngModelChange)="updateFormField('location', $event)" name="location">
+              <option value="">-- Select --</option>
+              @for (loc of locationOptions; track loc) {
+                <option [value]="loc">{{ loc }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Title *
+          <input type="text" required [ngModel]="form().title" (ngModelChange)="updateFormField('title', $event)" name="title" placeholder="e.g. Parent Meeting, Sports Day...">
+        </label>
+
+        <label>
+          Description
+          <textarea rows="2" [ngModel]="form().description" (ngModelChange)="updateFormField('description', $event)" name="description"></textarea>
+        </label>
+
+        <label>
+          Organizer Name
+          <input type="text" [ngModel]="form().organizerName" (ngModelChange)="updateFormField('organizerName', $event)" name="organizerName">
+        </label>
+
+        <div class="form-row">
+          <label>
+            Priority
+            <div class="priority-group">
+              @for (p of priorities; track p.value) {
+                <label class="radio-chip">
+                  <input type="radio" name="priority" [value]="p.value" [ngModel]="form().priority" (ngModelChange)="updateFormField('priority', $event)">
+                  {{ p.value }}
+                </label>
+              }
+            </div>
+          </label>
+          <label>
+            Status
+            <select [ngModel]="form().status" (ngModelChange)="updateFormField('status', $event)" name="status">
+              @for (s of statuses; track s.value) {
+                <option [value]="s.value">{{ s.label }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Notes
+          <textarea rows="2" [ngModel]="form().notes" (ngModelChange)="updateFormField('notes', $event)" name="notes"></textarea>
+        </label>
+
+        @if (errorMessage()) {
+          <p class="error">{{ errorMessage() }}</p>
+        }
+
+        <footer class="modal-footer">
+          @if (form().eventId) {
+            <button type="button" class="btn btn-danger" (click)="deleteCurrentEvent()">Delete</button>
+          }
+          <span class="spacer"></span>
+          <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="loading()">Save Event</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}

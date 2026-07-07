@@ -1,0 +1,225 @@
+<div class="login-page">
+  <div class="login-shell">
+    <section class="login-hero" aria-hidden="false">
+      <div class="hero-tricolor" aria-hidden="true"></div>
+
+      <div class="hero-content">
+        <div class="hero-brand">
+          <div class="brand-badge">ERP</div>
+          <div class="hero-brand-text">
+            <h1>SmartERP</h1>
+            <p>School &amp; Sanstha Portal</p>
+          </div>
+        </div>
+
+        <div class="hero-badges">
+          <span class="hero-badge">School Dashboard</span>
+          <span class="hero-badge">Sanstha Dashboard</span>
+        </div>
+
+        <h2 class="hero-title">Group of Schools — Education Management</h2>
+        <p class="hero-desc">
+          Secure access for teachers, staff, and administrators across your sanstha network.
+        </p>
+
+        <ul class="hero-features">
+          <li>
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+              </svg>
+            </span>
+            <span class="feature-text">
+              Sanstha overview &amp; analytics
+              <span class="feature-tag">Dashboard</span>
+            </span>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 3 1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
+              </svg>
+            </span>
+            <span class="feature-text">
+              Schools, students &amp; staff management
+            </span>
+          </li>
+          <li class="feature-highlight">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+              </svg>
+            </span>
+            <span class="feature-text">
+              Attendance management
+              <span class="feature-tag live">Live Track</span>
+            </span>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </span>
+            <span class="feature-text">
+              Notices, circulars &amp; announcements
+            </span>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </span>
+            <span class="feature-text">
+              Reports &amp; sanstha-level insights
+            </span>
+          </li>
+          <li>
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </span>
+            <span class="feature-text">
+              Secure login &amp; role-based access
+            </span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="panel-card">
+        <div class="card-top-accent"></div>
+
+        <div class="card-body">
+          <div class="login-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+
+          <h2 id="login-title">User Login</h2>
+          <p class="subtitle">Sign in with your registered app credentials</p>
+
+          @if (showDevDefaults) {
+            <div class="dev-hint" role="status">
+              <span class="dev-hint-icon" aria-hidden="true">!</span>
+              Development mode — default credentials are pre-filled.
+            </div>
+          }
+
+          @if (errorMessage()) {
+            <div class="alert alert-error" role="alert">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+            <div class="field">
+              <label for="userName">App Username</label>
+              <div class="input-wrap">
+                <span class="input-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                <input
+                  id="userName"
+                  type="text"
+                  formControlName="userName"
+                  autocomplete="username"
+                  placeholder="Mobile number or username"
+                  [class.invalid]="form.controls.userName.touched && form.controls.userName.invalid"
+                />
+              </div>
+              @if (form.controls.userName.touched && form.controls.userName.hasError('required')) {
+                <span class="field-error">Username is required</span>
+              }
+            </div>
+
+            <div class="field">
+              <label for="password">Password</label>
+              <div class="input-wrap">
+                <span class="input-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </span>
+                <input
+                  id="password"
+                  [type]="showPassword() ? 'text' : 'password'"
+                  formControlName="password"
+                  autocomplete="current-password"
+                  placeholder="Enter your password"
+                  [class.invalid]="form.controls.password.touched && form.controls.password.invalid"
+                />
+                <button
+                  type="button"
+                  class="toggle-pwd"
+                  (click)="togglePassword()"
+                  [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+                >
+                  @if (showPassword()) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  }
+                </button>
+              </div>
+              @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+                <span class="field-error">Password is required</span>
+              }
+            </div>
+
+            <button type="submit" class="btn-login" [disabled]="loading()">
+              @if (loading()) {
+                <span class="spinner" aria-hidden="true"></span>
+                Signing in...
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                Login to Dashboard
+              }
+            </button>
+          </form>
+
+          <p class="help-text">
+            For access issues, contact your system administrator or school office.
+          </p>
+        </div>
+      </div>
+
+      <footer class="panel-footer">
+        <p>&copy; {{ currentYear }} SmartERP — School &amp; Sanstha Dashboard</p>
+        <p class="footer-credit">Developed By <strong>LR Technology</strong></p>
+      </footer>
+    </section>
+  </div>
+</div>

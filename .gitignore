@@ -1,0 +1,64 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / editors
+.vs/
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET
+**/bin/
+**/obj/
+**/publish/
+**/out/
+*.dll
+*.exe
+*.pdb
+*.cache
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Node / Angular
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+frontend/dist/
+frontend/.angular/
+frontend/tmp/
+frontend/out-tsc/
+coverage/
+libpeerconnection.log
+testem.log
+typings/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# Secrets & local config (use *.example files)
+backend/cloudrun.env.yaml
+backend/SmartEPR.Api/appsettings.json
+.env
+.env.*
+!.env.example
+*.secrets.json
+
+# Logs & temp
+*.log
+*.tmp
+*.temp
+*.bak
+~$*

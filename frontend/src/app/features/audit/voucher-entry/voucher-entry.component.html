@@ -1,0 +1,251 @@
+<section class="audit-page">
+  <header class="page-header">
+    <div>
+      <h1>{{ title() }}</h1>
+      <p>VType: {{ vType() === 'R' ? 'Receipt Voucher' : 'Payment Voucher' }}</p>
+    </div>
+    <button type="button" class="btn btn-outline" (click)="newVoucher()">+ New</button>
+  </header>
+
+  <div class="audit-layout">
+    <aside class="list-panel">
+      <h3>Voucher List</h3>
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (v of vouchers(); track v.voucherID) {
+              <tr [class.active]="form().voucherID === v.voucherID">
+                <td class="code">#{{ v.vCode }}</td>
+                <td>{{ v.vDate | date:'dd/MM/yy' }}</td>
+                <td class="amt">{{ v.totalAmount | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="actions">
+                  <button type="button" class="action-btn view" title="View" (click)="viewVoucher(v)">View</button>
+                  <button type="button" class="action-btn edit" title="Edit" (click)="editVoucher(v)">Edit</button>
+                  <button type="button" class="action-btn print" title="Reprint" (click)="reprintVoucher(v)">Print</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty">No vouchers for selected org/FY</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </aside>
+
+    <div class="form-panel">
+      @if (lookupsLoading()) {
+        <p class="loading-hint">Loading schools and masters...</p>
+      }
+      @if (isViewMode()) {
+        <p class="view-banner">View mode — record is read-only</p>
+      }
+      <form class="voucher-form" (ngSubmit)="save()">
+        <fieldset [disabled]="isViewMode()">
+          <div class="form-section">
+            <h3>Voucher Header</h3>
+            <div class="form-grid">
+              <label class="field">
+                <span class="field-label">Org / School *</span>
+                <select class="field-control" required [ngModel]="form().orgID" (ngModelChange)="onOrgChange($event ? +$event : null)" name="orgID">
+                  <option [ngValue]="null">-- Select School --</option>
+                  @for (o of lookups()?.orgs ?? []; track o.orgID) {
+                    <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+                  }
+                </select>
+                @if (!lookupsLoading() && !(lookups()?.orgs?.length)) {
+                  <small class="field-hint warn">No schools available for your user.</small>
+                }
+              </label>
+              <label class="field">
+                <span class="field-label">Account Register *</span>
+                <select class="field-control" required [disabled]="!form().orgID" [ngModel]="form().accountRegisterID" (ngModelChange)="updateForm('accountRegisterID', $event ? +$event : null); onAccountRegisterOrFyChange()" name="accountRegisterID">
+                  <option [ngValue]="null">-- Select Register --</option>
+                  @for (r of accountRegisters(); track r.accountRegisterID) {
+                    <option [ngValue]="r.accountRegisterID">{{ r.accountRegister }}</option>
+                  }
+                </select>
+                @if (form().orgID && !accountRegisters().length) {
+                  <small class="field-hint warn">No register mapped for selected school.</small>
+                }
+              </label>
+              <label class="field">
+                <span class="field-label">FY *</span>
+                <select class="field-control" required [ngModel]="form().fyID" (ngModelChange)="updateForm('fyID', $event ? +$event : null); onAccountRegisterOrFyChange()" name="fyID">
+                  <option [ngValue]="null">-- Select --</option>
+                  @for (fy of lookups()?.fyList ?? []; track fy.fyID) {
+                    <option [ngValue]="fy.fyID">{{ fy.fyName }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Voucher No</span>
+                <input class="field-control field-readonly" type="number" readonly [ngModel]="form().vCode" name="vCode">
+              </label>
+              <label class="field">
+                <span class="field-label">Voucher Date *</span>
+                <input class="field-control" type="date" required [ngModel]="form().vDate" (ngModelChange)="updateForm('vDate', $event)" name="vDate">
+              </label>
+              <label class="field">
+                <span class="field-label">Party</span>
+                <select class="field-control" [disabled]="!form().orgID" [ngModel]="form().partyTID" (ngModelChange)="updateForm('partyTID', $event ? +$event : null)" name="partyTID">
+                  <option [ngValue]="null">-- Select Party --</option>
+                  @for (p of parties(); track p.partyID) {
+                    <option [ngValue]="p.partyID">{{ p.partyName }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Payment Type *</span>
+                <select class="field-control" required [ngModel]="form().paymentTypeID" (ngModelChange)="updateForm('paymentTypeID', $event ? +$event : null)" name="paymentTypeID">
+                  @for (pt of lookups()?.paymentTypes ?? []; track pt.paymentTypeID) {
+                    <option [ngValue]="pt.paymentTypeID">{{ pt.paymentType }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field full">
+                <span class="field-label">Remark</span>
+                <textarea class="field-control" rows="2" [ngModel]="form().remark" (ngModelChange)="updateForm('remark', $event)" name="remark"></textarea>
+              </label>
+            </div>
+          </div>
+
+          @if (showBankFields()) {
+            <div class="form-section bank-section">
+              <h3>Bank / Cheque Details</h3>
+              <div class="form-grid">
+                <label class="field">
+                  <span class="field-label">Transaction No</span>
+                  <input class="field-control" type="text" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
+                </label>
+                <label class="field">
+                  <span class="field-label">Transaction Date</span>
+                  <input class="field-control" type="date" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
+                </label>
+                <label class="field">
+                  <span class="field-label">Deposit Date</span>
+                  <input class="field-control" type="date" [ngModel]="form().depositDate" (ngModelChange)="updateForm('depositDate', $event)" name="depositDate">
+                </label>
+                <label class="field">
+                  <span class="field-label">Bank Ledger</span>
+                  <select class="field-control" [ngModel]="form().ledgerHeadBankID" (ngModelChange)="updateForm('ledgerHeadBankID', $event ? +$event : null)" name="ledgerHeadBankID">
+                    <option [ngValue]="null">-- Select Bank --</option>
+                    @for (b of bankLedgerHeads(); track b.ledgerHeadID) {
+                      <option [ngValue]="b.ledgerHeadID">{{ b.ledgerHead }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-label">File Path</span>
+                  <input class="field-control" type="text" [ngModel]="form().filePath" (ngModelChange)="updateForm('filePath', $event)" name="filePath" placeholder="Attachment path">
+                </label>
+              </div>
+            </div>
+          }
+
+          <div class="form-section">
+            <div class="section-head">
+              <h3>Voucher Details</h3>
+              @if (!isViewMode()) {
+                <button type="button" class="btn btn-outline btn-sm" (click)="addDetailRow()">+ Add Row</button>
+              }
+            </div>
+            <div class="detail-table-wrap">
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Sr</th>
+                    <th>Ledger Head</th>
+                    <th>Narration</th>
+                    <th>Amount</th>
+                    @if (!isViewMode()) {
+                      <th></th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (line of form().details; track line.srNo; let i = $index) {
+                    <tr>
+                      <td>{{ line.srNo }}</td>
+                      <td>
+                        <select required [ngModel]="line.ledgerHeadId" (ngModelChange)="updateDetail(i, 'ledgerHeadId', $event ? +$event : null); loadNarrations($event ? +$event : null)" [name]="'lh' + i">
+                          <option [ngValue]="null">-- Select --</option>
+                          @for (lh of ledgerHeads(); track lh.ledgerHeadID) {
+                            <option [ngValue]="lh.ledgerHeadID">{{ lh.ledgerHead }}</option>
+                          }
+                        </select>
+                      </td>
+                      <td>
+                        <input type="text" [attr.list]="'narr-' + i" [ngModel]="line.ledgerHeadNarration" (ngModelChange)="updateDetail(i, 'ledgerHeadNarration', $event)" [name]="'nar' + i">
+                        <datalist [id]="'narr-' + i">
+                          @for (n of narrationList(line.ledgerHeadId); track n) {
+                            <option [value]="n"></option>
+                          }
+                        </datalist>
+                      </td>
+                      <td>
+                        <input type="number" step="0.01" min="0" [ngModel]="line.amount" (ngModelChange)="updateDetail(i, 'amount', +$event)" [name]="'amt' + i">
+                      </td>
+                      @if (!isViewMode()) {
+                        <td>
+                          @if (form().details.length > 1) {
+                            <button type="button" class="icon-btn" (click)="removeDetailRow(i)">×</button>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="total-label">Total Amount</td>
+                    <td [attr.colspan]="isViewMode() ? 1 : 2" class="total-value">{{ totalAmount() | currency:'INR':'symbol':'1.2-2' }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </fieldset>
+
+        @if (errorMessage()) {
+          <p class="error">{{ errorMessage() }}</p>
+        }
+
+        <footer class="form-footer">
+          @if (isViewMode()) {
+            <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
+            <button type="button" class="btn btn-primary" (click)="printCurrent()">Print Receipt</button>
+          } @else {
+            <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
+          }
+        </footer>
+      </form>
+    </div>
+  </div>
+</section>
+
+@if (showPrintPrompt()) {
+  <div class="modal-overlay" (click)="dismissPrintPrompt()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Print Receipt</h2>
+      </header>
+      <p class="modal-message">Do you want to Print the Receipt?</p>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="dismissPrintPrompt()">No</button>
+        <button type="button" class="btn btn-primary" (click)="confirmPrint()">Yes, Print</button>
+      </footer>
+    </div>
+  </div>
+}
+

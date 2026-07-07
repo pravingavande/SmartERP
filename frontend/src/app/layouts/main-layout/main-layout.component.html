@@ -1,0 +1,183 @@
+<div class="layout" [class.sidebar-collapsed]="sidebarCollapsed()" [class.mobile-view]="isMobileView()">
+  @if (isMobileView() && !sidebarCollapsed()) {
+    <button
+      type="button"
+      class="sidebar-backdrop"
+      aria-label="Close menu"
+      (click)="closeSidebarIfMobile()"
+    ></button>
+  }
+
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="sidebar-brand">
+      <span class="brand-badge">ERP</span>
+      @if (!sidebarCollapsed()) {
+        <div class="brand-text">
+          <span class="brand-name">SmartERP</span>
+          <span class="brand-tagline">School &amp; Sanstha Portal</span>
+        </div>
+      }
+    </div>
+
+    <div class="sidebar-tricolor" aria-hidden="true">
+      <span class="stripe saffron"></span>
+      <span class="stripe white"></span>
+      <span class="stripe green"></span>
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (section of navSections; track section.title) {
+        <div class="nav-section">
+          @if (!sidebarCollapsed()) {
+            <div class="nav-section-title">{{ section.title }}</div>
+          }
+          <div class="nav-section-links">
+            @for (item of section.items; track item.route) {
+              <a
+                class="nav-link"
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                [title]="item.label"
+                (click)="closeSidebarIfMobile()"
+              >
+                <span class="nav-icon-wrap">
+                  <span class="nav-icon" [attr.data-icon]="item.icon"></span>
+                </span>
+                @if (!sidebarCollapsed()) {
+                  <span class="nav-label">{{ item.label }}</span>
+                }
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </nav>
+
+    <div class="sidebar-bottom">
+      <button
+        type="button"
+        class="btn-sidebar-logout"
+        (click)="logout()"
+        [title]="sidebarCollapsed() ? 'Logout' : ''"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+        @if (!sidebarCollapsed()) {
+          <span>Logout</span>
+        }
+      </button>
+
+      @if (!sidebarCollapsed()) {
+        <div class="sidebar-footer-note">
+          <span>Group of Schools</span>
+          <span>Sanstha Dashboard</span>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar" (click)="closeUserProfile()">
+      <div class="topbar-left" (click)="$event.stopPropagation()">
+        <button type="button" class="sidebar-toggle" (click)="toggleSidebar()" aria-label="Toggle sidebar">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="portal-title">
+          <span class="portal-heading">School + Sanstha Dashboard</span>
+          @if (profile(); as p) {
+            <span class="portal-sub">{{ p.schoolName || p.sansthaName || 'Education Management Portal' }}</span>
+          } @else {
+            <span class="portal-sub">Education Management Portal</span>
+          }
+        </div>
+      </div>
+
+      @if (profile(); as p) {
+        <div class="topbar-right" (click)="$event.stopPropagation()">
+          <section class="topbar-user-widget" [class.expanded]="userProfileExpanded()">
+            <button
+              type="button"
+              class="topbar-user-trigger"
+              (click)="toggleUserProfile()"
+              [attr.aria-expanded]="userProfileExpanded()"
+              aria-controls="topbar-user-details"
+              [title]="p.displayName"
+            >
+              <div class="user-logo" aria-hidden="true">
+                <span class="user-logo-text">{{ getInitials(p.displayName) }}</span>
+                <span class="user-logo-badge">ERP</span>
+              </div>
+              <div class="user-summary">
+                <span class="user-name">{{ p.displayName }}</span>
+                <span class="user-meta">{{ p.designationName || p.roleCode }}</span>
+              </div>
+              <span class="user-chevron" [class.open]="userProfileExpanded()" aria-hidden="true"></span>
+            </button>
+
+            @if (userProfileExpanded()) {
+              <div id="topbar-user-details" class="topbar-user-panel">
+                <h4>User Information</h4>
+                <div class="user-detail-list">
+                  <div class="detail-row">
+                    <span class="label">Username</span>
+                    <span class="value">{{ p.userName }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Mobile</span>
+                    <span class="value">{{ p.mobileNo1 || '—' }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Email</span>
+                    <span class="value">{{ p.email || '—' }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">School</span>
+                    <span class="value">{{ p.schoolName || '—' }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Sanstha</span>
+                    <span class="value">{{ p.sansthaName || '—' }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Role</span>
+                    <span class="value">{{ p.roleCode }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </section>
+        </div>
+      }
+    </header>
+
+    <main class="content" (click)="closeUserProfile()">
+      <router-outlet />
+    </main>
+
+    <footer class="app-footer">
+      <div class="footer-tricolor" aria-hidden="true">
+        <span class="stripe saffron"></span>
+        <span class="stripe white"></span>
+        <span class="stripe green"></span>
+      </div>
+
+      <div class="footer-body">
+        <div class="footer-brand">
+          <strong>SmartERP</strong>
+          <span class="footer-tag">School &amp; Sanstha (Group of Schools) Dashboard</span>
+          <span class="footer-copy">&copy; {{ currentYear }} All Rights Reserved</span>
+        </div>
+
+        <div class="footer-credit">
+          <span class="credit-label">Developed By</span>
+          <strong class="credit-name">LR Technology</strong>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>

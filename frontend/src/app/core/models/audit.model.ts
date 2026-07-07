@@ -1,0 +1,143 @@
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+}
+
+export interface OrgOption {
+  orgID: number;
+  organizationName: string;
+  shortName?: string | null;
+  schoolCode?: number | null;
+}
+
+export interface AccountRegisterOption {
+  accountRegisterID: number;
+  accountRegister: string;
+  orgID: number;
+}
+
+export interface PartyOption {
+  partyID: number;
+  partyCode?: string | null;
+  partyName: string;
+  mobNo?: string | null;
+}
+
+export interface PaymentTypeOption {
+  paymentTypeID: number;
+  paymentType: string;
+}
+
+export interface FyOption {
+  fyID: number;
+  fyName: string;
+  fromDate: string;
+  toDate: string;
+}
+
+export interface LedgerHeadOption {
+  ledgerHeadID: number;
+  ledgerHead: string;
+  ledgerHeadShort?: string | null;
+  ledgerTypeID?: number | null;
+}
+
+export interface AuditLookups {
+  orgs: OrgOption[];
+  paymentTypes: PaymentTypeOption[];
+  fyList: FyOption[];
+  ledgerHeads: LedgerHeadOption[];
+  bankLedgerHeads: LedgerHeadOption[];
+}
+
+export interface VoucherDetailLine {
+  srNo: number;
+  ledgerHeadId: number | null;
+  ledgerHeadNarration: string;
+  amount: number;
+}
+
+export interface VoucherFormState {
+  voucherID: number | null;
+  orgID: number | null;
+  accountRegisterID: number | null;
+  vCode: number;
+  vDate: string;
+  partyTID: number | null;
+  remark: string;
+  paymentTypeID: number | null;
+  transactionNo: string;
+  transactionDate: string;
+  depositDate: string;
+  ledgerHeadBankID: number | null;
+  filePath: string;
+  fyID: number | null;
+  details: VoucherDetailLine[];
+}
+
+export interface VoucherListItem {
+  voucherID: number;
+  orgID: number;
+  accountRegisterID: number;
+  vType: string;
+  vCode: number;
+  vDate: string;
+  partyTID?: number | null;
+  totalAmount: number;
+  remark?: string | null;
+  paymentTypeID?: number | null;
+  fyID: number;
+  organizationName?: string | null;
+  accountRegister?: string | null;
+  partyName?: string | null;
+  paymentType?: string | null;
+}
+
+export interface VoucherDetail {
+  voucherDetailID: number;
+  voucherID: number;
+  srNo: number;
+  ledgerHeadID: number;
+  ledgerHeadNarration?: string | null;
+  amount: number;
+  ledgerHead?: string | null;
+}
+
+export interface Voucher {
+  voucherID: number;
+  orgID: number;
+  accountRegisterID: number;
+  vType: string;
+  vCode: number;
+  vDate: string;
+  partyTID?: number | null;
+  totalAmount: number;
+  remark?: string | null;
+  paymentTypeID?: number | null;
+  transactionNo?: string | null;
+  transactionDate?: string | null;
+  depositDate?: string | null;
+  ledgerHeadBankID?: number | null;
+  filePath?: string | null;
+  userID: number;
+  fyID: number;
+  organizationName?: string | null;
+  accountRegister?: string | null;
+  partyName?: string | null;
+  paymentType?: string | null;
+  fyName?: string | null;
+  details: VoucherDetail[];
+}
+
+export interface AuditDashboardRow {
+  orgID: number;
+  organizationName: string;
+  accountRegisterID: number;
+  accountRegister: string;
+  lastTransactionDate?: string | null;
+  bankBalance: number;
+  voucherCategory: string;
+}
+
+export const CASH_PAYMENT_TYPE_ID = 1;

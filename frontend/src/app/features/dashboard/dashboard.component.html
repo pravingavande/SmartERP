@@ -1,0 +1,151 @@
+@if (profile(); as p) {
+  <section class="sanstha-banner">
+    <div class="banner-tricolor" aria-hidden="true">
+      <span class="stripe saffron"></span>
+      <span class="stripe white"></span>
+      <span class="stripe green"></span>
+    </div>
+    <div class="banner-content">
+      <div class="banner-badges">
+        <span class="badge-item">School Dashboard</span>
+        <span class="badge-sep">+</span>
+        <span class="badge-item">Sanstha Dashboard</span>
+      </div>
+      <div class="sanstha-label">Sanstha Name</div>
+      <h2>{{ summary()?.sansthaName || p.sansthaName || '—' }}</h2>
+      @if (p.schoolName) {
+        <p class="school-line">
+          <span class="school-label">School</span>
+          <strong>{{ p.schoolName }}</strong>
+        </p>
+      }
+      <p class="welcome-line">Group of Schools — Education Management Portal</p>
+    </div>
+  </section>
+} @else {
+  @if (sessionUser(); as u) {
+    <section class="sanstha-banner banner-loading">
+      <div class="banner-content">
+        <h2>Welcome, {{ u.displayName }}</h2>
+        <p>Loading your profile...</p>
+      </div>
+    </section>
+  }
+}
+
+<div class="dashboard-layout">
+  <div class="dashboard-main">
+    @if (summary(); as s) {
+      <section class="panel stats-panel">
+        <div class="panel-head">
+          <div class="panel-head-text">
+            <h3>Sanstha Overview</h3>
+            <span class="panel-sub">Key metrics at a glance</span>
+          </div>
+        </div>
+
+        <h4 class="section-label">Quick Statistics</h4>
+        <div class="stat-tiles">
+          @for (tile of statTiles(s); track tile.label) {
+            <article class="stat-tile" [class]="'tone-' + tile.tone">
+              <div class="tile-icon-wrap">
+                <div class="tile-icon" [attr.data-icon]="tile.icon" aria-hidden="true"></div>
+              </div>
+              <div class="tile-body">
+                <span class="tile-value">{{ tile.value | number }}</span>
+                <span class="tile-label">{{ tile.label }}</span>
+                @if (tile.hint) {
+                  <span class="tile-hint">{{ tile.hint }}</span>
+                }
+              </div>
+            </article>
+          }
+        </div>
+
+        <h4 class="section-label">Detailed Breakdown</h4>
+        <div class="breakdown-grid">
+          @for (card of breakdownCards(s); track card.title) {
+            <article class="breakdown-card" [class]="'tone-' + card.tone">
+              <div class="card-head">
+                <div class="card-icon-wrap">
+                  <div class="card-icon" [attr.data-icon]="card.icon" aria-hidden="true"></div>
+                </div>
+                <h4>{{ card.title }}</h4>
+              </div>
+              <div class="card-rows">
+                @for (row of card.rows; track row.label) {
+                  <div class="card-row">
+                    <span>{{ row.label }}</span>
+                    <strong>{{ row.value | number }}</strong>
+                  </div>
+                }
+              </div>
+              <div class="card-total">
+                <span>{{ card.totalLabel }}</span>
+                <strong>{{ card.total | number }}</strong>
+              </div>
+            </article>
+          }
+        </div>
+
+        <div class="info-note" role="note">
+          <span class="info-icon" aria-hidden="true">i</span>
+          <p>Summary numbers are placeholder data. Live counts will be connected from reporting tables.</p>
+        </div>
+      </section>
+    }
+  </div>
+
+  <aside class="dashboard-sidebar">
+    <section class="notice-widget" aria-label="Notices">
+      <div class="notice-tricolor" aria-hidden="true">
+        <span class="stripe saffron"></span>
+        <span class="stripe white"></span>
+        <span class="stripe green"></span>
+      </div>
+      <div class="notice-header">
+        <div class="notice-title-row">
+          <h3>Notices</h3>
+          @if (notices().length > 0) {
+            <span class="notice-count">{{ notices().length }}</span>
+          }
+        </div>
+        <span class="notice-underline"></span>
+      </div>
+
+      <div class="notice-body">
+        <div #noticeList class="notice-list">
+          @for (item of notices(); track item.tid) {
+            <article class="notice-item">
+              <div class="notice-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="13" y2="17" />
+                </svg>
+              </div>
+              <div class="notice-content">
+                <time class="notice-date">{{ formatDate(item.noticeDate) }}</time>
+                <p class="notice-title">{{ item.title }}</p>
+                @if (item.isNew) {
+                  <span class="notice-badge">NEW</span>
+                }
+              </div>
+            </article>
+          } @empty {
+            <p class="notice-empty">No notices available.</p>
+          }
+        </div>
+
+        @if (notices().length > 3) {
+          <button type="button" class="notice-scroll-btn" (click)="scrollNotices()" aria-label="Scroll notices">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        }
+      </div>
+    </section>
+  </aside>
+</div>

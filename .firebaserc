@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "myapp-650e5"
+  },
+  "targets": {
+    "myapp-650e5": {
+      "hosting": {
+        "smartepr": [
+          "smartepr"
+        ]
+      }
+    }
+  }
+}

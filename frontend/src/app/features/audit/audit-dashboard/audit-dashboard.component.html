@@ -1,0 +1,53 @@
+<section class="audit-dashboard">
+  <header class="page-header">
+    <div>
+      <h1>Audit Dashboard</h1>
+      <p>School-wise account register balances and last transaction dates</p>
+    </div>
+    <div class="actions">
+      <a routerLink="/audit/receipt-voucher" class="btn btn-primary">Receipt Voucher</a>
+      <a routerLink="/audit/payment-voucher" class="btn btn-outline">Payment Voucher</a>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="loading">Loading audit dashboard...</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>School / Org</th>
+            <th>Account Register</th>
+            <th>Last Transaction</th>
+            <th>Balance</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.orgID + '-' + row.accountRegisterID) {
+            <tr>
+              <td>{{ row.organizationName }}</td>
+              <td>{{ row.accountRegister }}</td>
+              <td>{{ row.lastTransactionDate ? (row.lastTransactionDate | date:'dd/MM/yyyy') : '—' }}</td>
+              <td class="amt">{{ row.bankBalance | currency:'INR':'symbol':'1.2-2' }}</td>
+              <td><span class="type-chip">{{ row.voucherCategory }}</span></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="empty">No audit data available for your organizations.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="legend-box">
+      <h3>Voucher Types</h3>
+      <ul>
+        <li>Receipt Voucher — Cash</li>
+        <li>Receipt Voucher — Bank</li>
+        <li>Payment Voucher — Cash</li>
+        <li>Payment Voucher — Bank</li>
+      </ul>
+    </div>
+  }
+</section>

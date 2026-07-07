@@ -1,0 +1,168 @@
+<section class="calendar-page">
+  <header class="page-header">
+    <div>
+      <h1>शैक्षणिक दिनदर्शिका</h1>
+      <p>Sutti, sana va shala dinank (Kalnirnay 2026)</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-outline" (click)="openNew('holiday')">+ सुट्टी</button>
+      <button type="button" class="btn btn-primary" (click)="openNew('festival')">+ सण / उत्सव</button>
+    </div>
+  </header>
+
+  <div class="calendar-layout">
+    <aside class="sidebar-panel">
+      <div class="panel-card">
+        <h3>सुट्ट्या ({{ holidays().length }})</h3>
+        <ul class="entry-list">
+          @for (h of holidays(); track h.holidayId) {
+            <li>
+              <button type="button" class="entry-btn holiday" (click)="editHoliday(h)">
+                <span class="date">{{ h.holidayDate | date:'dd MMM' }}</span>
+                <span class="name">{{ h.nameMr }}</span>
+              </button>
+              <button type="button" class="icon-btn" (click)="deleteHoliday(h)" aria-label="Delete">×</button>
+            </li>
+          } @empty {
+            <li class="empty">No holidays this month</li>
+          }
+        </ul>
+      </div>
+
+      <div class="panel-card">
+        <h3>सण / उत्सव ({{ festivals().length }})</h3>
+        <ul class="entry-list">
+          @for (f of festivals(); track f.festivalId) {
+            <li>
+              <button type="button" class="entry-btn festival" (click)="editFestival(f)">
+                <span class="date">{{ f.festivalDate | date:'dd MMM' }}</span>
+                <span class="name">{{ f.nameMr }}</span>
+              </button>
+              <button type="button" class="icon-btn" (click)="deleteFestival(f)" aria-label="Delete">×</button>
+            </li>
+          } @empty {
+            <li class="empty">No festivals this month</li>
+          }
+        </ul>
+      </div>
+
+      <div class="legend">
+        <span class="swatch holiday"></span> सुट्टी
+        <span class="swatch festival"></span> सण / उत्सव
+      </div>
+    </aside>
+
+    <div class="main-panel">
+      <div class="toolbar">
+        <button type="button" class="btn btn-outline" (click)="prevMonth()">‹ Prev</button>
+        <h2>{{ monthLabel() }}</h2>
+        <button type="button" class="btn btn-outline" (click)="nextMonth()">Next ›</button>
+        <button type="button" class="btn btn-text" (click)="goToday()">Today</button>
+      </div>
+
+      @if (loading()) {
+        <p class="loading">Loading calendar...</p>
+      }
+
+      <div class="month-grid">
+        @for (day of weekDays; track day) {
+          <div class="dow">{{ day }}</div>
+        }
+        @for (day of monthDays(); track day.iso) {
+          <button
+            type="button"
+            class="day-cell"
+            [class.outside]="!day.inMonth"
+            [class.today]="isToday(day.iso)"
+            (click)="openNew('holiday', day.iso)"
+          >
+            <span class="day-num">{{ day.date.getDate() }}</span>
+            @for (h of holidaysForDay(day.iso); track h.holidayId) {
+              <span class="chip holiday" (click)="$event.stopPropagation(); editHoliday(h)">🎌 {{ h.nameMr }}</span>
+            }
+            @for (f of festivalsForDay(day.iso); track f.festivalId) {
+              <span class="chip festival" (click)="$event.stopPropagation(); editFestival(f)">🪔 {{ f.nameMr }}</span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ entryType() === 'holiday' ? 'सुट्टी नोंद' : 'सण / उत्सव नोंद' }}</h2>
+        <button type="button" class="icon-btn" (click)="closeModal()">×</button>
+      </header>
+
+      <div class="type-tabs">
+        <button type="button" [class.active]="entryType() === 'holiday'" (click)="entryType.set('holiday')">सुट्टी</button>
+        <button type="button" [class.active]="entryType() === 'festival'" (click)="entryType.set('festival')">सण / उत्सव</button>
+      </div>
+
+      <form class="modal-form" (ngSubmit)="saveEntry()">
+        @if (entryType() === 'holiday') {
+          <div class="form-row">
+            <label>
+              तारीख *
+              <input type="date" required [ngModel]="holidayForm().holidayDate" (ngModelChange)="updateHolidayField('holidayDate', $event)" name="holidayDate">
+            </label>
+            <label>
+              वर्ष *
+              <input type="number" required [ngModel]="holidayForm().year" (ngModelChange)="updateHolidayField('year', +$event)" name="holidayYear">
+            </label>
+          </div>
+          <label>
+            नाव (मराठी) *
+            <input type="text" required [ngModel]="holidayForm().nameMr" (ngModelChange)="updateHolidayField('nameMr', $event)" name="nameMr" placeholder="उदा. प्रजासत्ताक दिन">
+          </label>
+          <div class="form-row">
+            <label>
+              प्रकार
+              <select [ngModel]="holidayForm().holidayType" (ngModelChange)="updateHolidayField('holidayType', $event)" name="holidayType">
+                @for (t of holidayTypes; track t.value) {
+                  <option [value]="t.value">{{ t.label }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Color
+              <input type="color" [ngModel]="holidayForm().color" (ngModelChange)="updateHolidayField('color', $event)" name="holidayColor">
+            </label>
+          </div>
+        } @else {
+          <div class="form-row">
+            <label>
+              तारीख *
+              <input type="date" required [ngModel]="festivalForm().festivalDate" (ngModelChange)="updateFestivalField('festivalDate', $event)" name="festivalDate">
+            </label>
+            <label>
+              वर्ष *
+              <input type="number" required [ngModel]="festivalForm().year" (ngModelChange)="updateFestivalField('year', +$event)" name="festivalYear">
+            </label>
+          </div>
+          <label>
+            नाव (मराठी) *
+            <input type="text" required [ngModel]="festivalForm().nameMr" (ngModelChange)="updateFestivalField('nameMr', $event)" name="festNameMr" placeholder="उदा. गणेश चतुर्थी">
+          </label>
+          <label>
+            Color
+            <input type="color" [ngModel]="festivalForm().color" (ngModelChange)="updateFestivalField('color', $event)" name="festColor">
+          </label>
+        }
+
+        @if (errorMessage()) {
+          <p class="error">{{ errorMessage() }}</p>
+        }
+
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeModal()">रद्द करा</button>
+          <button type="submit" class="btn btn-primary" [disabled]="loading()">जतन करा</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}
