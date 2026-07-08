@@ -1,0 +1,60 @@
+<section class="audit-page">
+  <header class="page-header">
+    <div>
+      <h1>Account Register Define</h1>
+      <p>Map account registers to each school / org</p>
+    </div>
+  </header>
+
+  @if (lookupsLoading()) {
+    <p class="loading-hint">Loading...</p>
+  }
+
+  <div class="form-panel standalone-panel">
+    <form class="voucher-form" (ngSubmit)="save()">
+      <div class="form-section">
+        <div class="form-grid">
+          <label class="field">
+            <span class="field-label">Under Org / School *</span>
+            <select class="field-control" required [ngModel]="selectedOrgID()" (ngModelChange)="onOrgChange($event ? +$event : null)" name="orgID">
+              <option [ngValue]="null">-- Select School --</option>
+              @for (o of lookups()?.orgs ?? []; track o.orgID) {
+                <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+              }
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Account Registers (multiple selection)</h3>
+        <p class="hint">Selected: {{ selectedCount() }}</p>
+        <div class="register-grid">
+          @for (r of allRegisters(); track r.accountRegisterID) {
+            <label class="register-item">
+              <input
+                type="checkbox"
+                [checked]="isSelected(r.accountRegisterID)"
+                (change)="toggleRegister(r.accountRegisterID, $any($event.target).checked)"
+              >
+              <span>{{ r.accountRegister }}</span>
+            </label>
+          } @empty {
+            <p class="empty">No account registers found in master.</p>
+          }
+        </div>
+      </div>
+
+      @if (errorMessage()) {
+        <p class="error">{{ errorMessage() }}</p>
+      }
+      @if (successMessage()) {
+        <p class="success">{{ successMessage() }}</p>
+      }
+
+      <footer class="form-footer">
+        <button type="submit" class="btn btn-primary" [disabled]="loading() || !selectedOrgID()">Save Mapping</button>
+      </footer>
+    </form>
+  </div>
+</section>

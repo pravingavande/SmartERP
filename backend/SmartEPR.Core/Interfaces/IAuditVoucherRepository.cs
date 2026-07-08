@@ -19,6 +19,12 @@ public interface IAuditVoucherRepository
     Task<long> SaveVoucherAsync(long userId, SaveVoucherRequestDto request, CancellationToken cancellationToken = default);
     Task DeleteVoucherAsync(long voucherId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AuditDashboardRowDto>> GetDashboardAsync(long userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterDefineByOrgAsync(long orgId, CancellationToken cancellationToken = default);
+    Task SaveAccountRegisterDefineAsync(long orgId, IReadOnlyList<long> accountRegisterIds, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<PartyMasterDto>> GetPartyListAsync(long orgId, CancellationToken cancellationToken = default);
+    Task<PartyMasterDto?> GetPartyByIdAsync(long partyId, CancellationToken cancellationToken = default);
+    Task<long> SavePartyAsync(SavePartyRequestDto request, CancellationToken cancellationToken = default);
 }
 
 public interface IAuditVoucherService
@@ -33,4 +39,10 @@ public interface IAuditVoucherService
     Task<VoucherDto?> SaveVoucherAsync(long userId, SaveVoucherRequestDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteVoucherAsync(long voucherId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AuditDashboardRowDto>> GetDashboardAsync(long userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default);
+    Task<AccountRegisterDefineDto> GetAccountRegisterDefineAsync(long orgId, CancellationToken cancellationToken = default);
+    Task SaveAccountRegisterDefineAsync(SaveAccountRegisterDefineRequestDto request, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<PartyMasterDto>> GetPartyListAsync(long orgId, CancellationToken cancellationToken = default);
+    Task<PartyMasterDto?> GetPartyByIdAsync(long partyId, CancellationToken cancellationToken = default);
+    Task<PartyMasterDto?> SavePartyAsync(SavePartyRequestDto request, CancellationToken cancellationToken = default);
 }

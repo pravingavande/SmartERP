@@ -17,7 +17,7 @@ public sealed class DonationService : IDonationService
     public async Task<DonationLookupsDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default)
     {
         var orgs = await _auditRepository.GetUserOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
-        var drHeads = await _donationRepository.GetDRHeadsAsync(cancellationToken).ConfigureAwait(false);
+        var drHeads = await _donationRepository.GetDRHeadsAsync(null, cancellationToken).ConfigureAwait(false);
         var paymentTypes = await _auditRepository.GetPaymentTypesAsync(cancellationToken).ConfigureAwait(false);
         var fyList = await _auditRepository.GetFyListAsync(cancellationToken).ConfigureAwait(false);
 
@@ -56,4 +56,23 @@ public sealed class DonationService : IDonationService
         await _donationRepository.DeleteAsync(drId, cancellationToken).ConfigureAwait(false);
         return true;
     }
+
+    public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadMasterAsync(CancellationToken cancellationToken = default)
+        => _donationRepository.GetDRHeadMasterAsync(cancellationToken);
+
+    public async Task<DRHeadDefineDto> GetDRHeadDefineAsync(long orgId, CancellationToken cancellationToken = default)
+    {
+        var mapped = await _donationRepository.GetDRHeadDefineByOrgAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return new DRHeadDefineDto
+        {
+            OrgID = orgId,
+            DRHeadIds = mapped.Select(h => h.DRHeadID).ToList()
+        };
+    }
+
+    public Task SaveDRHeadDefineAsync(SaveDRHeadDefineRequestDto request, CancellationToken cancellationToken = default)
+        => _donationRepository.SaveDRHeadDefineAsync(request.OrgID, request.DRHeadIds, cancellationToken);
+
+    public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadsForOrgAsync(long orgId, CancellationToken cancellationToken = default)
+        => _donationRepository.GetDRHeadsAsync(orgId, cancellationToken);
 }

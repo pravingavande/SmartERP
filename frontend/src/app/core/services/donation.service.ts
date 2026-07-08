@@ -7,7 +7,9 @@ import {
   Donation,
   DonationFormState,
   DonationListItem,
-  DonationLookups
+  DonationLookups,
+  DRHeadDefine,
+  DRHeadOption
 } from '../models/donation.model';
 
 @Injectable({ providedIn: 'root' })
@@ -86,6 +88,36 @@ export class DonationService {
 
   delete(drId: number): Observable<boolean> {
     return this.http.delete<ApiResponse<boolean>>(`${this.base}/${drId}`).pipe(
+      map((r) => r.success),
+      catchError(() => of(false))
+    );
+  }
+
+  getDRHeadMaster(): Observable<DRHeadOption[]> {
+    return this.http.get<ApiResponse<DRHeadOption[]>>(`${this.base}/dr-head-master`).pipe(
+      map((r) => (r.success && r.data ? r.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getDRHeadsForOrg(orgId: number): Observable<DRHeadOption[]> {
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.get<ApiResponse<DRHeadOption[]>>(`${this.base}/dr-heads`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getDRHeadDefine(orgId: number): Observable<DRHeadDefine | null> {
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.get<ApiResponse<DRHeadDefine>>(`${this.base}/dr-head-define`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data : null)),
+      catchError(() => of(null))
+    );
+  }
+
+  saveDRHeadDefine(orgId: number, drHeadIds: number[]): Observable<boolean> {
+    return this.http.post<ApiResponse<boolean>>(`${this.base}/dr-head-define`, { orgID: orgId, drHeadIds }).pipe(
       map((r) => r.success),
       catchError(() => of(false))
     );

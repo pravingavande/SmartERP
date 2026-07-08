@@ -64,3 +64,15 @@ public sealed class DonationLookupsDto
     public IReadOnlyList<PaymentTypeOptionDto> PaymentTypes { get; init; } = [];
     public IReadOnlyList<FyOptionDto> FyList { get; init; } = [];
 }
+
+public sealed class DRHeadDefineDto
+{
+    public long OrgID { get; init; }
+    public IReadOnlyList<long> DRHeadIds { get; init; } = [];
+}
+
+public sealed class SaveDRHeadDefineRequestDto
+{
+    public long OrgID { get; init; }
+    public IReadOnlyList<long> DRHeadIds { get; init; } = [];
+}

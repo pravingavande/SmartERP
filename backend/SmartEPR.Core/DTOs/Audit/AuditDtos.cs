@@ -91,6 +91,7 @@ public sealed class VoucherDto
     public DateTime? TransactionDate { get; init; }
     public DateTime? DepositDate { get; init; }
     public long? LedgerHeadBankID { get; init; }
+    public string? BankName { get; init; }
     public string? FilePath { get; init; }
     public long UserID { get; init; }
     public long FyID { get; init; }
@@ -125,9 +126,54 @@ public sealed class SaveVoucherRequestDto
     public DateTime? TransactionDate { get; init; }
     public DateTime? DepositDate { get; init; }
     public long? LedgerHeadBankID { get; init; }
+    public string? BankName { get; init; }
     public string? FilePath { get; init; }
     public long FyID { get; init; }
     public IReadOnlyList<VoucherDetailLineRequestDto> Details { get; init; } = [];
+}
+
+public sealed class AccountRegisterMasterOptionDto
+{
+    public long AccountRegisterID { get; init; }
+    public string AccountRegister { get; init; } = string.Empty;
+}
+
+public sealed class AccountRegisterDefineDto
+{
+    public long OrgID { get; init; }
+    public IReadOnlyList<long> AccountRegisterIds { get; init; } = [];
+}
+
+public sealed class SaveAccountRegisterDefineRequestDto
+{
+    public long OrgID { get; init; }
+    public IReadOnlyList<long> AccountRegisterIds { get; init; } = [];
+}
+
+public sealed class PartyMasterDto
+{
+    public long PartyID { get; init; }
+    public long OrgID { get; init; }
+    public long? RecordNo { get; init; }
+    public string? PartyCode { get; init; }
+    public string PartyName { get; init; } = string.Empty;
+    public string? Address { get; init; }
+    public string? MobNo { get; init; }
+    public string? PanNo { get; init; }
+    public string? GSTNo { get; init; }
+    public bool IsActive { get; init; }
+}
+
+public sealed class SavePartyRequestDto
+{
+    public long? PartyID { get; init; }
+    public long OrgID { get; init; }
+    public string PartyName { get; init; } = string.Empty;
+    public string? Address { get; init; }
+    public string? MobNo { get; init; }
+    public string? PanNo { get; init; }
+    public string? GSTNo { get; init; }
+    public bool IsActive { get; init; } = true;
 }
 
 public sealed class AuditDashboardRowDto

@@ -51,6 +51,21 @@ export const routes: Routes = [
           import('./features/audit/donation-entry/donation-entry.component').then((m) => m.DonationEntryComponent)
       },
       {
+        path: 'audit/party-master',
+        loadComponent: () =>
+          import('./features/audit/party-master/party-master.component').then((m) => m.PartyMasterComponent)
+      },
+      {
+        path: 'audit/account-register-define',
+        loadComponent: () =>
+          import('./features/audit/account-register-define/account-register-define.component').then((m) => m.AccountRegisterDefineComponent)
+      },
+      {
+        path: 'audit/donation-head-define',
+        loadComponent: () =>
+          import('./features/audit/donation-head-define/donation-head-define.component').then((m) => m.DonationHeadDefineComponent)
+      },
+      {
         path: 'tickets',
         loadComponent: () =>
           import('./features/ticket/ticket-entry/ticket-entry.component').then((m) => m.TicketEntryComponent)

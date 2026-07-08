@@ -3,10 +3,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  AccountRegisterDefine,
+  AccountRegisterMasterOption,
   AccountRegisterOption,
   ApiResponse,
   AuditDashboardRow,
   AuditLookups,
+  PartyFormState,
+  PartyMaster,
   PartyOption,
   Voucher,
   VoucherListItem
@@ -100,6 +104,7 @@ export class AuditService {
       transactionDate: form.transactionDate || null,
       depositDate: form.depositDate || null,
       ledgerHeadBankID: form.ledgerHeadBankID,
+      bankName: form.bankName || null,
       filePath: form.filePath || null,
       fyID: form.fyID,
       details: form.details
@@ -122,6 +127,60 @@ export class AuditService {
     return this.http.delete<ApiResponse<boolean>>(`${this.base}/vouchers/${voucherId}`).pipe(
       map((r) => r.success),
       catchError(() => of(false))
+    );
+  }
+
+  getAccountRegisterMaster(): Observable<AccountRegisterMasterOption[]> {
+    return this.http.get<ApiResponse<AccountRegisterMasterOption[]>>(`${this.base}/account-register-master`).pipe(
+      map((r) => (r.success && r.data ? r.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getAccountRegisterDefine(orgId: number): Observable<AccountRegisterDefine | null> {
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.get<ApiResponse<AccountRegisterDefine>>(`${this.base}/account-register-define`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data : null)),
+      catchError(() => of(null))
+    );
+  }
+
+  saveAccountRegisterDefine(orgId: number, accountRegisterIds: number[]): Observable<boolean> {
+    return this.http.post<ApiResponse<boolean>>(`${this.base}/account-register-define`, { orgID: orgId, accountRegisterIds }).pipe(
+      map((r) => r.success),
+      catchError(() => of(false))
+    );
+  }
+
+  getPartyList(orgId: number): Observable<PartyMaster[]> {
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.get<ApiResponse<PartyMaster[]>>(`${this.base}/party-master`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getParty(partyId: number): Observable<PartyMaster | null> {
+    return this.http.get<ApiResponse<PartyMaster>>(`${this.base}/party-master/${partyId}`).pipe(
+      map((r) => (r.success && r.data ? r.data : null)),
+      catchError(() => of(null))
+    );
+  }
+
+  saveParty(form: PartyFormState): Observable<PartyMaster | null> {
+    const payload = {
+      partyID: form.partyID,
+      orgID: form.orgID,
+      partyName: form.partyName.trim(),
+      address: form.address || null,
+      mobNo: form.mobNo || null,
+      panNo: form.panNo || null,
+      gstNo: form.gstNo || null,
+      isActive: form.isActive
+    };
+    return this.http.post<ApiResponse<PartyMaster>>(`${this.base}/party-master`, payload).pipe(
+      map((r) => (r.success && r.data ? r.data : null)),
+      catchError(() => of(null))
     );
   }
 }

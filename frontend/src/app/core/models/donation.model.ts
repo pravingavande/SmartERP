@@ -7,6 +7,7 @@ export interface ApiResponse<T> {
 export interface OrgOption {
   orgID: number;
   organizationName: string;
+  schoolCode?: number | null;
 }
 
 export interface DRHeadOption {
@@ -82,3 +83,8 @@ export interface Donation extends DonationListItem {
 }
 
 export const CASH_PAYMENT_TYPE_ID = 1;
+
+export interface DRHeadDefine {
+  orgID: number;
+  drHeadIds: number[];
+}

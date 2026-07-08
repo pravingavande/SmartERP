@@ -60,6 +60,14 @@ export class MainLayoutComponent {
       ]
     },
     {
+      title: 'Masters',
+      items: [
+        { label: 'Party Master', icon: 'party', route: '/audit/party-master' },
+        { label: 'Account Register Define', icon: 'register', route: '/audit/account-register-define' },
+        { label: 'Donation Head Define', icon: 'donation-head', route: '/audit/donation-head-define' }
+      ]
+    },
+    {
       title: 'Operations',
       items: [
         { label: 'Ticket Raise', icon: 'ticket', route: '/tickets' },

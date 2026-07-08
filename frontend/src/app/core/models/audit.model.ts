@@ -71,6 +71,7 @@ export interface VoucherFormState {
   transactionDate: string;
   depositDate: string;
   ledgerHeadBankID: number | null;
+  bankName: string;
   filePath: string;
   fyID: number | null;
   details: VoucherDetailLine[];
@@ -119,6 +120,7 @@ export interface Voucher {
   transactionDate?: string | null;
   depositDate?: string | null;
   ledgerHeadBankID?: number | null;
+  bankName?: string | null;
   filePath?: string | null;
   userID: number;
   fyID: number;
@@ -141,3 +143,37 @@ export interface AuditDashboardRow {
 }
 
 export const CASH_PAYMENT_TYPE_ID = 1;
+
+export interface AccountRegisterMasterOption {
+  accountRegisterID: number;
+  accountRegister: string;
+}
+
+export interface AccountRegisterDefine {
+  orgID: number;
+  accountRegisterIds: number[];
+}
+
+export interface PartyMaster {
+  partyID: number;
+  orgID: number;
+  recordNo?: number | null;
+  partyCode?: string | null;
+  partyName: string;
+  address?: string | null;
+  mobNo?: string | null;
+  panNo?: string | null;
+  gstNo?: string | null;
+  isActive: boolean;
+}
+
+export interface PartyFormState {
+  partyID: number | null;
+  orgID: number | null;
+  partyName: string;
+  address: string;
+  mobNo: string;
+  panNo: string;
+  gstNo: string;
+  isActive: boolean;
+}

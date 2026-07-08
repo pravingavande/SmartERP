@@ -106,6 +106,55 @@ public sealed class AuditController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(true, "Voucher deleted."));
     }
 
+    [HttpGet("account-register-master")]
+    public async Task<IActionResult> GetAccountRegisterMaster(CancellationToken cancellationToken)
+    {
+        var items = await _auditService.GetAccountRegisterMasterAsync(cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<AccountRegisterMasterOptionDto>>.Ok(items));
+    }
+
+    [HttpGet("account-register-define")]
+    public async Task<IActionResult> GetAccountRegisterDefine([FromQuery] long orgId, CancellationToken cancellationToken)
+    {
+        var item = await _auditService.GetAccountRegisterDefineAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<AccountRegisterDefineDto>.Ok(item));
+    }
+
+    [HttpPost("account-register-define")]
+    public async Task<IActionResult> SaveAccountRegisterDefine([FromBody] SaveAccountRegisterDefineRequestDto request, CancellationToken cancellationToken)
+    {
+        if (request.OrgID <= 0)
+            return Ok(ApiResponse<bool>.Fail("Org is required."));
+
+        await _auditService.SaveAccountRegisterDefineAsync(request, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<bool>.Ok(true, "Account registers saved."));
+    }
+
+    [HttpGet("party-master")]
+    public async Task<IActionResult> GetPartyList([FromQuery] long orgId, CancellationToken cancellationToken)
+    {
+        var items = await _auditService.GetPartyListAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<PartyMasterDto>>.Ok(items));
+    }
+
+    [HttpGet("party-master/{partyId:long}")]
+    public async Task<IActionResult> GetParty(long partyId, CancellationToken cancellationToken)
+    {
+        var item = await _auditService.GetPartyByIdAsync(partyId, cancellationToken).ConfigureAwait(false);
+        return item is null
+            ? Ok(ApiResponse<PartyMasterDto>.Fail("Party not found."))
+            : Ok(ApiResponse<PartyMasterDto>.Ok(item));
+    }
+
+    [HttpPost("party-master")]
+    public async Task<IActionResult> SaveParty([FromBody] SavePartyRequestDto request, CancellationToken cancellationToken)
+    {
+        var saved = await _auditService.SavePartyAsync(request, cancellationToken).ConfigureAwait(false);
+        return saved is null
+            ? Ok(ApiResponse<PartyMasterDto>.Fail("Unable to save party. Party name is required."))
+            : Ok(ApiResponse<PartyMasterDto>.Ok(saved, "Party saved."));
+    }
+
     private bool TryGetUserId(out long userId)
     {
         userId = 0;

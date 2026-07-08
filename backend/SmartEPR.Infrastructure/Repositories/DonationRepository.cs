@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Dapper;
 using SmartEPR.Core.DTOs.Donation;
 using SmartEPR.Core.Interfaces;
@@ -14,8 +15,31 @@ public sealed class DonationRepository : IDonationRepository
         _executor = executor;
     }
 
-    public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadsAsync(CancellationToken cancellationToken = default)
-        => _executor.QueryListAsync<DRHeadOptionDto>("dbo.sp_Donation_GetDRHeads", null, cancellationToken);
+    public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadsAsync(long? orgId = null, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        return _executor.QueryListAsync<DRHeadOptionDto>("dbo.sp_Donation_GetDRHeads", p, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadMasterAsync(CancellationToken cancellationToken = default)
+        => _executor.QueryListAsync<DRHeadOptionDto>("dbo.sp_Donation_GetDRHeadMaster", null, cancellationToken);
+
+    public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadDefineByOrgAsync(long orgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        return _executor.QueryListAsync<DRHeadOptionDto>("dbo.sp_Donation_DRHeadDefine_GetByOrg", p, cancellationToken);
+    }
+
+    public Task SaveDRHeadDefineAsync(long orgId, IReadOnlyList<long> drHeadIds, CancellationToken cancellationToken = default)
+    {
+        var json = JsonSerializer.Serialize(drHeadIds);
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        p.Add("@DRHeadIdsJson", json);
+        return _executor.ExecuteAsync("dbo.sp_Donation_DRHeadDefine_Save", p, cancellationToken);
+    }
 
     public async Task<long> GetNextReceiptNoAsync(long fyId, CancellationToken cancellationToken = default)
     {

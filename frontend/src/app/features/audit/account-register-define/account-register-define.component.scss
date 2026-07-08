@@ -1,0 +1,46 @@
+@import '../voucher-entry/voucher-entry.component.scss';
+
+.standalone-panel {
+  max-width: 900px;
+}
+
+.register-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.register-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #d8e2ee;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+
+  input {
+    flex-shrink: 0;
+  }
+}
+
+.hint {
+  margin: 0 0 0.75rem;
+  color: var(--epr-muted);
+  font-size: 0.85rem;
+}
+
+.success {
+  color: #1b5e20;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 8px;
+}
+
+.empty {
+  color: var(--epr-muted);
+}

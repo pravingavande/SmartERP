@@ -116,6 +116,7 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
             TransactionDate = header.TransactionDate,
             DepositDate = header.DepositDate,
             LedgerHeadBankID = header.LedgerHeadBankID,
+            BankName = header.BankName,
             FilePath = header.FilePath,
             UserID = header.UserID,
             FyID = header.FyID,
@@ -156,6 +157,7 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         p.Add("@TransactionDate", request.TransactionDate);
         p.Add("@DepositDate", request.DepositDate);
         p.Add("@LedgerHeadBankID", request.LedgerHeadBankID);
+        p.Add("@BankName", request.BankName);
         p.Add("@FilePath", request.FilePath);
         p.Add("@UserID", userId);
         p.Add("@FyID", request.FyID);
@@ -177,6 +179,55 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         var p = new DynamicParameters();
         p.Add("@UserID", userId);
         return _executor.QueryListAsync<AuditDashboardRowDto>("dbo.sp_Audit_GetDashboard", p, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default)
+        => _executor.QueryListAsync<AccountRegisterMasterOptionDto>("dbo.sp_Audit_GetAccountRegisterMaster", null, cancellationToken);
+
+    public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterDefineByOrgAsync(long orgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        return _executor.QueryListAsync<AccountRegisterMasterOptionDto>("dbo.sp_Audit_AccountRegisterDefine_GetByOrg", p, cancellationToken);
+    }
+
+    public Task SaveAccountRegisterDefineAsync(long orgId, IReadOnlyList<long> accountRegisterIds, CancellationToken cancellationToken = default)
+    {
+        var json = JsonSerializer.Serialize(accountRegisterIds);
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        p.Add("@AccountRegisterIdsJson", json);
+        return _executor.ExecuteAsync("dbo.sp_Audit_AccountRegisterDefine_Save", p, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<PartyMasterDto>> GetPartyListAsync(long orgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        return _executor.QueryListAsync<PartyMasterDto>("dbo.sp_Audit_Party_GetList", p, cancellationToken);
+    }
+
+    public async Task<PartyMasterDto?> GetPartyByIdAsync(long partyId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@PartyID", partyId);
+        return await _executor.QuerySingleOrDefaultAsync<PartyMasterDto>("dbo.sp_Audit_Party_GetById", p, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<long> SavePartyAsync(SavePartyRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@PartyID", request.PartyID > 0 ? request.PartyID : null, dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.InputOutput);
+        p.Add("@OrgID", request.OrgID);
+        p.Add("@PartyName", request.PartyName);
+        p.Add("@Address", request.Address);
+        p.Add("@MobNo", request.MobNo);
+        p.Add("@PanNo", request.PanNo);
+        p.Add("@GSTNo", request.GSTNo);
+        p.Add("@IsActive", request.IsActive);
+
+        await _executor.ExecuteAsync("dbo.sp_Audit_Party_Save", p, cancellationToken).ConfigureAwait(false);
+        return p.Get<long>("@PartyID");
     }
 
     private sealed class NarrationRow

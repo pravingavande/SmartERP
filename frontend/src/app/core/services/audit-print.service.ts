@@ -29,10 +29,14 @@ export class AuditPrintService {
         <div><span class="lbl">FY</span><span class="val">${this.esc(voucher.fyName ?? '')}</span></div>
         <div><span class="lbl">Party</span><span class="val">${this.esc(voucher.partyName ?? '—')}</span></div>
         <div><span class="lbl">Payment Type</span><span class="val">${this.esc(voucher.paymentType ?? '')}</span></div>
+        ${voucher.bankName ? `<div><span class="lbl">Bank Name</span><span class="val">${this.esc(voucher.bankName)}</span></div>` : ''}
         ${voucher.transactionNo ? `<div><span class="lbl">Transaction No</span><span class="val">${this.esc(voucher.transactionNo)}</span></div>` : ''}
+        ${voucher.transactionDate ? `<div><span class="lbl">Transaction Date</span><span class="val">${this.formatDate(voucher.transactionDate)}</span></div>` : ''}
+        ${voucher.depositDate ? `<div><span class="lbl">Deposit Date</span><span class="val">${this.formatDate(voucher.depositDate)}</span></div>` : ''}
+        ${voucher.filePath ? `<div class="full"><span class="lbl">Attachment</span><span class="val">${this.esc(voucher.filePath)}</span></div>` : ''}
       </div>
       <table>
-        <thead><tr><th>Sr</th><th>Ledger Head</th><th>Narration</th><th>Amount</th></tr></thead>
+        <thead><tr><th>Sr</th><th style="width:18%">Ledger Head</th><th style="width:46%">Narration</th><th>Amount</th></tr></thead>
         <tbody>${detailRows}</tbody>
         <tfoot><tr><td colspan="3" class="total-lbl">Total</td><td class="num total">${this.formatAmount(voucher.totalAmount)}</td></tr></tfoot>
       </table>

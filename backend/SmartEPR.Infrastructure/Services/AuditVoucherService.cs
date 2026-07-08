@@ -53,6 +53,9 @@ public sealed class AuditVoucherService : IAuditVoucherService
         if (request.Details.Count == 0)
             return null;
 
+        if (request.Details.Sum(d => d.Amount) <= 0)
+            return null;
+
         var voucherId = await _repository.SaveVoucherAsync(userId, request, cancellationToken).ConfigureAwait(false);
         return await _repository.GetVoucherByIdAsync(voucherId, cancellationToken).ConfigureAwait(false);
     }
@@ -65,4 +68,35 @@ public sealed class AuditVoucherService : IAuditVoucherService
 
     public Task<IReadOnlyList<AuditDashboardRowDto>> GetDashboardAsync(long userId, CancellationToken cancellationToken = default)
         => _repository.GetDashboardAsync(userId, cancellationToken);
+
+    public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default)
+        => _repository.GetAccountRegisterMasterAsync(cancellationToken);
+
+    public async Task<AccountRegisterDefineDto> GetAccountRegisterDefineAsync(long orgId, CancellationToken cancellationToken = default)
+    {
+        var mapped = await _repository.GetAccountRegisterDefineByOrgAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return new AccountRegisterDefineDto
+        {
+            OrgID = orgId,
+            AccountRegisterIds = mapped.Select(m => m.AccountRegisterID).ToList()
+        };
+    }
+
+    public Task SaveAccountRegisterDefineAsync(SaveAccountRegisterDefineRequestDto request, CancellationToken cancellationToken = default)
+        => _repository.SaveAccountRegisterDefineAsync(request.OrgID, request.AccountRegisterIds, cancellationToken);
+
+    public Task<IReadOnlyList<PartyMasterDto>> GetPartyListAsync(long orgId, CancellationToken cancellationToken = default)
+        => _repository.GetPartyListAsync(orgId, cancellationToken);
+
+    public Task<PartyMasterDto?> GetPartyByIdAsync(long partyId, CancellationToken cancellationToken = default)
+        => _repository.GetPartyByIdAsync(partyId, cancellationToken);
+
+    public async Task<PartyMasterDto?> SavePartyAsync(SavePartyRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.PartyName))
+            return null;
+
+        var partyId = await _repository.SavePartyAsync(request, cancellationToken).ConfigureAwait(false);
+        return await _repository.GetPartyByIdAsync(partyId, cancellationToken).ConfigureAwait(false);
+    }
 }

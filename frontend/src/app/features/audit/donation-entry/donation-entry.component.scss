@@ -23,8 +23,63 @@
 
 .donation-layout {
   display: grid;
-  grid-template-columns: 1fr minmax(300px, 360px);
   gap: 1rem;
+
+  &.list-only,
+  &.form-only {
+    grid-template-columns: 1fr;
+  }
+}
+
+.list-error {
+  margin-bottom: 1rem;
+}
+
+.list-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--epr-white);
+  border: 1px solid #c5d0de;
+  border-radius: var(--epr-radius);
+
+  .field {
+    min-width: 220px;
+    flex: 1;
+  }
+}
+
+.field-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a2f4d;
+}
+
+.field-control {
+  width: 100%;
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 0.62rem 0.75rem;
+  border: 1.5px solid #9eb0c8;
+  border-radius: 8px;
+}
+
+.field-readonly {
+  background: #f0f4f9;
+  color: #334a66;
+  font-weight: 700;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &.full {
+    grid-column: 1 / -1;
+  }
 }
 
 .form-panel {

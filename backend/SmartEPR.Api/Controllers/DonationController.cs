@@ -130,6 +130,37 @@ public sealed class DonationController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(true, "Donation deleted."));
     }
 
+    [HttpGet("dr-head-master")]
+    public async Task<IActionResult> GetDRHeadMaster(CancellationToken cancellationToken)
+    {
+        var items = await _donationService.GetDRHeadMasterAsync(cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<DRHeadOptionDto>>.Ok(items));
+    }
+
+    [HttpGet("dr-heads")]
+    public async Task<IActionResult> GetDRHeadsForOrg([FromQuery] long orgId, CancellationToken cancellationToken)
+    {
+        var items = await _donationService.GetDRHeadsForOrgAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<DRHeadOptionDto>>.Ok(items));
+    }
+
+    [HttpGet("dr-head-define")]
+    public async Task<IActionResult> GetDRHeadDefine([FromQuery] long orgId, CancellationToken cancellationToken)
+    {
+        var item = await _donationService.GetDRHeadDefineAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<DRHeadDefineDto>.Ok(item));
+    }
+
+    [HttpPost("dr-head-define")]
+    public async Task<IActionResult> SaveDRHeadDefine([FromBody] SaveDRHeadDefineRequestDto request, CancellationToken cancellationToken)
+    {
+        if (request.OrgID <= 0)
+            return Ok(ApiResponse<bool>.Fail("Org is required."));
+
+        await _donationService.SaveDRHeadDefineAsync(request, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<bool>.Ok(true, "Donation heads saved."));
+    }
+
     private bool TryGetUserId(out long userId)
     {
         userId = 0;
