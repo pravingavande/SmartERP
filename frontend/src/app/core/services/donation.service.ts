@@ -20,7 +20,10 @@ export class DonationService {
 
   getLookups(): Observable<DonationLookups | null> {
     return this.http.get<ApiResponse<DonationLookups>>(`${this.base}/lookups`).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
+      map((r) => {
+        if (!r.success || !r.data) return null;
+        return { ...r.data, bankLedgerHeads: r.data.bankLedgerHeads ?? [] };
+      }),
       catchError(() => of(null))
     );
   }
@@ -74,6 +77,8 @@ export class DonationService {
       transactionNo: form.transactionNo || null,
       transactionDate: form.transactionDate || null,
       depositDate: form.depositDate || null,
+      bankName: form.bankName || null,
+      ledgerHeadBankID: form.ledgerHeadBankID,
       remark: form.remark || null,
       fyID: form.fyID,
       orgID: form.orgID,
@@ -124,10 +129,22 @@ export class DonationService {
   }
 
   /** API may return `drid` (all-caps acronym) instead of `drID` until backend DTO is updated. */
-  private normalizeDonation<T extends DonationListItem>(item: T & { drid?: number }): T {
-    if (item.drID == null && item.drid != null) {
-      return { ...item, drID: item.drid };
-    }
-    return item;
+  private normalizeDonation<T extends DonationListItem>(item: T & {
+    drid?: number;
+    bankName?: string | null;
+    ledgerHeadBankID?: number | null;
+    depositBankName?: string | null;
+    BankName?: string | null;
+    LedgerHeadBankID?: number | null;
+    DepositBankName?: string | null;
+  }): T {
+    const normalized = {
+      ...item,
+      drID: item.drID ?? item.drid ?? item.drID,
+      bankName: item.bankName ?? item.BankName ?? null,
+      ledgerHeadBankID: item.ledgerHeadBankID ?? item.LedgerHeadBankID ?? null,
+      depositBankName: item.depositBankName ?? item.DepositBankName ?? null
+    };
+    return normalized as T;
   }
 }

@@ -47,6 +47,8 @@ export class AuditPrintService {
   }
 
   printDonation(donation: Donation): void {
+    const isCheque = (donation.paymentType ?? '').toLowerCase().includes('cheque');
+
     const html = this.wrapReceipt(
       'Donation Receipt',
       `
@@ -62,6 +64,12 @@ export class AuditPrintService {
         <div><span class="lbl">PAN</span><span class="val">${this.esc(donation.panNo ?? '—')}</span></div>
         <div><span class="lbl">Aadhar</span><span class="val">${this.esc(donation.aadharNo ?? '—')}</span></div>
         <div><span class="lbl">Payment Type</span><span class="val">${this.esc(donation.paymentType ?? '')}</span></div>
+        ${isCheque && donation.bankName ? `<div><span class="lbl">Bank Name</span><span class="val">${this.esc(donation.bankName)}</span></div>` : ''}
+        ${isCheque && donation.transactionNo ? `<div><span class="lbl">Cheque Number</span><span class="val">${this.esc(donation.transactionNo)}</span></div>` : ''}
+        ${isCheque && donation.depositBankName ? `<div><span class="lbl">Deposit Bank</span><span class="val">${this.esc(donation.depositBankName)}</span></div>` : ''}
+        ${!isCheque && donation.transactionNo ? `<div><span class="lbl">Transaction No</span><span class="val">${this.esc(donation.transactionNo)}</span></div>` : ''}
+        ${donation.transactionDate ? `<div><span class="lbl">Transaction Date</span><span class="val">${this.formatDate(donation.transactionDate)}</span></div>` : ''}
+        ${donation.depositDate ? `<div><span class="lbl">Deposit Date</span><span class="val">${this.formatDate(donation.depositDate)}</span></div>` : ''}
         <div class="full"><span class="lbl">Address</span><span class="val">${this.esc(donation.address ?? '—')}</span></div>
       </div>
       <p class="amount-box">Amount Received: <strong>${this.formatAmount(donation.amount ?? 0)}</strong></p>

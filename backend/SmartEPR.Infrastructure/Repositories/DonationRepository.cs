@@ -90,6 +90,8 @@ public sealed class DonationRepository : IDonationRepository
         p.Add("@TransactionNo", request.TransactionNo);
         p.Add("@TransactionDate", request.TransactionDate);
         p.Add("@DepositDate", request.DepositDate);
+        p.Add("@BankName", request.BankName);
+        p.Add("@LedgerHeadBankID", request.LedgerHeadBankID);
         p.Add("@Remark", request.Remark);
         p.Add("@UserID", userId);
         p.Add("@FyID", request.FyID);

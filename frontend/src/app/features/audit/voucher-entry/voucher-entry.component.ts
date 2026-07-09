@@ -57,9 +57,19 @@ export class VoucherEntryComponent {
   readonly showPartyModal = signal(false);
   readonly partySaving = signal(false);
   readonly partyForm = signal({ partyName: '', mobNo: '', address: '' });
+  readonly pendingAttachmentFile = signal<File | null>(null);
+  readonly attachmentPreviewUrl = signal<string | null>(null);
+
+  private detailRowSeq = 0;
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
+  readonly isEditMode = computed(() => this.formMode() === 'edit');
   readonly isCashPayment = computed(() => this.form().paymentTypeID === CASH_PAYMENT_TYPE_ID);
+  readonly isChequePayment = computed(() => {
+    const paymentTypeId = this.form().paymentTypeID;
+    const paymentType = this.lookups()?.paymentTypes.find((pt) => pt.paymentTypeID === paymentTypeId)?.paymentType ?? '';
+    return paymentType.toLowerCase().includes('cheque');
+  });
   readonly totalAmount = computed(() =>
     this.form().details.reduce((sum, line) => sum + (Number(line.amount) || 0), 0)
   );
@@ -73,7 +83,7 @@ export class VoucherEntryComponent {
     return list.filter((v) => v.accountRegisterID === regId);
   });
   readonly activeFy = computed(() => {
-    const fyId = this.listFyID();
+    const fyId = this.formVisible() ? (this.form().fyID ?? this.listFyID()) : this.listFyID();
     return this.lookups()?.fyList.find((fy) => fy.fyID === fyId) ?? null;
   });
   readonly fyDisplayName = computed(() => this.activeFy()?.fyName ?? '—');
@@ -180,7 +190,7 @@ export class VoucherEntryComponent {
         this.errorMessage.set('No account register mapped for this school. Configure under Account Register Define.');
       }
     });
-    this.audit.getParties(orgId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => this.parties.set(p));
+    this.loadParties(orgId, this.form().partyTID);
     if (reloadListOnly || !this.formVisible()) {
       this.loadVoucherList();
     }
@@ -218,8 +228,14 @@ export class VoucherEntryComponent {
     if (this.isViewMode()) return;
     this.form.update((f) => ({
       ...f,
-      details: [...f.details, { srNo: f.details.length + 1, ledgerHeadId: null, ledgerHeadNarration: '', amount: 0 }]
+      details: [...f.details, this.createDetailLine(f.details.length + 1)]
     }));
+  }
+
+  confirmRemoveDetailRow(index: number): void {
+    if (this.isViewMode() || this.form().details.length <= 1) return;
+    if (!confirm('Remove this voucher detail row?')) return;
+    this.removeDetailRow(index);
   }
 
   removeDetailRow(index: number): void {
@@ -239,6 +255,9 @@ export class VoucherEntryComponent {
       return;
     }
     const fy = this.activeFy();
+    const today = this.todayDateString();
+    this.detailRowSeq = 0;
+    this.clearAttachmentState();
     this.formMode.set('new');
     this.formVisible.set(true);
     this.errorMessage.set(null);
@@ -247,7 +266,7 @@ export class VoucherEntryComponent {
       orgID: orgId,
       fyID: fyId,
       accountRegisterID: this.listAccountRegisterID(),
-      vDate: this.clampDateToFy(new Date().toISOString().slice(0, 10), fy)
+      vDate: this.clampDateToFy(today, fy) || today
     });
     this.loadOrgDependents(orgId, false);
     if (this.listAccountRegisterID()) {
@@ -284,12 +303,14 @@ export class VoucherEntryComponent {
         this.listOrgID.set(v.orgID);
         this.listFyID.set(v.fyID);
         this.audit.getAccountRegisters(v.orgID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((r) => this.accountRegisters.set(r));
-        this.audit.getParties(v.orgID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => this.parties.set(p));
+        this.loadParties(v.orgID, v.partyTID ?? null);
         v.details.forEach((d) => this.loadNarrations(d.ledgerHeadID));
       });
   }
 
   private applyVoucherToForm(v: Voucher): void {
+    this.detailRowSeq = 0;
+    this.clearAttachmentState();
     this.form.set({
       voucherID: v.voucherID,
       orgID: v.orgID,
@@ -307,55 +328,101 @@ export class VoucherEntryComponent {
       filePath: v.filePath ?? '',
       fyID: v.fyID,
       details: v.details.length
-        ? v.details.map((d) => ({
-            srNo: d.srNo,
-            ledgerHeadId: d.ledgerHeadID,
-            ledgerHeadNarration: d.ledgerHeadNarration ?? '',
-            amount: d.amount
-          }))
-        : [{ srNo: 1, ledgerHeadId: null, ledgerHeadNarration: '', amount: 0 }]
+        ? v.details.map((d) => this.createDetailLine(d.srNo, d.ledgerHeadID, d.ledgerHeadNarration ?? '', d.amount))
+        : [this.createDetailLine(1)]
     });
   }
 
   save(): void {
     if (this.isViewMode()) return;
+    const validationError = this.validateForm();
+    if (validationError) {
+      this.errorMessage.set(validationError);
+      return;
+    }
+
     const f = this.form();
-    if (!f.orgID || !f.accountRegisterID || !f.fyID) {
-      this.errorMessage.set('Org, Account Register and FY are required.');
-      return;
-    }
-    if (f.details.length < 1) {
-      this.errorMessage.set('At least one detail line is required.');
-      return;
-    }
-    if (!f.details.some((d) => d.ledgerHeadId)) {
-      this.errorMessage.set('Select ledger head on at least one detail line.');
-      return;
-    }
-    if (this.totalAmount() <= 0) {
-      this.errorMessage.set('Total amount must be greater than zero.');
-      return;
-    }
-    if (!this.isDateWithinFy(f.vDate)) {
-      this.errorMessage.set('Voucher date must be within the active financial year.');
-      return;
+    const vDate = f.vDate?.trim() || this.clampDateToFy(this.todayDateString(), this.activeFy()) || this.todayDateString();
+    if (!f.vDate?.trim()) {
+      this.updateForm('vDate', vDate);
     }
 
     this.loading.set(true);
     this.errorMessage.set(null);
     this.audit
-      .saveVoucher(this.vType(), f)
+      .saveVoucher(this.vType(), { ...f, vDate })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
         this.loading.set(false);
         if (!saved) {
-          this.errorMessage.set('Unable to save voucher. Check detail lines and total amount.');
+          this.errorMessage.set('Unable to save voucher. Please check all required fields and try again.');
           return;
         }
         this.loadVoucherList();
         this.pendingPrintVoucher.set(saved);
         this.showPrintPrompt.set(true);
       });
+  }
+
+  private validateForm(): string | null {
+    const f = this.form();
+
+    if (!f.accountRegisterID) {
+      return 'Please select Account Register.';
+    }
+
+    const vDate = f.vDate?.trim() || this.todayDateString();
+    if (!vDate) {
+      return 'Please enter Voucher Date.';
+    }
+    if (!this.isDateWithinFy(vDate)) {
+      return 'Voucher Date must be within the selected Financial Year.';
+    }
+
+    if (!f.partyTID) {
+      return 'Please select Party Name.';
+    }
+
+    if (!f.paymentTypeID) {
+      return 'Please select Payment Type.';
+    }
+
+    if (f.details.length < 1) {
+      return 'Please add at least one voucher detail row.';
+    }
+
+    for (const line of f.details) {
+      if (!line.ledgerHeadId) {
+        return `Please select Ledger Head on row ${line.srNo}.`;
+      }
+      if (!line.amount || line.amount <= 0) {
+        return `Please enter Amount on row ${line.srNo}.`;
+      }
+    }
+
+    if (this.totalAmount() <= 0) {
+      return 'Please enter Amount.';
+    }
+
+    if (this.isChequePayment()) {
+      if (!f.transactionNo?.trim()) {
+        return 'Please enter Cheque Number.';
+      }
+      if (this.isReceiptVoucher()) {
+        if (!f.bankName?.trim()) {
+          return 'Please enter Bank Name.';
+        }
+        if (!f.ledgerHeadBankID) {
+          return 'Please select Deposit Bank.';
+        }
+      } else if (this.isPaymentVoucher()) {
+        if (!f.ledgerHeadBankID) {
+          return 'Please select Bank Name.';
+        }
+      }
+    }
+
+    return null;
   }
 
   confirmPrint(): void {
@@ -387,6 +454,7 @@ export class VoucherEntryComponent {
   }
 
   closeForm(): void {
+    this.clearAttachmentState();
     this.formVisible.set(false);
     this.formMode.set('new');
     this.errorMessage.set(null);
@@ -400,9 +468,38 @@ export class VoucherEntryComponent {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (file) {
-      this.updateForm('filePath', file.name);
+    if (!file) return;
+    this.revokeAttachmentPreview();
+    this.pendingAttachmentFile.set(file);
+    const previewUrl = URL.createObjectURL(file);
+    this.attachmentPreviewUrl.set(previewUrl);
+    this.updateForm('filePath', file.name);
+    input.value = '';
+  }
+
+  viewAttachment(): void {
+    const previewUrl = this.attachmentPreviewUrl();
+    if (previewUrl) {
+      window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      return;
     }
+    const filePath = this.form().filePath?.trim();
+    if (!filePath) return;
+    if (/^https?:\/\//i.test(filePath)) {
+      window.open(filePath, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    alert(`Attachment saved as: ${filePath}\n\nRe-select the file using Browse to preview before saving.`);
+  }
+
+  removeAttachment(): void {
+    if (!confirm('Remove this attachment?')) return;
+    this.clearAttachmentState();
+    this.updateForm('filePath', '');
+  }
+
+  hasAttachment(): boolean {
+    return !!(this.form().filePath?.trim() || this.pendingAttachmentFile());
   }
 
   onVoucherDateChange(value: string): void {
@@ -436,7 +533,7 @@ export class VoucherEntryComponent {
   }
 
   openPartyModal(): void {
-    if (this.isViewMode() || !this.form().orgID) return;
+    if (this.isViewMode() || this.isEditMode() || !this.form().orgID) return;
     this.partyForm.set({ partyName: '', mobNo: '', address: '' });
     this.showPartyModal.set(true);
   }
@@ -467,19 +564,35 @@ export class VoucherEntryComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
         this.partySaving.set(false);
-        if (!saved) {
+        if (!saved?.partyID) {
           this.errorMessage.set('Unable to save party.');
           return;
         }
-        this.audit
-          .getParties(orgId)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe((parties) => {
-            this.parties.set(parties);
-            this.updateForm('partyTID', saved.partyID);
-            this.closePartyModal();
-            this.errorMessage.set(null);
-          });
+        const newParty: PartyOption = {
+          partyID: saved.partyID,
+          partyName: saved.partyName,
+          mobNo: saved.mobNo ?? null
+        };
+        this.parties.update((list) => {
+          if (list.some((p) => p.partyID === newParty.partyID)) return list;
+          return [...list, newParty].sort((a, b) => a.partyName.localeCompare(b.partyName));
+        });
+        this.form.update((f) => ({ ...f, partyTID: saved.partyID }));
+        this.loadParties(orgId, saved.partyID, () => {
+          this.form.update((f) => ({ ...f, partyTID: saved.partyID }));
+          this.closePartyModal();
+          this.errorMessage.set(null);
+        });
+      });
+  }
+
+  private loadParties(orgId: number, selectedPartyId?: number | null, onLoaded?: () => void): void {
+    this.audit
+      .getParties(orgId, selectedPartyId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((parties) => {
+        this.parties.set(parties);
+        onLoaded?.();
       });
   }
 
@@ -493,7 +606,7 @@ export class VoucherEntryComponent {
 
   private isDateWithinFy(date: string): boolean {
     const fy = this.activeFy();
-    if (!fy || !date) return false;
+    if (!fy || !date) return true;
     return date >= fy.fromDate.slice(0, 10) && date <= fy.toDate.slice(0, 10);
   }
 
@@ -506,13 +619,50 @@ export class VoucherEntryComponent {
     return date;
   }
 
+  private todayDateString(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  private createDetailLine(
+    srNo: number,
+    ledgerHeadId: number | null = null,
+    ledgerHeadNarration = '',
+    amount = 0
+  ): VoucherFormState['details'][0] {
+    return {
+      rowId: ++this.detailRowSeq,
+      srNo,
+      ledgerHeadId,
+      ledgerHeadNarration,
+      amount
+    };
+  }
+
+  private clearAttachmentState(): void {
+    this.revokeAttachmentPreview();
+    this.pendingAttachmentFile.set(null);
+  }
+
+  private revokeAttachmentPreview(): void {
+    const url = this.attachmentPreviewUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
+    this.attachmentPreviewUrl.set(null);
+  }
+
   private emptyForm(): VoucherFormState {
+    this.detailRowSeq = 0;
     return {
       voucherID: null,
       orgID: null,
       accountRegisterID: null,
       vCode: 1,
-      vDate: new Date().toISOString().slice(0, 10),
+      vDate: this.todayDateString(),
       partyTID: null,
       remark: '',
       paymentTypeID: CASH_PAYMENT_TYPE_ID,
@@ -523,7 +673,7 @@ export class VoucherEntryComponent {
       bankName: '',
       filePath: '',
       fyID: null,
-      details: [{ srNo: 1, ledgerHeadId: null, ledgerHeadNarration: '', amount: 0 }]
+      details: [this.createDetailLine(1)]
     };
   }
 }

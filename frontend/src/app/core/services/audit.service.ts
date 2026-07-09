@@ -35,9 +35,12 @@ export class AuditService {
       map((r) => {
         if (!r.success || !r.data) return this.emptyDashboardPage();
         if (Array.isArray(r.data)) {
-          return { summary: this.emptyDashboardPage().summary, rows: r.data };
+          return { summary: this.emptyDashboardPage().summary, rows: r.data.map((row) => this.normalizeDashboardRow(row)) };
         }
-        return r.data;
+        return {
+          summary: r.data.summary ?? this.emptyDashboardPage().summary,
+          rows: (r.data.rows ?? []).map((row) => this.normalizeDashboardRow(row))
+        };
       }),
       catchError(() => of(this.emptyDashboardPage()))
     );
@@ -58,6 +61,26 @@ export class AuditService {
     };
   }
 
+  private normalizeDashboardRow(raw: AuditDashboardRow & {
+    OrgID?: number;
+    OrganizationName?: string;
+    AccountRegisterID?: number;
+    AccountRegister?: string;
+    LastTransactionDate?: string | null;
+    BankBalance?: number;
+    VoucherCategory?: string;
+  }): AuditDashboardRow {
+    return {
+      orgID: raw.orgID ?? raw.OrgID ?? 0,
+      organizationName: raw.organizationName ?? raw.OrganizationName ?? '',
+      accountRegisterID: raw.accountRegisterID ?? raw.AccountRegisterID ?? 0,
+      accountRegister: raw.accountRegister ?? raw.AccountRegister ?? '',
+      lastTransactionDate: raw.lastTransactionDate ?? raw.LastTransactionDate ?? null,
+      bankBalance: raw.bankBalance ?? raw.BankBalance ?? 0,
+      voucherCategory: raw.voucherCategory ?? raw.VoucherCategory ?? ''
+    };
+  }
+
   getLookups(): Observable<AuditLookups | null> {
     return this.http.get<ApiResponse<AuditLookups>>(`${this.base}/lookups`).pipe(
       map((r) => (r.success && r.data ? r.data : null)),
@@ -73,11 +96,15 @@ export class AuditService {
     );
   }
 
-  getParties(orgId: number): Observable<PartyOption[]> {
-    const params = new HttpParams().set('orgId', orgId.toString());
-    return this.http.get<ApiResponse<PartyOption[]>>(`${this.base}/parties`, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
-      catchError(() => of([]))
+  /** Active parties from Party Master for voucher dropdowns (Receipt & Payment). */
+  getParties(orgId: number, includePartyId?: number | null): Observable<PartyOption[]> {
+    return this.getPartyList(orgId).pipe(
+      map((list) =>
+        list
+          .filter((p) => p.isActive !== false || p.partyID === includePartyId)
+          .map((p) => this.partyMasterToOption(p))
+          .sort((a, b) => a.partyName.localeCompare(b.partyName))
+      )
     );
   }
 
@@ -183,14 +210,14 @@ export class AuditService {
   getPartyList(orgId: number): Observable<PartyMaster[]> {
     const params = new HttpParams().set('orgId', orgId.toString());
     return this.http.get<ApiResponse<PartyMaster[]>>(`${this.base}/party-master`, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
+      map((r) => (r.success && r.data ? r.data.map((p) => this.normalizePartyMaster(p)) : [])),
       catchError(() => of([]))
     );
   }
 
   getParty(partyId: number): Observable<PartyMaster | null> {
     return this.http.get<ApiResponse<PartyMaster>>(`${this.base}/party-master/${partyId}`).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
+      map((r) => (r.success && r.data ? this.normalizePartyMaster(r.data) : null)),
       catchError(() => of(null))
     );
   }
@@ -207,9 +234,46 @@ export class AuditService {
       isActive: form.isActive
     };
     return this.http.post<ApiResponse<PartyMaster>>(`${this.base}/party-master`, payload).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
+      map((r) => (r.success && r.data ? this.normalizePartyMaster(r.data) : null)),
       catchError(() => of(null))
     );
+  }
+
+  private partyMasterToOption(p: PartyMaster): PartyOption {
+    return {
+      partyID: p.partyID,
+      partyCode: p.partyCode ?? (p.recordNo != null ? String(p.recordNo) : null),
+      partyName: p.partyName,
+      mobNo: p.mobNo ?? null
+    };
+  }
+
+  private normalizePartyMaster(
+    raw: PartyMaster & {
+      PartyID?: number;
+      OrgID?: number;
+      RecordNo?: number | null;
+      PartyCode?: string | null;
+      PartyName?: string;
+      Address?: string | null;
+      MobNo?: string | null;
+      PanNo?: string | null;
+      GSTNo?: string | null;
+      IsActive?: boolean;
+    }
+  ): PartyMaster {
+    return {
+      partyID: raw.partyID ?? raw.PartyID ?? 0,
+      orgID: raw.orgID ?? raw.OrgID ?? 0,
+      recordNo: raw.recordNo ?? raw.RecordNo ?? null,
+      partyCode: raw.partyCode ?? raw.PartyCode ?? null,
+      partyName: raw.partyName ?? raw.PartyName ?? '',
+      address: raw.address ?? raw.Address ?? null,
+      mobNo: raw.mobNo ?? raw.MobNo ?? null,
+      panNo: raw.panNo ?? raw.PanNo ?? null,
+      gstNo: raw.gstNo ?? raw.GSTNo ?? null,
+      isActive: raw.isActive ?? raw.IsActive ?? true
+    };
   }
 
   getLedgerTypes(): Observable<LedgerTypeOption[]> {

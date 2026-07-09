@@ -30,6 +30,12 @@ export interface DonationLookups {
   drHeads: DRHeadOption[];
   paymentTypes: PaymentTypeOption[];
   fyList: FyOption[];
+  bankLedgerHeads: BankLedgerHeadOption[];
+}
+
+export interface BankLedgerHeadOption {
+  ledgerHeadID: number;
+  ledgerHead: string;
 }
 
 export interface DonationFormState {
@@ -48,6 +54,8 @@ export interface DonationFormState {
   transactionNo: string;
   transactionDate: string;
   depositDate: string;
+  bankName: string;
+  ledgerHeadBankID: number | null;
   remark: string;
   fyID: number | null;
   orgID: number | null;
@@ -78,6 +86,9 @@ export interface Donation extends DonationListItem {
   transactionNo?: string | null;
   transactionDate?: string | null;
   depositDate?: string | null;
+  bankName?: string | null;
+  ledgerHeadBankID?: number | null;
+  depositBankName?: string | null;
   remark?: string | null;
   userID?: number | null;
 }

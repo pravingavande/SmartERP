@@ -118,7 +118,7 @@
                 </label>
                 <label class="field">
                   <span class="field-label">Mobile No</span>
-                  <input class="field-control" type="text" [ngModel]="form().mobileNo" (ngModelChange)="updateForm('mobileNo', $event)" name="mobileNo">
+                  <input class="field-control" type="text" inputmode="numeric" maxlength="10" [ngModel]="form().mobileNo" (ngModelChange)="onMobileInput($event)" name="mobileNo" placeholder="10-digit mobile">
                 </label>
                 <label class="field full">
                   <span class="field-label">Address</span>
@@ -130,7 +130,7 @@
                 </label>
                 <label class="field">
                   <span class="field-label">Aadhar No</span>
-                  <input class="field-control" type="text" [ngModel]="form().aadharNo" (ngModelChange)="updateForm('aadharNo', $event)" name="aadharNo">
+                  <input class="field-control" type="text" inputmode="numeric" maxlength="14" [ngModel]="form().aadharNo" (ngModelChange)="onAadharInput($event)" name="aadharNo" placeholder="12 or 14 digits">
                 </label>
                 <label class="field">
                   <span class="field-label">Amount *</span>
@@ -156,16 +156,29 @@
                 <h3>Bank / Cheque Details</h3>
                 <div class="form-grid">
                   <label class="field">
-                    <span class="field-label">Transaction No</span>
-                    <input class="field-control" type="text" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
+                    <span class="field-label">@if (isChequePayment()) { Cheque Number * } @else { Transaction No }</span>
+                    <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
+                  </label>
+                  <label class="field">
+                    <span class="field-label">Bank Name@if (isChequePayment()) { * }</span>
+                    <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().bankName" (ngModelChange)="updateForm('bankName', $event)" name="bankName">
+                  </label>
+                  <label class="field">
+                    <span class="field-label">Deposit Bank@if (isChequePayment()) { * }</span>
+                    <select class="field-control" [disabled]="isViewMode()" [ngModel]="form().ledgerHeadBankID" (ngModelChange)="updateForm('ledgerHeadBankID', $event ? +$event : null)" name="ledgerHeadBankID">
+                      <option [ngValue]="null">-- Select Deposit Bank --</option>
+                      @for (b of lookups()?.bankLedgerHeads ?? []; track b.ledgerHeadID) {
+                        <option [ngValue]="b.ledgerHeadID">{{ b.ledgerHead }}</option>
+                      }
+                    </select>
                   </label>
                   <label class="field">
                     <span class="field-label">Transaction Date</span>
-                    <input class="field-control" type="date" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
+                    <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
                   </label>
                   <label class="field">
                     <span class="field-label">Deposit Date</span>
-                    <input class="field-control" type="date" [ngModel]="form().depositDate" (ngModelChange)="updateForm('depositDate', $event)" name="depositDate">
+                    <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().depositDate" (ngModelChange)="updateForm('depositDate', $event)" name="depositDate">
                   </label>
                 </div>
               </div>

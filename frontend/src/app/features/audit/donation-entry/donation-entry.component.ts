@@ -47,6 +47,11 @@ export class DonationEntryComponent {
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly isCashPayment = computed(() => this.form().paymentTypeID === CASH_PAYMENT_TYPE_ID);
+  readonly isChequePayment = computed(() => {
+    const paymentTypeId = this.form().paymentTypeID;
+    const paymentType = this.lookups()?.paymentTypes.find((pt) => pt.paymentTypeID === paymentTypeId)?.paymentType ?? '';
+    return paymentType.toLowerCase().includes('cheque');
+  });
   readonly showBankFields = computed(() => !this.isCashPayment());
   readonly fyDisplayName = computed(() => {
     const fyId = this.listFyID();
@@ -215,6 +220,8 @@ export class DonationEntryComponent {
       transactionNo: d.transactionNo ?? '',
       transactionDate: d.transactionDate?.slice(0, 10) ?? '',
       depositDate: d.depositDate ? d.depositDate.slice(0, 10) : '',
+      bankName: d.bankName ?? '',
+      ledgerHeadBankID: d.ledgerHeadBankID ?? null,
       remark: d.remark ?? '',
       fyID: d.fyID ?? null,
       orgID: d.orgID ?? null
@@ -223,20 +230,16 @@ export class DonationEntryComponent {
 
   save(): void {
     if (this.isViewMode()) return;
-    const f = this.form();
-    if (!f.orgID || !f.fyID || !f.drHeadID) {
-      this.errorMessage.set('Org, FY and Donation Head are required.');
-      return;
-    }
-    if (!f.donorName.trim() || f.amount <= 0) {
-      this.errorMessage.set('Donor name and amount are required.');
+    const validationError = this.validateForm();
+    if (validationError) {
+      this.errorMessage.set(validationError);
       return;
     }
 
     this.loading.set(true);
     this.errorMessage.set(null);
     this.donation
-      .save(f)
+      .save(this.form())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
         this.loading.set(false);
@@ -248,6 +251,57 @@ export class DonationEntryComponent {
         this.pendingPrintDonation.set(saved);
         this.showPrintPrompt.set(true);
       });
+  }
+
+  private validateForm(): string | null {
+    const f = this.form();
+
+    if (!f.drHeadID) {
+      return 'Please select Donation Head.';
+    }
+    if (!f.donorName.trim()) {
+      return 'Please enter Donor Name.';
+    }
+    if (f.amount <= 0) {
+      return 'Please enter Amount.';
+    }
+    if (!f.paymentTypeID) {
+      return 'Please select Payment Type.';
+    }
+
+    const mobile = f.mobileNo.trim();
+    if (mobile && !/^\d{10}$/.test(mobile)) {
+      return 'Please enter a valid 10-digit Mobile Number.';
+    }
+
+    const aadhar = f.aadharNo.trim();
+    if (aadhar && !/^\d{12}$|^\d{14}$/.test(aadhar)) {
+      return 'Please enter a valid Aadhaar Number.';
+    }
+
+    if (this.isChequePayment()) {
+      if (!f.transactionNo?.trim()) {
+        return 'Please enter Cheque Number.';
+      }
+      if (!f.bankName?.trim()) {
+        return 'Please enter Bank Name.';
+      }
+      if (!f.ledgerHeadBankID) {
+        return 'Please select Deposit Bank.';
+      }
+    }
+
+    return null;
+  }
+
+  onMobileInput(value: string): void {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    this.updateForm('mobileNo', digits);
+  }
+
+  onAadharInput(value: string): void {
+    const digits = value.replace(/\D/g, '').slice(0, 14);
+    this.updateForm('aadharNo', digits);
   }
 
   confirmPrint(): void {
@@ -305,6 +359,8 @@ export class DonationEntryComponent {
       transactionNo: '',
       transactionDate: '',
       depositDate: '',
+      bankName: '',
+      ledgerHeadBankID: null,
       remark: '',
       fyID: null,
       orgID: null

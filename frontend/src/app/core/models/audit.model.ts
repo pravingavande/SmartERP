@@ -52,6 +52,7 @@ export interface AuditLookups {
 }
 
 export interface VoucherDetailLine {
+  rowId: number;
   srNo: number;
   ledgerHeadId: number | null;
   ledgerHeadNarration: string;

@@ -143,6 +143,8 @@
 
   display: flex;
 
+  flex-wrap: wrap;
+
   gap: 0.5rem;
 
   align-items: center;
@@ -153,8 +155,21 @@
 
     flex: 1;
 
+    min-width: 180px;
+
   }
 
+}
+
+
+
+.btn-danger-outline {
+  color: #c62828;
+  border-color: #e8b4b4;
+
+  &:hover {
+    background: #fff5f5;
+  }
 }
 
 
@@ -499,6 +514,7 @@ fieldset {
 
 
 
+  &.voucher-header-grid,
   &.receipt-header-grid {
     grid-template-columns: minmax(180px, 1.2fr) minmax(90px, 0.55fr) minmax(120px, 0.65fr) minmax(260px, 2fr);
     align-items: end;

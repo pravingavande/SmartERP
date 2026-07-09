@@ -24,6 +24,9 @@ public sealed class DonationListItemDto
     public string? TransactionNo { get; init; }
     public DateTime? TransactionDate { get; init; }
     public DateTime? DepositDate { get; init; }
+    public string? BankName { get; init; }
+    public long? LedgerHeadBankID { get; init; }
+    public string? DepositBankName { get; init; }
     public string? Remark { get; init; }
     public long? UserID { get; init; }
     public long? FyID { get; init; }
@@ -51,6 +54,8 @@ public sealed class SaveDonationRequestDto
     public string? TransactionNo { get; init; }
     public DateTime? TransactionDate { get; init; }
     public DateTime? DepositDate { get; init; }
+    public string? BankName { get; init; }
+    public long? LedgerHeadBankID { get; init; }
     public string? Remark { get; init; }
     public long FyID { get; init; }
     public long OrgID { get; init; }
@@ -63,6 +68,7 @@ public sealed class DonationLookupsDto
     public IReadOnlyList<DRHeadOptionDto> DrHeads { get; init; } = [];
     public IReadOnlyList<PaymentTypeOptionDto> PaymentTypes { get; init; } = [];
     public IReadOnlyList<FyOptionDto> FyList { get; init; } = [];
+    public IReadOnlyList<LedgerHeadOptionDto> BankLedgerHeads { get; init; } = [];
 }
 
 public sealed class DRHeadDefineDto

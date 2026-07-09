@@ -102,6 +102,7 @@ export class AuditDashboardComponent {
       .getDashboard(fyId)
       .pipe(
         switchMap((dashboard) => {
+          this.rows.set(dashboard.rows);
           if (dashboard.summary.fyID != null) {
             return of(dashboard.summary);
           }
