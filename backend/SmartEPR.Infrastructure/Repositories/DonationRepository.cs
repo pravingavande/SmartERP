@@ -76,7 +76,7 @@ public sealed class DonationRepository : IDonationRepository
     public async Task<long> SaveAsync(long userId, SaveDonationRequestDto request, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
-        p.Add("@DRID", request.DRID > 0 ? request.DRID : null, dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.InputOutput);
+        p.Add("@DRID", request.DrID > 0 ? request.DrID : null, dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.InputOutput);
         p.Add("@ReceiptNo", request.ReceiptNo);
         p.Add("@ReceiptDate", request.ReceiptDate);
         p.Add("@DRHeadID", request.DRHeadID);

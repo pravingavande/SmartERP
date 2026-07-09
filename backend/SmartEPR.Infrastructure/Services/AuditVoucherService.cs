@@ -69,6 +69,21 @@ public sealed class AuditVoucherService : IAuditVoucherService
     public Task<IReadOnlyList<AuditDashboardRowDto>> GetDashboardAsync(long userId, CancellationToken cancellationToken = default)
         => _repository.GetDashboardAsync(userId, cancellationToken);
 
+    public Task<AuditDashboardSummaryDto> GetDashboardSummaryAsync(long userId, long? fyId, CancellationToken cancellationToken = default)
+        => _repository.GetDashboardSummaryAsync(userId, fyId, cancellationToken);
+
+    public async Task<AuditDashboardResponseDto> GetDashboardPageAsync(long userId, long? fyId, CancellationToken cancellationToken = default)
+    {
+        var rowsTask = _repository.GetDashboardAsync(userId, cancellationToken);
+        var summaryTask = _repository.GetDashboardSummaryAsync(userId, fyId, cancellationToken);
+        await Task.WhenAll(rowsTask, summaryTask).ConfigureAwait(false);
+        return new AuditDashboardResponseDto
+        {
+            Rows = await rowsTask.ConfigureAwait(false),
+            Summary = await summaryTask.ConfigureAwait(false)
+        };
+    }
+
     public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default)
         => _repository.GetAccountRegisterMasterAsync(cancellationToken);
 

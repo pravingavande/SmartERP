@@ -2,17 +2,190 @@
   <header class="page-header">
     <div>
       <h1>Audit Dashboard</h1>
-      <p>School-wise account register balances and last transaction dates</p>
+      <p>Summary of receipts, payments and donations for your organizations</p>
     </div>
     <div class="actions">
       <a routerLink="/audit/receipt-voucher" class="btn btn-primary">Receipt Voucher</a>
       <a routerLink="/audit/payment-voucher" class="btn btn-outline">Payment Voucher</a>
+      <a routerLink="/audit/donation" class="btn btn-outline">Donation Entry</a>
     </div>
   </header>
 
   @if (loading()) {
     <p class="loading">Loading audit dashboard...</p>
   } @else {
+  <div class="summary-section">
+    <div class="summary-head">
+      <div>
+        <h2>Transaction Summary</h2>
+        <p class="summary-sub">Counts and totals for selected financial year</p>
+      </div>
+      <label class="fy-filter">
+        <span class="field-label">Financial Year</span>
+        <select
+          class="field-control"
+          [ngModel]="selectedFyID()"
+          (ngModelChange)="onFyChange($event ? +$event : null)"
+          name="summaryFyID"
+        >
+          @for (fy of fyList(); track fy.fyID) {
+            <option [ngValue]="fy.fyID">{{ fy.fyName }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (summary(); as s) {
+      <div class="summary-cards" [class.loading-cards]="summaryLoading()">
+        @for (card of summaryCards(s); track card.title) {
+          <a class="summary-card" [class]="'tone-' + card.tone" [routerLink]="card.route">
+            <div class="card-ring" [style.--ring-color]="card.color" [style.--ring-percent]="card.sharePercent">
+              <svg viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="ring-bg" cx="18" cy="18" r="15.9"></circle>
+                <circle class="ring-fill" cx="18" cy="18" r="15.9"></circle>
+              </svg>
+              <span class="ring-label">{{ card.sharePercent }}%</span>
+            </div>
+            <span class="card-title">{{ card.title }}</span>
+            <span class="card-count">{{ card.count | number }}</span>
+            <span class="card-label">Entries</span>
+            <span class="card-amount">{{ card.amount | currency:'INR':'symbol':'1.0-0' }}</span>
+            <span class="card-amount-label">Total Amount</span>
+          </a>
+        }
+      </div>
+
+      @if (visuals(); as v) {
+        <div class="visuals-grid" [class.loading-cards]="summaryLoading()">
+          <article class="visual-panel donut-panel">
+            <header class="panel-title">
+              <h3>Amount Distribution</h3>
+              <span class="panel-sub">Share of total transaction value</span>
+            </header>
+            @if (v.hasData) {
+              <div class="donut-wrap">
+                <svg class="donut-chart" viewBox="0 0 200 200" role="img" aria-label="Amount distribution chart">
+                  <circle class="donut-track" cx="100" cy="100" [attr.r]="donutRadius"></circle>
+                  @for (seg of v.donut; track seg.label) {
+                    @if (seg.value > 0) {
+                      <circle
+                        class="donut-segment"
+                        cx="100"
+                        cy="100"
+                        [attr.r]="donutRadius"
+                        [attr.stroke]="seg.color"
+                        [attr.stroke-dasharray]="seg.dashArray"
+                        [attr.stroke-dashoffset]="seg.dashOffset"
+                      ></circle>
+                    }
+                  }
+                </svg>
+                <div class="donut-center">
+                  <span class="donut-total-label">Total</span>
+                  <strong class="donut-total">{{ formatCompact(v.totalAmount) }}</strong>
+                  <span class="donut-total-sub">{{ v.totalCount | number }} entries</span>
+                </div>
+              </div>
+              <ul class="donut-legend">
+                @for (seg of v.donut; track seg.label) {
+                  <li>
+                    <span class="legend-dot" [style.background]="seg.color"></span>
+                    <span class="legend-label">{{ seg.label }}</span>
+                    <span class="legend-value">{{ seg.value | currency:'INR':'symbol':'1.0-0' }}</span>
+                    <span class="legend-pct">{{ seg.percent | number:'1.0-0' }}%</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="visual-empty">No transactions recorded for this financial year.</p>
+            }
+          </article>
+
+          <article class="visual-panel bars-panel">
+            <header class="panel-title">
+              <h3>Category Comparison</h3>
+              <span class="panel-sub">Entry count vs amount by module</span>
+            </header>
+            @if (v.hasData) {
+              <div class="bar-chart">
+                @for (bar of v.bars; track bar.label) {
+                  <div class="bar-row">
+                    <div class="bar-meta">
+                      <span class="bar-label">{{ bar.label }}</span>
+                      <span class="bar-stats">{{ bar.count | number }} · {{ bar.amount | currency:'INR':'symbol':'1.0-0' }}</span>
+                    </div>
+                    <div class="bar-tracks">
+                      <div class="bar-track">
+                        <span class="track-label">Amount</span>
+                        <div class="track-bg">
+                          <div class="track-fill amount-fill" [style.width.%]="bar.amountPercent" [style.background]="bar.color"></div>
+                        </div>
+                      </div>
+                      <div class="bar-track">
+                        <span class="track-label">Count</span>
+                        <div class="track-bg">
+                          <div class="track-fill count-fill" [style.width.%]="bar.countPercent" [style.background]="bar.color"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="visual-empty">No transactions recorded for this financial year.</p>
+            }
+          </article>
+
+          <article class="visual-panel flow-panel">
+            <header class="panel-title">
+              <h3>Cash Flow Snapshot</h3>
+              <span class="panel-sub">Money in vs money out for {{ s.fyName || 'selected FY' }}</span>
+            </header>
+            <div class="flow-cards">
+              <div class="flow-card inflow">
+                <span class="flow-icon" aria-hidden="true">↓</span>
+                <span class="flow-label">Money In</span>
+                <strong>{{ v.inflow | currency:'INR':'symbol':'1.0-0' }}</strong>
+                <span class="flow-hint">Receipts + Donations</span>
+              </div>
+              <div class="flow-card outflow">
+                <span class="flow-icon" aria-hidden="true">↑</span>
+                <span class="flow-label">Money Out</span>
+                <strong>{{ v.outflow | currency:'INR':'symbol':'1.0-0' }}</strong>
+                <span class="flow-hint">Payment Vouchers</span>
+              </div>
+              <div class="flow-card net" [class.positive]="v.net >= 0" [class.negative]="v.net < 0">
+                <span class="flow-icon" aria-hidden="true">=</span>
+                <span class="flow-label">Net Position</span>
+                <strong>{{ v.net | currency:'INR':'symbol':'1.0-0' }}</strong>
+                <span class="flow-hint">{{ v.net >= 0 ? 'Surplus' : 'Deficit' }}</span>
+              </div>
+            </div>
+            <div class="flow-meter">
+              @if (v.inflow + v.outflow > 0) {
+                <div
+                  class="meter-in"
+                  [style.width.%]="(v.inflow / (v.inflow + v.outflow)) * 100"
+                ></div>
+                <div
+                  class="meter-out"
+                  [style.width.%]="(v.outflow / (v.inflow + v.outflow)) * 100"
+                ></div>
+              }
+            </div>
+            <div class="flow-meter-legend">
+              <span><i class="dot in"></i> Inflow</span>
+              <span><i class="dot out"></i> Outflow</span>
+            </div>
+          </article>
+        </div>
+      }
+    }
+  </div>
+
+  <div class="table-section">
+    <h2>Account Register Balances</h2>
+    <p class="section-sub">School-wise register balances and last transaction dates</p>
     <div class="table-wrap">
       <table class="audit-table">
         <thead>
@@ -39,15 +212,6 @@
         </tbody>
       </table>
     </div>
-
-    <div class="legend-box">
-      <h3>Voucher Types</h3>
-      <ul>
-        <li>Receipt Voucher — Cash</li>
-        <li>Receipt Voucher — Bank</li>
-        <li>Payment Voucher — Cash</li>
-        <li>Payment Voucher — Bank</li>
-      </ul>
-    </div>
+  </div>
   }
 </section>

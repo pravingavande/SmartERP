@@ -181,6 +181,15 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         return _executor.QueryListAsync<AuditDashboardRowDto>("dbo.sp_Audit_GetDashboard", p, cancellationToken);
     }
 
+    public async Task<AuditDashboardSummaryDto> GetDashboardSummaryAsync(long userId, long? fyId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserID", userId);
+        p.Add("@FyID", fyId);
+        var row = await _executor.QuerySingleOrDefaultAsync<AuditDashboardSummaryDto>("dbo.sp_Audit_GetDashboardSummary", p, cancellationToken).ConfigureAwait(false);
+        return row ?? new AuditDashboardSummaryDto();
+    }
+
     public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default)
         => _executor.QueryListAsync<AccountRegisterMasterOptionDto>("dbo.sp_Audit_GetAccountRegisterMaster", null, cancellationToken);
 

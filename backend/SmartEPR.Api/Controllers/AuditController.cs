@@ -21,13 +21,13 @@ public sealed class AuditController : ControllerBase
     }
 
     [HttpGet("dashboard")]
-    public async Task<IActionResult> GetDashboard(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetDashboard([FromQuery] long? fyId, CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
-            return Unauthorized(ApiResponse<IReadOnlyList<AuditDashboardRowDto>>.Fail("Invalid token."));
+            return Unauthorized(ApiResponse<AuditDashboardResponseDto>.Fail("Invalid token."));
 
-        var rows = await _auditService.GetDashboardAsync(userId, cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<IReadOnlyList<AuditDashboardRowDto>>.Ok(rows));
+        var page = await _auditService.GetDashboardPageAsync(userId, fyId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<AuditDashboardResponseDto>.Ok(page));
     }
 
     [HttpGet("lookups")]

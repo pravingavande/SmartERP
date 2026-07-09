@@ -10,7 +10,7 @@ public sealed class DRHeadOptionDto
 
 public sealed class DonationListItemDto
 {
-    public long DRID { get; init; }
+    public long DrID { get; init; }
     public long? ReceiptNo { get; init; }
     public DateTime? ReceiptDate { get; init; }
     public long? DRHeadID { get; init; }
@@ -37,7 +37,7 @@ public sealed class DonationListItemDto
 
 public sealed class SaveDonationRequestDto
 {
-    public long? DRID { get; init; }
+    public long? DrID { get; init; }
     public long? ReceiptNo { get; init; }
     public DateTime ReceiptDate { get; init; }
     public long DRHeadID { get; init; }

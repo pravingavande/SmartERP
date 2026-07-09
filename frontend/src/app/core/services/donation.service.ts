@@ -46,14 +46,14 @@ export class DonationService {
     if (orgId) params = params.set('orgId', orgId.toString());
     if (fyId) params = params.set('fyId', fyId.toString());
     return this.http.get<ApiResponse<DonationListItem[]>>(this.base, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
+      map((r) => (r.success && r.data ? r.data.map((item) => this.normalizeDonation(item)) : [])),
       catchError(() => of([]))
     );
   }
 
   getById(drId: number): Observable<Donation | null> {
     return this.http.get<ApiResponse<Donation>>(`${this.base}/${drId}`).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
+      map((r) => (r.success && r.data ? this.normalizeDonation(r.data) : null)),
       catchError(() => of(null))
     );
   }
@@ -81,7 +81,7 @@ export class DonationService {
     };
 
     return this.http.post<ApiResponse<Donation>>(this.base, payload).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
+      map((r) => (r.success && r.data ? this.normalizeDonation(r.data) : null)),
       catchError(() => of(null))
     );
   }
@@ -121,5 +121,13 @@ export class DonationService {
       map((r) => r.success),
       catchError(() => of(false))
     );
+  }
+
+  /** API may return `drid` (all-caps acronym) instead of `drID` until backend DTO is updated. */
+  private normalizeDonation<T extends DonationListItem>(item: T & { drid?: number }): T {
+    if (item.drID == null && item.drid != null) {
+      return { ...item, drID: item.drid };
+    }
+    return item;
   }
 }

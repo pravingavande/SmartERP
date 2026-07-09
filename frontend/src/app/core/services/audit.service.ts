@@ -7,7 +7,9 @@ import {
   AccountRegisterMasterOption,
   AccountRegisterOption,
   ApiResponse,
+  AuditDashboardPage,
   AuditDashboardRow,
+  AuditDashboardSummary,
   AuditLookups,
   PartyFormState,
   PartyMaster,
@@ -23,11 +25,34 @@ export class AuditService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getDashboard(): Observable<AuditDashboardRow[]> {
-    return this.http.get<ApiResponse<AuditDashboardRow[]>>(`${this.base}/dashboard`).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
-      catchError(() => of([]))
+  getDashboard(fyId?: number | null): Observable<AuditDashboardPage> {
+    let params = new HttpParams();
+    if (fyId) params = params.set('fyId', fyId.toString());
+    return this.http.get<ApiResponse<AuditDashboardPage | AuditDashboardRow[]>>(`${this.base}/dashboard`, { params }).pipe(
+      map((r) => {
+        if (!r.success || !r.data) return this.emptyDashboardPage();
+        if (Array.isArray(r.data)) {
+          return { summary: this.emptyDashboardPage().summary, rows: r.data };
+        }
+        return r.data;
+      }),
+      catchError(() => of(this.emptyDashboardPage()))
     );
+  }
+
+  private emptyDashboardPage(): AuditDashboardPage {
+    return {
+      summary: {
+        fyName: '',
+        receiptVoucherCount: 0,
+        receiptVoucherAmount: 0,
+        paymentVoucherCount: 0,
+        paymentVoucherAmount: 0,
+        donationCount: 0,
+        donationAmount: 0
+      },
+      rows: []
+    };
   }
 
   getLookups(): Observable<AuditLookups | null> {

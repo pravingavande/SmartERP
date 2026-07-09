@@ -142,6 +142,22 @@ export interface AuditDashboardRow {
   voucherCategory: string;
 }
 
+export interface AuditDashboardSummary {
+  fyID?: number | null;
+  fyName: string;
+  receiptVoucherCount: number;
+  receiptVoucherAmount: number;
+  paymentVoucherCount: number;
+  paymentVoucherAmount: number;
+  donationCount: number;
+  donationAmount: number;
+}
+
+export interface AuditDashboardPage {
+  summary: AuditDashboardSummary;
+  rows: AuditDashboardRow[];
+}
+
 export const CASH_PAYMENT_TYPE_ID = 1;
 
 export interface AccountRegisterMasterOption {

@@ -187,6 +187,24 @@ public sealed class AuditDashboardRowDto
     public string VoucherCategory { get; init; } = string.Empty;
 }
 
+public sealed class AuditDashboardSummaryDto
+{
+    public long? FyID { get; init; }
+    public string FyName { get; init; } = string.Empty;
+    public int ReceiptVoucherCount { get; init; }
+    public decimal ReceiptVoucherAmount { get; init; }
+    public int PaymentVoucherCount { get; init; }
+    public decimal PaymentVoucherAmount { get; init; }
+    public int DonationCount { get; init; }
+    public decimal DonationAmount { get; init; }
+}
+
+public sealed class AuditDashboardResponseDto
+{
+    public AuditDashboardSummaryDto Summary { get; init; } = new();
+    public IReadOnlyList<AuditDashboardRowDto> Rows { get; init; } = [];
+}
+
 public sealed class AuditLookupsDto
 {
     public IReadOnlyList<OrgOptionDto> Orgs { get; init; } = [];
