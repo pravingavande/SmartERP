@@ -12,6 +12,9 @@ import {
   AuditDashboardSummary,
   AuditLookups,
   PartyFormState,
+  LedgerHeadFormState,
+  LedgerHeadMaster,
+  LedgerTypeOption,
   PartyMaster,
   PartyOption,
   Voucher,
@@ -204,6 +207,44 @@ export class AuditService {
       isActive: form.isActive
     };
     return this.http.post<ApiResponse<PartyMaster>>(`${this.base}/party-master`, payload).pipe(
+      map((r) => (r.success && r.data ? r.data : null)),
+      catchError(() => of(null))
+    );
+  }
+
+  getLedgerTypes(): Observable<LedgerTypeOption[]> {
+    return this.http.get<ApiResponse<LedgerTypeOption[]>>(`${this.base}/ledger-types`).pipe(
+      map((r) => (r.success && r.data ? r.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getLedgerHeadList(underOrgId: number): Observable<LedgerHeadMaster[]> {
+    const params = new HttpParams().set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<LedgerHeadMaster[]>>(`${this.base}/ledger-head-master`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getNextLedgerHeadSrNo(underOrgId: number): Observable<number> {
+    const params = new HttpParams().set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<number>>(`${this.base}/ledger-head-master/next-sr-no`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data : 1)),
+      catchError(() => of(1))
+    );
+  }
+
+  saveLedgerHead(form: LedgerHeadFormState): Observable<LedgerHeadMaster | null> {
+    const payload = {
+      ledgerHeadID: form.ledgerHeadID,
+      underOrgID: form.underOrgID,
+      ledgerHead: form.ledgerHead.trim(),
+      ledgerHeadShort: form.ledgerHeadShort.trim() || null,
+      ledgerTypeID: form.ledgerTypeID,
+      isActive: form.isActive
+    };
+    return this.http.post<ApiResponse<LedgerHeadMaster>>(`${this.base}/ledger-head-master`, payload).pipe(
       map((r) => (r.success && r.data ? r.data : null)),
       catchError(() => of(null))
     );

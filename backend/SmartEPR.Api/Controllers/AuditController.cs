@@ -155,6 +155,45 @@ public sealed class AuditController : ControllerBase
             : Ok(ApiResponse<PartyMasterDto>.Ok(saved, "Party saved."));
     }
 
+    [HttpGet("ledger-types")]
+    public async Task<IActionResult> GetLedgerTypes(CancellationToken cancellationToken)
+    {
+        var items = await _auditService.GetLedgerTypesAsync(cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<LedgerTypeOptionDto>>.Ok(items));
+    }
+
+    [HttpGet("ledger-head-master")]
+    public async Task<IActionResult> GetLedgerHeadList([FromQuery] long underOrgId, CancellationToken cancellationToken)
+    {
+        var items = await _auditService.GetLedgerHeadListAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<LedgerHeadMasterDto>>.Ok(items));
+    }
+
+    [HttpGet("ledger-head-master/next-sr-no")]
+    public async Task<IActionResult> GetNextLedgerHeadSrNo([FromQuery] long underOrgId, CancellationToken cancellationToken)
+    {
+        var no = await _auditService.GetNextLedgerHeadSrNoAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<long>.Ok(no));
+    }
+
+    [HttpGet("ledger-head-master/{ledgerHeadId:long}")]
+    public async Task<IActionResult> GetLedgerHead(long ledgerHeadId, CancellationToken cancellationToken)
+    {
+        var item = await _auditService.GetLedgerHeadByIdAsync(ledgerHeadId, cancellationToken).ConfigureAwait(false);
+        return item is null
+            ? Ok(ApiResponse<LedgerHeadMasterDto>.Fail("Ledger head not found."))
+            : Ok(ApiResponse<LedgerHeadMasterDto>.Ok(item));
+    }
+
+    [HttpPost("ledger-head-master")]
+    public async Task<IActionResult> SaveLedgerHead([FromBody] SaveLedgerHeadRequestDto request, CancellationToken cancellationToken)
+    {
+        var saved = await _auditService.SaveLedgerHeadAsync(request, cancellationToken).ConfigureAwait(false);
+        return saved is null
+            ? Ok(ApiResponse<LedgerHeadMasterDto>.Fail("Unable to save ledger head. School, name and type are required."))
+            : Ok(ApiResponse<LedgerHeadMasterDto>.Ok(saved, "Ledger head saved."));
+    }
+
     private bool TryGetUserId(out long userId)
     {
         userId = 0;

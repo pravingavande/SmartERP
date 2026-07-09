@@ -63,6 +63,7 @@ export class MainLayoutComponent {
       title: 'Masters',
       items: [
         { label: 'Party Master', icon: 'party', route: '/audit/party-master' },
+        { label: 'Ledger Head Master', icon: 'register', route: '/audit/ledger-head-master' },
         { label: 'Account Register Define', icon: 'register', route: '/audit/account-register-define' },
         { label: 'Donation Head Define', icon: 'donation-head', route: '/audit/donation-head-define' }
       ]

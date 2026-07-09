@@ -29,7 +29,9 @@ export class TicketEntryComponent {
   readonly tickets = signal<TicketListItem[]>([]);
   readonly form = signal<TicketFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
+  readonly formVisible = signal(false);
   readonly selectedFileName = signal<string | null>(null);
+  readonly listOrgID = signal<number | null>(null);
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly schoolDisabled = computed(() => !this.lookups()?.isSansthaUser);
@@ -62,14 +64,8 @@ export class TicketEntryComponent {
           return;
         }
 
-        const defaultStatusId = data.statuses[0].ticketStatusID;
         const orgId = this.resolveDefaultOrgId(data, profile);
-
-        this.form.update((f) => ({
-          ...f,
-          ticketStatusID: f.ticketStatusID ?? defaultStatusId,
-          orgID: f.orgID ?? orgId
-        }));
+        this.listOrgID.set(orgId);
         this.loadList();
       });
   }
@@ -88,33 +84,41 @@ export class TicketEntryComponent {
     return data.orgs.length === 1 ? data.orgs[0].orgID : data.orgs[0]?.orgID ?? null;
   }
 
-  onOrgChange(orgId: number | null): void {
-    if (this.schoolDisabled()) return;
-    this.form.update((f) => ({ ...f, orgID: orgId, ticketID: null }));
-    this.formMode.set('new');
+  onListOrgChange(orgId: number | null): void {
+    this.listOrgID.set(orgId);
+    this.closeForm();
     this.loadList();
   }
 
+  onOrgChange(orgId: number | null): void {
+    if (this.isViewMode() || this.schoolDisabled()) return;
+    this.form.update((f) => ({ ...f, orgID: orgId, ticketID: null }));
+  }
+
   loadList(): void {
-    const orgId = this.form().orgID;
     this.ticketService
-      .getList(orgId)
+      .getList(this.listOrgID())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((list) => this.tickets.set(list));
   }
 
   newEntry(): void {
     const lookups = this.lookups();
-    const orgId = this.form().orgID ?? (lookups ? this.resolveDefaultOrgId(lookups, null) : null);
+    const orgId = this.listOrgID() ?? this.resolveDefaultOrgId(lookups!, null);
+    if (!orgId && lookups?.isSansthaUser) {
+      this.errorMessage.set('Select school on the list page before adding new.');
+      return;
+    }
+
     this.formMode.set('new');
+    this.formVisible.set(true);
+    this.errorMessage.set(null);
     this.form.set({
       ...this.emptyForm(),
       orgID: orgId,
-      ticketStatusID: this.lookups()?.statuses[0]?.ticketStatusID ?? null
+      ticketStatusID: lookups?.statuses[0]?.ticketStatusID ?? null
     });
     this.selectedFileName.set(null);
-    this.errorMessage.set(null);
-    this.loadList();
   }
 
   editEntry(item: TicketListItem): void {
@@ -132,9 +136,10 @@ export class TicketEntryComponent {
       .subscribe((t) => {
         if (!t) return;
         this.formMode.set(mode);
+        this.formVisible.set(true);
         this.applyTicketToForm(t);
         this.selectedFileName.set(t.attachment ?? null);
-        this.loadList();
+        this.errorMessage.set(null);
       });
   }
 
@@ -177,18 +182,30 @@ export class TicketEntryComponent {
           this.errorMessage.set('टिकिट जतन करता आले नाही. API deploy आवश्यक असू शकते — admin ला सांगा.');
           return;
         }
-        this.newEntry();
-        this.loadList();
+        this.closeForm();
       });
   }
 
   cancel(): void {
-    this.newEntry();
+    this.closeForm();
     this.errorMessage.set(null);
+  }
+
+  closeForm(): void {
+    this.formVisible.set(false);
+    this.formMode.set('new');
+    this.selectedFileName.set(null);
+    this.loadList();
   }
 
   updateForm<K extends keyof TicketFormState>(key: K, value: TicketFormState[K]): void {
     this.form.update((x) => ({ ...x, [key]: value }));
+  }
+
+  statusLabel(item: { statusNameMr?: string | null; statusName?: string | null }): string {
+    const mr = item.statusNameMr?.trim();
+    if (mr) return mr;
+    return item.statusName?.trim() || '—';
   }
 
   private emptyForm(): TicketFormState {

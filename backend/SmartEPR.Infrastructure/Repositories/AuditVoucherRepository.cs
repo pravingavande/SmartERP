@@ -239,6 +239,45 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         return p.Get<long>("@PartyID");
     }
 
+    public Task<IReadOnlyList<LedgerTypeOptionDto>> GetLedgerTypesAsync(CancellationToken cancellationToken = default)
+        => _executor.QueryListAsync<LedgerTypeOptionDto>("dbo.sp_Audit_GetLedgerTypes", null, cancellationToken);
+
+    public Task<IReadOnlyList<LedgerHeadMasterDto>> GetLedgerHeadListAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        return _executor.QueryListAsync<LedgerHeadMasterDto>("dbo.sp_Audit_LedgerHead_GetList", p, cancellationToken);
+    }
+
+    public Task<LedgerHeadMasterDto?> GetLedgerHeadByIdAsync(long ledgerHeadId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@LedgerHeadID", ledgerHeadId);
+        return _executor.QuerySingleOrDefaultAsync<LedgerHeadMasterDto>("dbo.sp_Audit_LedgerHead_GetById", p, cancellationToken);
+    }
+
+    public async Task<long> GetNextLedgerHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        var row = await _executor.QuerySingleOrDefaultAsync<NextSrNoRow>("dbo.sp_Audit_LedgerHead_GetNextSrNo", p, cancellationToken).ConfigureAwait(false);
+        return row?.NextSrNo ?? 1;
+    }
+
+    public async Task<long> SaveLedgerHeadAsync(SaveLedgerHeadRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@LedgerHeadID", request.LedgerHeadID > 0 ? request.LedgerHeadID : null, dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.InputOutput);
+        p.Add("@UnderOrgID", request.UnderOrgID);
+        p.Add("@LedgerHead", request.LedgerHead);
+        p.Add("@LedgerHeadShort", request.LedgerHeadShort);
+        p.Add("@LedgerTypeID", request.LedgerTypeID);
+        p.Add("@IsActive", request.IsActive);
+
+        await _executor.ExecuteAsync("dbo.sp_Audit_LedgerHead_Save", p, cancellationToken).ConfigureAwait(false);
+        return p.Get<long>("@LedgerHeadID");
+    }
+
     private sealed class NarrationRow
     {
         public string LedgerHeadNarration { get; init; } = string.Empty;
@@ -247,5 +286,10 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
     private sealed class NextVCodeRow
     {
         public long NextVCode { get; init; }
+    }
+
+    private sealed class NextSrNoRow
+    {
+        public long NextSrNo { get; init; }
     }
 }

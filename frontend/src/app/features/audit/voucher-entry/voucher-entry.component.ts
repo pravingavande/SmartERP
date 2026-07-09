@@ -53,6 +53,10 @@ export class VoucherEntryComponent {
   readonly pendingPrintVoucher = signal<Voucher | null>(null);
   readonly listOrgID = signal<number | null>(null);
   readonly listFyID = signal<number | null>(null);
+  readonly listAccountRegisterID = signal<number | null>(null);
+  readonly showPartyModal = signal(false);
+  readonly partySaving = signal(false);
+  readonly partyForm = signal({ partyName: '', mobNo: '', address: '' });
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly isCashPayment = computed(() => this.form().paymentTypeID === CASH_PAYMENT_TYPE_ID);
@@ -61,6 +65,13 @@ export class VoucherEntryComponent {
   );
   readonly showBankFields = computed(() => !this.isCashPayment());
   readonly isPaymentVoucher = computed(() => this.vType() === 'P');
+  readonly isReceiptVoucher = computed(() => this.vType() === 'R');
+  readonly displayedVouchers = computed(() => {
+    const regId = this.listAccountRegisterID();
+    const list = this.vouchers();
+    if (!regId) return list;
+    return list.filter((v) => v.accountRegisterID === regId);
+  });
   readonly activeFy = computed(() => {
     const fyId = this.listFyID();
     return this.lookups()?.fyList.find((fy) => fy.fyID === fyId) ?? null;
@@ -116,6 +127,7 @@ export class VoucherEntryComponent {
 
   onListOrgChange(orgId: number | null): void {
     this.listOrgID.set(orgId);
+    this.listAccountRegisterID.set(null);
     this.form.update((f) => ({ ...f, orgID: orgId }));
     if (!orgId) {
       this.accountRegisters.set([]);
@@ -123,7 +135,20 @@ export class VoucherEntryComponent {
       this.vouchers.set([]);
       return;
     }
+    this.closeForm();
     this.loadOrgDependents(orgId, true);
+  }
+
+  onListFyChange(fyId: number | null): void {
+    this.listFyID.set(fyId);
+    this.form.update((f) => ({ ...f, fyID: fyId }));
+    this.closeForm();
+    this.loadVoucherList();
+  }
+
+  onListAccountRegisterChange(accountRegisterId: number | null): void {
+    this.listAccountRegisterID.set(accountRegisterId);
+    this.closeForm();
   }
 
   onOrgChange(orgId: number | null): void {
@@ -221,9 +246,13 @@ export class VoucherEntryComponent {
       ...this.emptyForm(),
       orgID: orgId,
       fyID: fyId,
+      accountRegisterID: this.listAccountRegisterID(),
       vDate: this.clampDateToFy(new Date().toISOString().slice(0, 10), fy)
     });
     this.loadOrgDependents(orgId, false);
+    if (this.listAccountRegisterID()) {
+      this.onAccountRegisterChange();
+    }
   }
 
   editVoucher(item: VoucherListItem): void {
@@ -393,11 +422,69 @@ export class VoucherEntryComponent {
   }
 
   ledgerHeads(): LedgerHeadOption[] {
-    return this.lookups()?.ledgerHeads ?? [];
+    const heads = this.lookups()?.ledgerHeads ?? [];
+    if (!this.isReceiptVoucher()) return heads;
+    return heads.filter((h) => h.ledgerTypeID === 2 || h.ledgerTypeID === 4);
   }
 
   bankLedgerHeads(): LedgerHeadOption[] {
-    return this.lookups()?.bankLedgerHeads ?? [];
+    if (!this.isReceiptVoucher()) {
+      return this.lookups()?.bankLedgerHeads ?? [];
+    }
+    const heads = this.lookups()?.ledgerHeads ?? [];
+    return heads.filter((h) => [5, 6, 7, 8, 9].includes(h.ledgerTypeID ?? 0));
+  }
+
+  openPartyModal(): void {
+    if (this.isViewMode() || !this.form().orgID) return;
+    this.partyForm.set({ partyName: '', mobNo: '', address: '' });
+    this.showPartyModal.set(true);
+  }
+
+  closePartyModal(): void {
+    this.showPartyModal.set(false);
+  }
+
+  saveQuickParty(): void {
+    const orgId = this.form().orgID;
+    const pf = this.partyForm();
+    if (!orgId || !pf.partyName.trim()) {
+      this.errorMessage.set('Party name is required.');
+      return;
+    }
+    this.partySaving.set(true);
+    this.audit
+      .saveParty({
+        partyID: null,
+        orgID: orgId,
+        partyName: pf.partyName.trim(),
+        address: pf.address,
+        mobNo: pf.mobNo,
+        panNo: '',
+        gstNo: '',
+        isActive: true
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((saved) => {
+        this.partySaving.set(false);
+        if (!saved) {
+          this.errorMessage.set('Unable to save party.');
+          return;
+        }
+        this.audit
+          .getParties(orgId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((parties) => {
+            this.parties.set(parties);
+            this.updateForm('partyTID', saved.partyID);
+            this.closePartyModal();
+            this.errorMessage.set(null);
+          });
+      });
+  }
+
+  updatePartyForm(field: 'partyName' | 'mobNo' | 'address', value: string): void {
+    this.partyForm.update((p) => ({ ...p, [field]: value }));
   }
 
   narrationList(ledgerHeadId: number | null): string[] {

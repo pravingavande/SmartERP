@@ -4,171 +4,202 @@
       <h1>Ticket Raise</h1>
       <p>टिकिट नोंद — शाळा / सांस्था</p>
     </div>
-    <button type="button" class="btn btn-outline" (click)="newEntry()">+ New</button>
+    @if (!formVisible()) {
+      <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
+    }
   </header>
 
-  <div class="ticket-layout">
-    <div class="form-panel">
-      @if (lookupsLoading()) {
-        <p class="loading-hint">Loading ticket masters...</p>
-      }
-      @if (isViewMode()) {
-        <p class="view-banner">View mode — record is read-only</p>
-      }
+  @if (!formVisible()) {
+    @if (lookups()?.isSansthaUser) {
+      <div class="list-filters">
+        <label class="field">
+          <span class="field-label">शाळा (School)</span>
+          <select
+            class="field-control"
+            [ngModel]="listOrgID()"
+            (ngModelChange)="onListOrgChange($event ? +$event : null)"
+            name="listOrgID"
+          >
+            <option [ngValue]="null">-- All Schools --</option>
+            @for (o of lookups()?.orgs ?? []; track o.orgID) {
+              <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    }
 
-      <form class="ticket-form" (ngSubmit)="save()">
-        <fieldset [disabled]="isViewMode()">
-          <div class="form-section">
-            <h3>Ticket Raise</h3>
-            <div class="form-grid">
-              <label class="field">
-                <span class="field-label">शाळा (School) *</span>
-                <select
-                  class="field-control"
-                  required
-                  [disabled]="schoolDisabled() || isViewMode()"
-                  [ngModel]="form().orgID"
-                  (ngModelChange)="onOrgChange($event ? +$event : null)"
-                  name="orgID"
-                >
-                  <option [ngValue]="null">-- शाळा निवडा --</option>
-                  @for (o of lookups()?.orgs ?? []; track o.orgID) {
-                    <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-                  }
-                </select>
-                @if (schoolDisabled()) {
-                  <small class="field-hint">School login — your school is auto-selected.</small>
-                }
-              </label>
+    @if (errorMessage() && !formVisible()) {
+      <p class="error list-error">{{ errorMessage() }}</p>
+    }
+  }
 
-              <label class="field">
-                <span class="field-label">दिनांक (Date) *</span>
-                <input
-                  class="field-control"
-                  type="datetime-local"
-                  required
-                  [ngModel]="form().ticketDate"
-                  (ngModelChange)="updateForm('ticketDate', $event)"
-                  name="ticketDate"
-                >
-              </label>
+  <div class="ticket-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
+    @if (!formVisible()) {
+      <aside class="list-panel">
+        <h3>Ticket List</h3>
+        <div class="records-table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>शाळा</th>
+                <th>दिनांक</th>
+                <th>वर्णन</th>
+                <th>रक्कम</th>
+                <th>स्थिती</th>
+                <th>UserCode</th>
+                <th>Created</th>
+                <th>Modified</th>
+                <th>IP</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of tickets(); track t.ticketID) {
+                <tr [class.active]="form().ticketID === t.ticketID">
+                  <td class="school">{{ t.organizationName }}</td>
+                  <td>{{ t.ticketDate | date:'dd/MM/yy HH:mm' }}</td>
+                  <td class="desc">{{ t.description || '—' }}</td>
+                  <td class="amt">{{ t.amount | currency:'INR':'symbol':'1.0-0' }}</td>
+                  <td>{{ statusLabel(t) }}</td>
+                  <td>{{ t.userCode || '—' }}</td>
+                  <td>{{ t.createdDate | date:'dd/MM/yy HH:mm' }}</td>
+                  <td>{{ t.modifyDate ? (t.modifyDate | date:'dd/MM/yy HH:mm') : '—' }}</td>
+                  <td>{{ t.ip || '—' }}</td>
+                  <td class="actions">
+                    <button type="button" class="action-btn view" title="View" (click)="viewEntry(t)">View</button>
+                    <button type="button" class="action-btn edit" title="Edit" (click)="editEntry(t)">Edit</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="10" class="empty">No tickets found</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </aside>
+    }
 
-              <label class="field full">
-                <span class="field-label">वर्णन (Description)</span>
-                <textarea
-                  class="field-control"
-                  rows="4"
-                  [ngModel]="form().description"
-                  (ngModelChange)="updateForm('description', $event)"
-                  name="description"
-                ></textarea>
-              </label>
-
-              <label class="field">
-                <span class="field-label">रक्कम (Amount)</span>
-                <input
-                  class="field-control"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  [ngModel]="form().amount"
-                  (ngModelChange)="updateForm('amount', +$event)"
-                  name="amount"
-                >
-              </label>
-
-              <label class="field">
-                <span class="field-label">स्थिती (Status) *</span>
-                <select
-                  class="field-control"
-                  required
-                  [ngModel]="form().ticketStatusID"
-                  (ngModelChange)="updateForm('ticketStatusID', $event ? +$event : null)"
-                  name="ticketStatusID"
-                >
-                  <option [ngValue]="null">-- स्थिती निवडा --</option>
-                  @for (s of lookups()?.statuses ?? []; track s.ticketStatusID) {
-                    <option [ngValue]="s.ticketStatusID">{{ s.statusNameMr }} ({{ s.statusName }})</option>
-                  }
-                </select>
-              </label>
-
-              <label class="field full">
-                <span class="field-label">Attachment (Browse)</span>
-                <div class="file-row">
-                  <input
-                    class="field-control file-input"
-                    type="file"
-                    (change)="onFileSelected($event)"
-                    name="attachmentFile"
-                  >
-                  @if (selectedFileName() || form().attachment) {
-                    <span class="file-name">{{ selectedFileName() || form().attachment }}</span>
-                  }
-                </div>
-              </label>
-            </div>
-          </div>
-        </fieldset>
-
-        @if (errorMessage()) {
-          <p class="error">{{ errorMessage() }}</p>
+    @if (formVisible()) {
+      <div class="form-panel">
+        @if (lookupsLoading()) {
+          <p class="loading-hint">Loading ticket masters...</p>
+        }
+        @if (isViewMode()) {
+          <p class="view-banner">View mode — record is read-only</p>
         }
 
-        <footer class="form-footer">
-          @if (isViewMode()) {
-            <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
-          } @else {
-            <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
-            <button type="submit" class="btn btn-primary" [disabled]="loading()">Submit</button>
-          }
-        </footer>
-      </form>
-    </div>
+        <form class="ticket-form" (ngSubmit)="save()">
+          <fieldset [disabled]="isViewMode()">
+            <div class="form-section">
+              <h3>Ticket Raise</h3>
+              <div class="form-grid">
+                <label class="field">
+                  <span class="field-label">शाळा (School) *</span>
+                  <select
+                    class="field-control"
+                    required
+                    [disabled]="schoolDisabled() || isViewMode()"
+                    [ngModel]="form().orgID"
+                    (ngModelChange)="onOrgChange($event ? +$event : null)"
+                    name="orgID"
+                  >
+                    <option [ngValue]="null">-- शाळा निवडा --</option>
+                    @for (o of lookups()?.orgs ?? []; track o.orgID) {
+                      <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+                    }
+                  </select>
+                  @if (schoolDisabled()) {
+                    <small class="field-hint">School login — your school is auto-selected.</small>
+                  }
+                </label>
 
-    <aside class="list-panel">
-      <h3>Ticket List</h3>
-      <div class="records-table-wrap">
-        <table class="records-table">
-          <thead>
-            <tr>
-              <th>शाळा</th>
-              <th>दिनांक</th>
-              <th>वर्णन</th>
-              <th>रक्कम</th>
-              <th>स्थिती</th>
-              <th>UserCode</th>
-              <th>Created</th>
-              <th>Modified</th>
-              <th>IP</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (t of tickets(); track t.ticketID) {
-              <tr [class.active]="form().ticketID === t.ticketID">
-                <td class="school">{{ t.organizationName }}</td>
-                <td>{{ t.ticketDate | date:'dd/MM/yy HH:mm' }}</td>
-                <td class="desc">{{ t.description || '—' }}</td>
-                <td class="amt">{{ t.amount | currency:'INR':'symbol':'1.0-0' }}</td>
-                <td>{{ t.statusNameMr || t.statusName }}</td>
-                <td>{{ t.userCode || '—' }}</td>
-                <td>{{ t.createdDate | date:'dd/MM/yy HH:mm' }}</td>
-                <td>{{ t.modifyDate ? (t.modifyDate | date:'dd/MM/yy HH:mm') : '—' }}</td>
-                <td>{{ t.ip || '—' }}</td>
-                <td class="actions">
-                  <button type="button" class="action-btn view" (click)="viewEntry(t)">View</button>
-                  <button type="button" class="action-btn edit" (click)="editEntry(t)">Edit</button>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="10" class="empty">No tickets found</td>
-              </tr>
+                <label class="field">
+                  <span class="field-label">दिनांक (Date) *</span>
+                  <input
+                    class="field-control"
+                    type="datetime-local"
+                    required
+                    [ngModel]="form().ticketDate"
+                    (ngModelChange)="updateForm('ticketDate', $event)"
+                    name="ticketDate"
+                  >
+                </label>
+
+                <label class="field full">
+                  <span class="field-label">वर्णन (Description)</span>
+                  <textarea
+                    class="field-control"
+                    rows="4"
+                    [ngModel]="form().description"
+                    (ngModelChange)="updateForm('description', $event)"
+                    name="description"
+                  ></textarea>
+                </label>
+
+                <label class="field">
+                  <span class="field-label">रक्कम (Amount)</span>
+                  <input
+                    class="field-control"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    [ngModel]="form().amount"
+                    (ngModelChange)="updateForm('amount', +$event)"
+                    name="amount"
+                  >
+                </label>
+
+                <label class="field">
+                  <span class="field-label">स्थिती (Status) *</span>
+                  <select
+                    class="field-control"
+                    required
+                    [ngModel]="form().ticketStatusID"
+                    (ngModelChange)="updateForm('ticketStatusID', $event ? +$event : null)"
+                    name="ticketStatusID"
+                  >
+                    <option [ngValue]="null">-- स्थिती निवडा --</option>
+                    @for (s of lookups()?.statuses ?? []; track s.ticketStatusID) {
+                      <option [ngValue]="s.ticketStatusID">{{ statusLabel(s) }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="field full">
+                  <span class="field-label">Attachment (Browse)</span>
+                  <div class="file-row">
+                    <input
+                      class="field-control file-input"
+                      type="file"
+                      (change)="onFileSelected($event)"
+                      name="attachmentFile"
+                    >
+                    @if (selectedFileName() || form().attachment) {
+                      <span class="file-name">{{ selectedFileName() || form().attachment }}</span>
+                    }
+                  </div>
+                </label>
+              </div>
+            </div>
+          </fieldset>
+
+          @if (errorMessage()) {
+            <p class="error">{{ errorMessage() }}</p>
+          }
+
+          <footer class="form-footer">
+            @if (isViewMode()) {
+              <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
+            } @else {
+              <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading()">Submit</button>
             }
-          </tbody>
-        </table>
+          </footer>
+        </form>
       </div>
-    </aside>
+    }
   </div>
 </section>

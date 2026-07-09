@@ -1,0 +1,114 @@
+<section class="audit-page">
+  <header class="page-header">
+    <div>
+      <h1>Ledger Head Master</h1>
+      <p>Org-wise ledger heads for voucher entries</p>
+    </div>
+    @if (!formVisible()) {
+      <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
+    }
+  </header>
+
+  @if (!formVisible()) {
+  <div class="list-filters">
+    <label class="field">
+      <span class="field-label">Org / School</span>
+      <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
+        <option [ngValue]="null">-- Select School --</option>
+        @for (o of lookups()?.orgs ?? []; track o.orgID) {
+          <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+        }
+      </select>
+    </label>
+  </div>
+  @if (errorMessage() && !formVisible()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+  }
+
+  <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
+    @if (!formVisible()) {
+    <aside class="list-panel">
+      <h3>All Ledger Heads</h3>
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Sr.No</th>
+              <th>Ledger Head</th>
+              <th>Short Name</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (h of ledgerHeads(); track h.ledgerHeadID) {
+              <tr [class.active]="form().ledgerHeadID === h.ledgerHeadID">
+                <td class="code">{{ h.srNo }}</td>
+                <td>{{ h.ledgerHead }}</td>
+                <td>{{ h.ledgerHeadShort || '—' }}</td>
+                <td>{{ h.ledgerType || '—' }}</td>
+                <td>{{ h.isActive ? 'Active' : 'Inactive' }}</td>
+                <td class="actions">
+                  <button type="button" class="action-btn edit" (click)="editEntry(h)">Edit</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="empty">No ledger heads for selected school</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </aside>
+    }
+
+    @if (formVisible()) {
+      <div class="form-panel">
+        <form class="voucher-form" (ngSubmit)="save()">
+          <div class="form-section">
+            <h3>{{ formMode() === 'edit' ? 'Edit Ledger Head' : 'New Ledger Head' }}</h3>
+            <div class="form-grid">
+              <label class="field">
+                <span class="field-label">Sr.No</span>
+                <input class="field-control field-readonly" type="number" readonly [ngModel]="form().srNo" name="srNo">
+              </label>
+              <label class="field">
+                <span class="field-label">Ledger Type *</span>
+                <select class="field-control" required [ngModel]="form().ledgerTypeID" (ngModelChange)="updateForm('ledgerTypeID', $event ? +$event : null)" name="ledgerTypeID">
+                  <option [ngValue]="null">-- Select Type --</option>
+                  @for (t of ledgerTypes(); track t.ledgerTypeID) {
+                    <option [ngValue]="t.ledgerTypeID">{{ t.ledgerType }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field full">
+                <span class="field-label">Ledger Head *</span>
+                <input class="field-control" type="text" required [ngModel]="form().ledgerHead" (ngModelChange)="updateForm('ledgerHead', $event)" name="ledgerHead">
+              </label>
+              <label class="field full">
+                <span class="field-label">Ledger Head Short</span>
+                <input class="field-control" type="text" [ngModel]="form().ledgerHeadShort" (ngModelChange)="updateForm('ledgerHeadShort', $event)" name="ledgerHeadShort">
+              </label>
+              <label class="field checkbox-field">
+                <span class="field-label">Active</span>
+                <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
+              </label>
+            </div>
+          </div>
+
+          @if (errorMessage()) {
+            <p class="error">{{ errorMessage() }}</p>
+          }
+
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
+          </footer>
+        </form>
+      </div>
+    }
+  </div>
+</section>

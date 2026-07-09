@@ -114,4 +114,25 @@ public sealed class AuditVoucherService : IAuditVoucherService
         var partyId = await _repository.SavePartyAsync(request, cancellationToken).ConfigureAwait(false);
         return await _repository.GetPartyByIdAsync(partyId, cancellationToken).ConfigureAwait(false);
     }
+
+    public Task<IReadOnlyList<LedgerTypeOptionDto>> GetLedgerTypesAsync(CancellationToken cancellationToken = default)
+        => _repository.GetLedgerTypesAsync(cancellationToken);
+
+    public Task<IReadOnlyList<LedgerHeadMasterDto>> GetLedgerHeadListAsync(long underOrgId, CancellationToken cancellationToken = default)
+        => _repository.GetLedgerHeadListAsync(underOrgId, cancellationToken);
+
+    public Task<LedgerHeadMasterDto?> GetLedgerHeadByIdAsync(long ledgerHeadId, CancellationToken cancellationToken = default)
+        => _repository.GetLedgerHeadByIdAsync(ledgerHeadId, cancellationToken);
+
+    public Task<long> GetNextLedgerHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default)
+        => _repository.GetNextLedgerHeadSrNoAsync(underOrgId, cancellationToken);
+
+    public async Task<LedgerHeadMasterDto?> SaveLedgerHeadAsync(SaveLedgerHeadRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (request.UnderOrgID <= 0 || string.IsNullOrWhiteSpace(request.LedgerHead) || request.LedgerTypeID <= 0)
+            return null;
+
+        var ledgerHeadId = await _repository.SaveLedgerHeadAsync(request, cancellationToken).ConfigureAwait(false);
+        return await _repository.GetLedgerHeadByIdAsync(ledgerHeadId, cancellationToken).ConfigureAwait(false);
+    }
 }

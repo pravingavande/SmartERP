@@ -1,12 +1,12 @@
 .ticket-page {
-  padding: 1.25rem;
+  padding: 0;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
 
   h1 {
     margin: 0;
@@ -23,12 +23,35 @@
 
 .ticket-layout {
   display: grid;
-  grid-template-columns: 1fr minmax(320px, 42%);
   gap: 1rem;
+
+  &.list-only,
+  &.form-only {
+    grid-template-columns: 1fr;
+  }
+}
+
+.list-error {
+  margin-bottom: 1rem;
+}
+
+.list-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--epr-white);
+  border: 1px solid #c5d0de;
+  border-radius: var(--epr-radius);
+
+  .field {
+    min-width: 220px;
+    flex: 1;
+  }
 }
 
 .form-panel {
-  order: 1;
   padding: 1.25rem;
   background: var(--epr-white);
   border: 1px solid #c5d0de;
@@ -37,7 +60,6 @@
 }
 
 .list-panel {
-  order: 2;
   padding: 0;
   overflow: hidden;
   background: var(--epr-white);
@@ -266,10 +288,5 @@ fieldset {
 @media (max-width: 1100px) {
   .ticket-layout {
     grid-template-columns: 1fr;
-  }
-
-  .list-panel,
-  .form-panel {
-    order: unset;
   }
 }

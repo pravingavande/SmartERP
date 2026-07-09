@@ -193,3 +193,29 @@ export interface PartyFormState {
   gstNo: string;
   isActive: boolean;
 }
+
+export interface LedgerTypeOption {
+  ledgerTypeID: number;
+  ledgerType: string;
+}
+
+export interface LedgerHeadMaster {
+  ledgerHeadID: number;
+  underOrgID: number;
+  srNo: number;
+  ledgerHead: string;
+  ledgerHeadShort?: string | null;
+  ledgerTypeID: number;
+  ledgerType?: string | null;
+  isActive: boolean;
+}
+
+export interface LedgerHeadFormState {
+  ledgerHeadID: number | null;
+  underOrgID: number | null;
+  srNo: number;
+  ledgerHead: string;
+  ledgerHeadShort: string;
+  ledgerTypeID: number | null;
+  isActive: boolean;
+}

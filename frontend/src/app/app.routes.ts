@@ -56,6 +56,11 @@ export const routes: Routes = [
           import('./features/audit/party-master/party-master.component').then((m) => m.PartyMasterComponent)
       },
       {
+        path: 'audit/ledger-head-master',
+        loadComponent: () =>
+          import('./features/audit/ledger-head-master/ledger-head-master.component').then((m) => m.LedgerHeadMasterComponent)
+      },
+      {
         path: 'audit/account-register-define',
         loadComponent: () =>
           import('./features/audit/account-register-define/account-register-define.component').then((m) => m.AccountRegisterDefineComponent)

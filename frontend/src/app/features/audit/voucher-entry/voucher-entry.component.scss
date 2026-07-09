@@ -1,6 +1,6 @@
 .audit-page {
 
-  padding: 1.25rem;
+  padding: 0;
 
 }
 
@@ -14,7 +14,7 @@
 
   align-items: flex-start;
 
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
 
 
 
@@ -343,42 +343,66 @@
 
   .empty { text-align: center; color: var(--epr-muted); padding: 0.75rem; }
 
-  .actions { white-space: nowrap; }
+  .actions {
+    white-space: nowrap;
+    min-width: 11rem;
+    text-align: center;
+  }
 
 }
 
 
 
+.action-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+
+
 .action-btn {
-
-  border: none;
-
-  background: transparent;
-
-  font-size: 0.8rem;
-
-  font-weight: 800;
-
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #eef4ff;
+  font-size: 0.72rem;
+  font-weight: 700;
   cursor: pointer;
+  padding: 0.28rem 0.5rem;
+  line-height: 1.1;
+  white-space: nowrap;
 
-  padding: 0.2rem 0.35rem;
 
 
+  &.view {
+    color: var(--epr-navy);
+    border-color: #b8c9e4;
+    background: #eef4ff;
+  }
 
-  &.view { color: var(--epr-navy); }
+  &.edit {
+    color: #1a3f6e;
+    border-color: #9eb8dc;
+    background: #e8f0fb;
+  }
 
-  &.edit { color: #1a3f6e; }
-
-  &.print { color: var(--epr-orange); }
+  &.print {
+    color: var(--epr-orange);
+    border-color: #f0c9a8;
+    background: #fff8f2;
+  }
 
 
 
   &:hover {
-
-    text-decoration: underline;
-
-    filter: brightness(0.85);
-
+    text-decoration: none;
+    filter: brightness(0.95);
+    box-shadow: 0 1px 3px rgba(15, 35, 65, 0.12);
   }
 
 }
@@ -473,6 +497,13 @@ fieldset {
 
   gap: 1rem;
 
+
+
+  &.receipt-header-grid {
+    grid-template-columns: minmax(180px, 1.2fr) minmax(90px, 0.55fr) minmax(120px, 0.65fr) minmax(260px, 2fr);
+    align-items: end;
+  }
+
 }
 
 
@@ -489,6 +520,44 @@ fieldset {
 
   &.full { grid-column: 1 / -1; }
 
+  &.field-compact {
+    max-width: 150px;
+  }
+
+  &.field-party-wide {
+    grid-column: span 1;
+    min-width: 0;
+  }
+
+}
+
+
+
+.party-field-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+
+  .field-control {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+
+
+.btn-add-party {
+  flex: 0 0 auto;
+  min-width: 2.4rem;
+  padding: 0.55rem 0.65rem;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+
+
+.btn-back {
+  font-weight: 700;
 }
 
 
@@ -630,11 +699,11 @@ fieldset {
 
 
   col.col-sr {
-    width: 3.75rem;
+    width: 3.25rem;
   }
 
   col.col-ledger {
-    width: 30%;
+    width: 28%;
   }
 
   col.col-narration {
@@ -645,6 +714,10 @@ fieldset {
     width: 6.5rem;
   }
 
+  col.col-action {
+    width: 4.5rem;
+  }
+
 
 
   .sr-col {
@@ -653,22 +726,43 @@ fieldset {
     padding: 0.5rem 0.35rem;
   }
 
-  .sr-cell {
+  .sr-no {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.2rem;
-  }
-
-  .sr-no {
+    min-width: 1.5rem;
     font-weight: 700;
     line-height: 1;
   }
 
-  .sr-remove {
-    padding: 0;
-    line-height: 1;
-    font-size: 1rem;
+  .action-col {
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    padding: 0.35rem;
+  }
+
+  .row-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.25rem;
+    padding: 0.28rem 0.45rem;
+    border: 1px solid #e8b4b4;
+    border-radius: 6px;
+    background: #fff5f5;
+    color: #c62828;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.1;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover {
+      background: #ffe8e8;
+      border-color: #d88;
+    }
   }
 
   .ledger-col select {
@@ -907,6 +1001,21 @@ fieldset {
 
   padding: 1.25rem;
 
+
+
+  &.party-modal {
+    max-width: 480px;
+  }
+
+}
+
+
+
+.modal-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+  margin: 1rem 0 1.25rem;
 }
 
 
@@ -963,6 +1072,19 @@ fieldset {
 
     order: unset;
 
+  }
+
+
+
+  .form-grid.receipt-header-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+
+  .field.field-compact,
+  .field.field-party-wide {
+    max-width: none;
   }
 
 }

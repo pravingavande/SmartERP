@@ -26,6 +26,11 @@ public interface IAuditVoucherRepository
     Task<IReadOnlyList<PartyMasterDto>> GetPartyListAsync(long orgId, CancellationToken cancellationToken = default);
     Task<PartyMasterDto?> GetPartyByIdAsync(long partyId, CancellationToken cancellationToken = default);
     Task<long> SavePartyAsync(SavePartyRequestDto request, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LedgerTypeOptionDto>> GetLedgerTypesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LedgerHeadMasterDto>> GetLedgerHeadListAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<LedgerHeadMasterDto?> GetLedgerHeadByIdAsync(long ledgerHeadId, CancellationToken cancellationToken = default);
+    Task<long> GetNextLedgerHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<long> SaveLedgerHeadAsync(SaveLedgerHeadRequestDto request, CancellationToken cancellationToken = default);
 }
 
 public interface IAuditVoucherService
@@ -48,4 +53,9 @@ public interface IAuditVoucherService
     Task<IReadOnlyList<PartyMasterDto>> GetPartyListAsync(long orgId, CancellationToken cancellationToken = default);
     Task<PartyMasterDto?> GetPartyByIdAsync(long partyId, CancellationToken cancellationToken = default);
     Task<PartyMasterDto?> SavePartyAsync(SavePartyRequestDto request, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LedgerTypeOptionDto>> GetLedgerTypesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LedgerHeadMasterDto>> GetLedgerHeadListAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<LedgerHeadMasterDto?> GetLedgerHeadByIdAsync(long ledgerHeadId, CancellationToken cancellationToken = default);
+    Task<long> GetNextLedgerHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<LedgerHeadMasterDto?> SaveLedgerHeadAsync(SaveLedgerHeadRequestDto request, CancellationToken cancellationToken = default);
 }

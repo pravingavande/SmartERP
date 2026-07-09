@@ -176,6 +176,34 @@ public sealed class SavePartyRequestDto
     public bool IsActive { get; init; } = true;
 }
 
+public sealed class LedgerTypeOptionDto
+{
+    public long LedgerTypeID { get; init; }
+    public string LedgerType { get; init; } = string.Empty;
+}
+
+public sealed class LedgerHeadMasterDto
+{
+    public long LedgerHeadID { get; init; }
+    public long UnderOrgID { get; init; }
+    public long SrNo { get; init; }
+    public string LedgerHead { get; init; } = string.Empty;
+    public string? LedgerHeadShort { get; init; }
+    public long LedgerTypeID { get; init; }
+    public string? LedgerType { get; init; }
+    public bool IsActive { get; init; }
+}
+
+public sealed class SaveLedgerHeadRequestDto
+{
+    public long? LedgerHeadID { get; init; }
+    public long UnderOrgID { get; init; }
+    public string LedgerHead { get; init; } = string.Empty;
+    public string? LedgerHeadShort { get; init; }
+    public long LedgerTypeID { get; init; }
+    public bool IsActive { get; init; } = true;
+}
+
 public sealed class AuditDashboardRowDto
 {
     public long OrgID { get; init; }

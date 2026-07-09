@@ -1,5 +1,7 @@
 .audit-dashboard {
-  padding: 1.25rem;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1.5;
 }
 
 .page-header {
@@ -7,17 +9,18 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.65rem;
 
   h1 {
     margin: 0;
     color: var(--epr-navy);
+    font-size: 1.85rem;
   }
 
   p {
     margin: 0.35rem 0 0;
     color: var(--epr-muted);
-    font-size: 0.9rem;
+    font-size: 1.05rem;
   }
 }
 
@@ -30,8 +33,8 @@
 .btn {
   text-decoration: none;
   border-radius: var(--epr-radius);
-  padding: 0.45rem 0.85rem;
-  font-size: 0.85rem;
+  padding: 0.55rem 1rem;
+  font-size: 1rem;
 
   &.btn-primary {
     background: linear-gradient(135deg, var(--epr-orange), var(--epr-orange-hover));
@@ -64,7 +67,7 @@
 
   h2 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1.35rem;
     color: var(--epr-navy);
   }
 }
@@ -73,7 +76,7 @@
 .section-sub {
   margin: 0.3rem 0 0;
   color: var(--epr-muted);
-  font-size: 0.82rem;
+  font-size: 1rem;
 }
 
 .fy-filter {
@@ -84,7 +87,7 @@
 }
 
 .field-label {
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   color: var(--epr-muted);
   font-weight: 600;
 }
@@ -92,8 +95,8 @@
 .field-control {
   border: 1px solid var(--epr-border);
   border-radius: var(--epr-radius);
-  padding: 0.4rem 0.55rem;
-  font-size: 0.85rem;
+  padding: 0.5rem 0.65rem;
+  font-size: 1rem;
   color: var(--epr-navy);
   background: #fff;
 }
@@ -118,7 +121,8 @@
   gap: 0.15rem 0.75rem;
   text-decoration: none;
   border-radius: var(--epr-radius);
-  padding: 0.9rem 1rem 0.9rem 4.5rem;
+  padding: 1rem 1.1rem 1rem 5rem;
+
   border: 1px solid var(--epr-border);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   overflow: hidden;
@@ -141,8 +145,8 @@
     left: 0.65rem;
     top: 50%;
     transform: translateY(-50%);
-    width: 3.25rem;
-    height: 3.25rem;
+    width: 3.75rem;
+    height: 3.75rem;
 
     svg {
       width: 100%;
@@ -170,7 +174,7 @@
       inset: 0;
       display: grid;
       place-items: center;
-      font-size: 0.62rem;
+      font-size: 0.85rem;
       font-weight: 800;
       color: var(--epr-navy);
     }
@@ -178,32 +182,32 @@
 
   .card-title {
     grid-column: 1 / -1;
-    font-size: 0.82rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--epr-navy);
   }
 
   .card-count {
-    font-size: 1.65rem;
+    font-size: 2rem;
     font-weight: 800;
     line-height: 1;
   }
 
   .card-label {
     align-self: end;
-    font-size: 0.72rem;
+    font-size: 0.95rem;
     color: var(--epr-muted);
   }
 
   .card-amount {
-    font-size: 1.05rem;
+    font-size: 1.3rem;
     font-weight: 700;
     text-align: right;
   }
 
   .card-amount-label {
     grid-column: 2;
-    font-size: 0.72rem;
+    font-size: 0.95rem;
     color: var(--epr-muted);
     text-align: right;
   }
@@ -250,7 +254,7 @@
 
   h3 {
     margin: 0;
-    font-size: 0.92rem;
+    font-size: 1.2rem;
     color: var(--epr-navy);
   }
 }
@@ -258,14 +262,14 @@
 .panel-sub {
   display: block;
   margin-top: 0.2rem;
-  font-size: 0.74rem;
+  font-size: 0.95rem;
   color: var(--epr-muted);
 }
 
 .donut-wrap {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
   margin: 0 auto 0.75rem;
 }
 
@@ -299,20 +303,20 @@
 }
 
 .donut-total-label {
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   color: var(--epr-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .donut-total {
-  font-size: 1.35rem;
+  font-size: 1.65rem;
   color: var(--epr-navy);
   line-height: 1.1;
 }
 
 .donut-total-sub {
-  font-size: 0.72rem;
+  font-size: 0.95rem;
   color: var(--epr-muted);
 }
 
@@ -329,7 +333,7 @@
     grid-template-columns: auto 1fr auto auto;
     gap: 0.45rem 0.55rem;
     align-items: center;
-    font-size: 0.78rem;
+    font-size: 1rem;
   }
 }
 
@@ -370,7 +374,7 @@
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
-  font-size: 0.78rem;
+  font-size: 1rem;
 }
 
 .bar-label {
@@ -390,18 +394,18 @@
 
 .bar-track {
   display: grid;
-  grid-template-columns: 3.2rem 1fr;
+  grid-template-columns: 4rem 1fr;
   gap: 0.45rem;
   align-items: center;
 }
 
 .track-label {
-  font-size: 0.68rem;
+  font-size: 0.9rem;
   color: var(--epr-muted);
 }
 
 .track-bg {
-  height: 0.55rem;
+  height: 0.7rem;
   background: #e8ecf1;
   border-radius: 999px;
   overflow: hidden;
@@ -435,25 +439,25 @@
   background: #fff;
 
   .flow-icon {
-    font-size: 1.1rem;
+    font-size: 1.35rem;
     font-weight: 800;
     line-height: 1;
   }
 
   .flow-label {
-    font-size: 0.72rem;
+    font-size: 0.9rem;
     color: var(--epr-muted);
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
 
   strong {
-    font-size: 1.05rem;
+    font-size: 1.3rem;
     color: var(--epr-navy);
   }
 
   .flow-hint {
-    font-size: 0.72rem;
+    font-size: 0.95rem;
     color: var(--epr-muted);
   }
 
@@ -500,7 +504,7 @@
   display: flex;
   gap: 1rem;
   margin-top: 0.45rem;
-  font-size: 0.72rem;
+  font-size: 0.95rem;
   color: var(--epr-muted);
 
   .dot {
@@ -520,13 +524,13 @@
   margin: 1.5rem 0;
   text-align: center;
   color: var(--epr-muted);
-  font-size: 0.85rem;
+  font-size: 1.05rem;
 }
 
 .table-section {
   h2 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1.35rem;
     color: var(--epr-navy);
   }
 }
@@ -543,11 +547,11 @@
 .audit-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
 
   th, td {
     border-bottom: 1px solid var(--epr-border);
-    padding: 0.65rem 0.75rem;
+    padding: 0.8rem 0.9rem;
     text-align: left;
   }
 
@@ -574,12 +578,13 @@
   background: #e3f2fd;
   color: #1565c0;
   border-radius: 999px;
-  padding: 0.15rem 0.55rem;
-  font-size: 0.72rem;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.95rem;
 }
 
 .loading {
   color: var(--epr-muted);
+  font-size: 1.1rem;
 }
 
 @media (max-width: 1100px) {

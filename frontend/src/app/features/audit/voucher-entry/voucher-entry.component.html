@@ -5,6 +5,8 @@
     </div>
     @if (!formVisible()) {
       <button type="button" class="btn btn-primary" (click)="newVoucher()">+ Add New</button>
+    } @else {
+      <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
     }
   </header>
 
@@ -20,8 +22,22 @@
       </select>
     </label>
     <label class="field">
+      <span class="field-label">Account Register</span>
+      <select class="field-control" [disabled]="!listOrgID()" [ngModel]="listAccountRegisterID()" (ngModelChange)="onListAccountRegisterChange($event ? +$event : null)" name="listAccountRegisterID">
+        <option [ngValue]="null">-- All Registers --</option>
+        @for (r of accountRegisters(); track r.accountRegisterID) {
+          <option [ngValue]="r.accountRegisterID">{{ r.accountRegister }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
       <span class="field-label">Financial Year</span>
-      <input class="field-control field-readonly" type="text" readonly [value]="fyDisplayName()" name="fyDisplay">
+      <select class="field-control" [ngModel]="listFyID()" (ngModelChange)="onListFyChange($event ? +$event : null)" name="listFyID">
+        <option [ngValue]="null">-- Select FY --</option>
+        @for (fy of lookups()?.fyList ?? []; track fy.fyID) {
+          <option [ngValue]="fy.fyID">{{ fy.fyName }}</option>
+        }
+      </select>
     </label>
   </div>
   @if (errorMessage() && !formVisible()) {
@@ -44,15 +60,17 @@
             </tr>
           </thead>
           <tbody>
-            @for (v of vouchers(); track v.voucherID) {
+            @for (v of displayedVouchers(); track v.voucherID) {
               <tr [class.active]="form().voucherID === v.voucherID">
                 <td class="code">#{{ v.vCode }}</td>
                 <td>{{ v.vDate | date:'dd/MM/yy' }}</td>
                 <td class="amt">{{ v.totalAmount | currency:'INR':'symbol':'1.0-0' }}</td>
                 <td class="actions">
-                  <button type="button" class="action-btn view" title="View" (click)="viewVoucher(v)">View</button>
-                  <button type="button" class="action-btn edit" title="Edit" (click)="editVoucher(v)">Edit</button>
-                  <button type="button" class="action-btn print" title="Reprint" (click)="reprintVoucher(v)">Print</button>
+                  <div class="action-group">
+                    <button type="button" class="action-btn view" title="View" (click)="viewVoucher(v)">View</button>
+                    <button type="button" class="action-btn edit" title="Edit" (click)="editVoucher(v)">Edit</button>
+                    <button type="button" class="action-btn print" title="Reprint" (click)="reprintVoucher(v)">Print</button>
+                  </div>
                 </td>
               </tr>
             } @empty {
@@ -78,7 +96,7 @@
           <fieldset [disabled]="isViewMode()">
             <div class="form-section">
               <h3>Voucher Header</h3>
-              <div class="form-grid">
+              <div class="form-grid" [class.receipt-header-grid]="isReceiptVoucher()">
                 <label class="field">
                   <span class="field-label">Account Register *</span>
                   <select class="field-control" required [disabled]="!form().orgID" [ngModel]="form().accountRegisterID" (ngModelChange)="updateForm('accountRegisterID', $event ? +$event : null); onAccountRegisterChange()" name="accountRegisterID">
@@ -88,22 +106,27 @@
                     }
                   </select>
                 </label>
-                <label class="field">
+                <label class="field" [class.field-compact]="isReceiptVoucher()">
                   <span class="field-label">Voucher No</span>
                   <input class="field-control field-readonly" type="number" readonly [ngModel]="form().vCode" name="vCode">
                 </label>
-                <label class="field">
+                <label class="field" [class.field-compact]="isReceiptVoucher()">
                   <span class="field-label">Voucher Date *</span>
                   <input class="field-control" type="date" required [min]="voucherDateMin()" [max]="voucherDateMax()" [ngModel]="form().vDate" (ngModelChange)="onVoucherDateChange($event)" name="vDate">
                 </label>
-                <label class="field">
+                <label class="field" [class.field-party-wide]="isReceiptVoucher()">
                   <span class="field-label">Party</span>
-                  <select class="field-control" [disabled]="!form().orgID" [ngModel]="form().partyTID" (ngModelChange)="updateForm('partyTID', $event ? +$event : null)" name="partyTID">
-                    <option [ngValue]="null">-- Select Party --</option>
-                    @for (p of parties(); track p.partyID) {
-                      <option [ngValue]="p.partyID">{{ p.partyName }}</option>
+                  <div class="party-field-row">
+                    <select class="field-control" [disabled]="!form().orgID" [ngModel]="form().partyTID" (ngModelChange)="updateForm('partyTID', $event ? +$event : null)" name="partyTID">
+                      <option [ngValue]="null">-- Select Party --</option>
+                      @for (p of parties(); track p.partyID) {
+                        <option [ngValue]="p.partyID">{{ p.partyName }}</option>
+                      }
+                    </select>
+                    @if (!isViewMode() && isReceiptVoucher()) {
+                      <button type="button" class="btn btn-outline btn-add-party" title="Add new party" (click)="openPartyModal()">+</button>
                     }
-                  </select>
+                  </div>
                 </label>
               </div>
             </div>
@@ -122,6 +145,9 @@
                     <col class="col-ledger">
                     <col class="col-narration">
                     <col class="col-amount">
+                    @if (!isViewMode()) {
+                      <col class="col-action">
+                    }
                   </colgroup>
                   <thead>
                     <tr>
@@ -129,18 +155,16 @@
                       <th class="ledger-col">Ledger Head</th>
                       <th class="narration-col">Narration</th>
                       <th class="amount-col">Amount</th>
+                      @if (!isViewMode()) {
+                        <th class="action-col">Delete</th>
+                      }
                     </tr>
                   </thead>
                   <tbody>
                     @for (line of form().details; track line.srNo; let i = $index) {
                       <tr>
                         <td class="sr-col">
-                          <div class="sr-cell">
-                            <span class="sr-no">{{ line.srNo }}</span>
-                            @if (!isViewMode() && form().details.length > 1) {
-                              <button type="button" class="icon-btn sr-remove" title="Remove row" (click)="removeDetailRow(i)">×</button>
-                            }
-                          </div>
+                          <span class="sr-no">{{ line.srNo }}</span>
                         </td>
                         <td class="ledger-col">
                           <select required [ngModel]="line.ledgerHeadId" (ngModelChange)="updateDetail(i, 'ledgerHeadId', $event ? +$event : null); loadNarrations($event ? +$event : null)" [name]="'lh' + i">
@@ -161,12 +185,19 @@
                         <td class="amount-col">
                           <input type="number" step="0.01" min="0" [ngModel]="line.amount" (ngModelChange)="updateDetail(i, 'amount', +$event)" [name]="'amt' + i">
                         </td>
+                        @if (!isViewMode()) {
+                          <td class="action-col">
+                            @if (form().details.length > 1) {
+                              <button type="button" class="row-delete-btn" title="Delete row" (click)="removeDetailRow(i)">Delete</button>
+                            }
+                          </td>
+                        }
                       </tr>
                     }
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colspan="3" class="total-label">Total Amount</td>
+                      <td [attr.colspan]="isViewMode() ? 3 : 4" class="total-label">Total Amount</td>
                       <td class="total-value">{{ totalAmount() | currency:'INR':'symbol':'1.2-2' }}</td>
                     </tr>
                   </tfoot>
@@ -210,11 +241,11 @@
                       <input class="field-control" type="text" [ngModel]="form().bankName" (ngModelChange)="updateForm('bankName', $event)" name="bankName">
                     </label>
                     <label class="field">
-                      <span class="field-label">Transaction No</span>
+                      <span class="field-label">Transaction/UTR/Cheque No</span>
                       <input class="field-control" type="text" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
                     </label>
                     <label class="field">
-                      <span class="field-label">Transaction Date</span>
+                      <span class="field-label">Transaction/UTR/Cheque Date</span>
                       <input class="field-control" type="date" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
                     </label>
                     <label class="field">
@@ -259,7 +290,7 @@
               <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
               <button type="button" class="btn btn-primary" (click)="printCurrent()">Print Receipt</button>
             } @else {
-              <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+              <button type="button" class="btn btn-outline" (click)="cancel()">Back</button>
               <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
             }
           </footer>
@@ -279,6 +310,34 @@
       <footer class="modal-footer">
         <button type="button" class="btn btn-outline" (click)="dismissPrintPrompt()">No</button>
         <button type="button" class="btn btn-primary" (click)="confirmPrint()">Yes, Print</button>
+      </footer>
+    </div>
+  </div>
+}
+
+@if (showPartyModal()) {
+  <div class="modal-overlay" (click)="closePartyModal()">
+    <div class="modal-box party-modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>Add New Party</h2>
+      </header>
+      <div class="modal-form">
+        <label class="field full">
+          <span class="field-label">Party Name *</span>
+          <input class="field-control" type="text" required [ngModel]="partyForm().partyName" (ngModelChange)="updatePartyForm('partyName', $event)" name="quickPartyName">
+        </label>
+        <label class="field">
+          <span class="field-label">Mobile No</span>
+          <input class="field-control" type="text" [ngModel]="partyForm().mobNo" (ngModelChange)="updatePartyForm('mobNo', $event)" name="quickPartyMob">
+        </label>
+        <label class="field full">
+          <span class="field-label">Address</span>
+          <textarea class="field-control" rows="2" [ngModel]="partyForm().address" (ngModelChange)="updatePartyForm('address', $event)" name="quickPartyAddress"></textarea>
+        </label>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closePartyModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" [disabled]="partySaving()" (click)="saveQuickParty()">Save Party</button>
       </footer>
     </div>
   </div>
