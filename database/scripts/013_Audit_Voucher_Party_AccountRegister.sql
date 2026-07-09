@@ -133,6 +133,17 @@ BEGIN
 
     IF @VoucherID IS NULL OR @VoucherID = 0
     BEGIN
+        SELECT @VCode = ISNULL(MAX(v.VCode), 0) + 1
+        FROM dbo.ACVoucher v WITH (UPDLOCK, HOLDLOCK)
+        WHERE v.OrgID = @OrgID
+          AND v.AccountRegisterID = @AccountRegisterID
+          AND v.FyID = @FyID
+          AND (
+              v.VType = @VType
+              OR (@VType = N'R' AND v.VType = N'RV')
+              OR (@VType = N'P' AND v.VType = N'PV')
+          );
+
         INSERT INTO dbo.ACVoucher (
             OrgID, AccountRegisterID, VType, VCode, VDate, PartyTID, TotalAmount, Remark,
             PaymentTypeID, TransactionNo, TransactionDate, DepositDate, LedgerHeadBankID,

@@ -15,6 +15,7 @@ import {
   LedgerHeadFormState,
   LedgerHeadMaster,
   LedgerTypeOption,
+  OrgOption,
   PartyMaster,
   PartyOption,
   Voucher,
@@ -83,8 +84,21 @@ export class AuditService {
 
   getLookups(): Observable<AuditLookups | null> {
     return this.http.get<ApiResponse<AuditLookups>>(`${this.base}/lookups`).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
+      map((r) => {
+        if (!r.success || !r.data) return null;
+        return {
+          ...r.data,
+          orgs: (r.data.orgs ?? []).map((o) => this.normalizeOrgOption(o))
+        };
+      }),
       catchError(() => of(null))
+    );
+  }
+
+  getSansthaOrgs(): Observable<OrgOption[]> {
+    return this.http.get<ApiResponse<OrgOption[]>>(`${this.base}/sanstha-orgs`).pipe(
+      map((r) => (r.success && r.data ? r.data.map((o) => this.normalizeOrgOption(o)) : [])),
+      catchError(() => of([]))
     );
   }
 
@@ -132,7 +146,7 @@ export class AuditService {
     let params = new HttpParams().set('orgId', orgId.toString()).set('vType', vType);
     if (fyId) params = params.set('fyId', fyId.toString());
     return this.http.get<ApiResponse<VoucherListItem[]>>(`${this.base}/vouchers`, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
+      map((r) => (r.success && r.data ? r.data.map((item) => this.normalizeVoucherListItem(item)) : [])),
       catchError(() => of([]))
     );
   }
@@ -239,6 +253,48 @@ export class AuditService {
     );
   }
 
+  private normalizeOrgOption(
+    raw: OrgOption & {
+      OrgID?: number;
+      OrganizationName?: string;
+      ShortName?: string | null;
+      SchoolCode?: number | null;
+      UnderOrgID?: number | null;
+    }
+  ): OrgOption {
+    return {
+      orgID: raw.orgID ?? raw.OrgID ?? 0,
+      organizationName: raw.organizationName ?? raw.OrganizationName ?? '',
+      shortName: raw.shortName ?? raw.ShortName ?? null,
+      schoolCode: raw.schoolCode ?? raw.SchoolCode ?? null,
+      underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? null
+    };
+  }
+
+  private normalizeLedgerHeadMaster(
+    raw: LedgerHeadMaster & {
+      LedgerHeadID?: number;
+      UnderOrgID?: number;
+      SrNo?: number;
+      LedgerHead?: string;
+      LedgerHeadShort?: string | null;
+      LedgerTypeID?: number;
+      LedgerType?: string | null;
+      IsActive?: boolean;
+    }
+  ): LedgerHeadMaster {
+    return {
+      ledgerHeadID: raw.ledgerHeadID ?? raw.LedgerHeadID ?? 0,
+      underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? 0,
+      srNo: raw.srNo ?? raw.SrNo ?? 0,
+      ledgerHead: raw.ledgerHead ?? raw.LedgerHead ?? '',
+      ledgerHeadShort: raw.ledgerHeadShort ?? raw.LedgerHeadShort ?? null,
+      ledgerTypeID: raw.ledgerTypeID ?? raw.LedgerTypeID ?? 0,
+      ledgerType: raw.ledgerType ?? raw.LedgerType ?? null,
+      isActive: raw.isActive ?? raw.IsActive ?? true
+    };
+  }
+
   private partyMasterToOption(p: PartyMaster): PartyOption {
     return {
       partyID: p.partyID,
@@ -276,6 +332,44 @@ export class AuditService {
     };
   }
 
+  private normalizeVoucherListItem(
+    raw: VoucherListItem & {
+      VoucherID?: number;
+      OrgID?: number;
+      AccountRegisterID?: number;
+      VType?: string;
+      VCode?: number;
+      VDate?: string;
+      PartyTID?: number | null;
+      TotalAmount?: number;
+      Remark?: string | null;
+      PaymentTypeID?: number | null;
+      FyID?: number;
+      OrganizationName?: string | null;
+      AccountRegister?: string | null;
+      PartyName?: string | null;
+      PaymentType?: string | null;
+    }
+  ): VoucherListItem {
+    return {
+      voucherID: raw.voucherID ?? raw.VoucherID ?? 0,
+      orgID: raw.orgID ?? raw.OrgID ?? 0,
+      accountRegisterID: raw.accountRegisterID ?? raw.AccountRegisterID ?? 0,
+      vType: raw.vType ?? raw.VType ?? '',
+      vCode: raw.vCode ?? raw.VCode ?? 0,
+      vDate: raw.vDate ?? raw.VDate ?? '',
+      partyTID: raw.partyTID ?? raw.PartyTID ?? null,
+      totalAmount: raw.totalAmount ?? raw.TotalAmount ?? 0,
+      remark: raw.remark ?? raw.Remark ?? null,
+      paymentTypeID: raw.paymentTypeID ?? raw.PaymentTypeID ?? null,
+      fyID: raw.fyID ?? raw.FyID ?? 0,
+      organizationName: raw.organizationName ?? raw.OrganizationName ?? null,
+      accountRegister: raw.accountRegister ?? raw.AccountRegister ?? null,
+      partyName: raw.partyName ?? raw.PartyName ?? null,
+      paymentType: raw.paymentType ?? raw.PaymentType ?? null
+    };
+  }
+
   getLedgerTypes(): Observable<LedgerTypeOption[]> {
     return this.http.get<ApiResponse<LedgerTypeOption[]>>(`${this.base}/ledger-types`).pipe(
       map((r) => (r.success && r.data ? r.data : [])),
@@ -286,7 +380,7 @@ export class AuditService {
   getLedgerHeadList(underOrgId: number): Observable<LedgerHeadMaster[]> {
     const params = new HttpParams().set('underOrgId', underOrgId.toString());
     return this.http.get<ApiResponse<LedgerHeadMaster[]>>(`${this.base}/ledger-head-master`, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
+      map((r) => (r.success && r.data ? r.data.map((h) => this.normalizeLedgerHeadMaster(h)) : [])),
       catchError(() => of([]))
     );
   }

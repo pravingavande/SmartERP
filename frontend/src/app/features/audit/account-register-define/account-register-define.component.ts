@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AccountRegisterMasterOption, AuditLookups } from '../../../core/models/audit.model';
+import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
@@ -22,6 +23,8 @@ export class AccountRegisterDefineComponent {
   readonly loading = signal(false);
   readonly lookupsLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly fieldErrors = signal<FieldErrors>({});
+  readonly saveError = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly lookups = signal<AuditLookups | null>(null);
   readonly allRegisters = signal<AccountRegisterMasterOption[]>([]);
@@ -72,10 +75,16 @@ export class AccountRegisterDefineComponent {
 
   onOrgChange(orgId: number | null): void {
     this.selectedOrgID.set(orgId);
+    this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
     this.errorMessage.set(null);
+    this.saveError.set(null);
     this.successMessage.set(null);
     if (orgId) this.loadMapping(orgId);
     else this.selectedRegisterIds.set(new Set());
+  }
+
+  fieldError(key: string): string | null {
+    return this.fieldErrors()[key] ?? null;
   }
 
   loadMapping(orgId: number): void {
@@ -103,12 +112,14 @@ export class AccountRegisterDefineComponent {
   save(): void {
     const orgId = this.selectedOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select a school / org first.');
+      this.fieldErrors.set({ orgID: 'Select a school / org first.' });
+      this.saveError.set(null);
       return;
     }
 
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.successMessage.set(null);
     const ids = Array.from(this.selectedRegisterIds());
     this.audit
@@ -117,7 +128,7 @@ export class AccountRegisterDefineComponent {
       .subscribe((ok) => {
         this.loading.set(false);
         if (!ok) {
-          this.errorMessage.set('Unable to save account register mapping.');
+          this.saveError.set('Unable to save account register mapping.');
           return;
         }
         this.successMessage.set('Account registers saved successfully.');

@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AuditLookups, PartyFormState, PartyMaster } from '../../../core/models/audit.model';
+import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
@@ -24,6 +25,8 @@ export class PartyMasterComponent {
   readonly loading = signal(false);
   readonly lookupsLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly fieldErrors = signal<FieldErrors>({});
+  readonly saveError = signal<string | null>(null);
   readonly lookups = signal<AuditLookups | null>(null);
   readonly parties = signal<PartyMaster[]>([]);
   readonly form = signal<PartyFormState>(this.emptyForm());
@@ -92,6 +95,8 @@ export class PartyMasterComponent {
     this.formMode.set('new');
     this.formVisible.set(true);
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.form.set({ ...this.emptyForm(), orgID: orgId });
   }
 
@@ -99,6 +104,8 @@ export class PartyMasterComponent {
     this.formMode.set('edit');
     this.formVisible.set(true);
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.form.set({
       partyID: item.partyID,
       orgID: item.orgID,
@@ -113,25 +120,38 @@ export class PartyMasterComponent {
 
   save(): void {
     const f = this.form();
-    if (!f.orgID || !f.partyName.trim()) {
-      this.errorMessage.set('School and party name are required.');
+    const errors: FieldErrors = {};
+    if (!f.orgID) {
+      errors['orgID'] = 'Please select School.';
+    }
+    if (!f.partyName.trim()) {
+      errors['partyName'] = 'Please enter Party Name.';
+    }
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
+      this.saveError.set(null);
       return;
     }
 
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.audit
       .saveParty(f)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
         this.loading.set(false);
         if (!saved) {
-          this.errorMessage.set('Unable to save party.');
+          this.saveError.set('Unable to save party.');
           return;
         }
         this.closeForm();
         this.loadList();
       });
+  }
+
+  fieldError(key: string): string | null {
+    return this.fieldErrors()[key] ?? null;
   }
 
   cancel(): void {
@@ -145,6 +165,7 @@ export class PartyMasterComponent {
   }
 
   updateForm<K extends keyof PartyFormState>(key: K, value: PartyFormState[K]): void {
+    this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((x) => ({ ...x, [key]: value }));
   }
 

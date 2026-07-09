@@ -92,11 +92,14 @@
         }
 
         <form class="ticket-form" (ngSubmit)="save()">
+          @if (saveError()) {
+            <p class="form-save-error">{{ saveError() }}</p>
+          }
           <fieldset [disabled]="isViewMode()">
             <div class="form-section">
               <h3>Ticket Raise</h3>
               <div class="form-grid">
-                <label class="field">
+                <label class="field" [class.field-invalid]="fieldError('orgID')">
                   <span class="field-label">शाळा (School) *</span>
                   <select
                     class="field-control"
@@ -111,6 +114,9 @@
                       <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
                     }
                   </select>
+                  @if (fieldError('orgID')) {
+                    <span class="field-error">{{ fieldError('orgID') }}</span>
+                  }
                   @if (schoolDisabled()) {
                     <small class="field-hint">School login — your school is auto-selected.</small>
                   }
@@ -152,7 +158,7 @@
                   >
                 </label>
 
-                <label class="field">
+                <label class="field" [class.field-invalid]="fieldError('ticketStatusID')">
                   <span class="field-label">स्थिती (Status) *</span>
                   <select
                     class="field-control"
@@ -166,6 +172,9 @@
                       <option [ngValue]="s.ticketStatusID">{{ statusLabel(s) }}</option>
                     }
                   </select>
+                  @if (fieldError('ticketStatusID')) {
+                    <span class="field-error">{{ fieldError('ticketStatusID') }}</span>
+                  }
                 </label>
 
                 <label class="field full">
@@ -185,10 +194,6 @@
               </div>
             </div>
           </fieldset>
-
-          @if (errorMessage()) {
-            <p class="error">{{ errorMessage() }}</p>
-          }
 
           <footer class="form-footer">
             @if (isViewMode()) {

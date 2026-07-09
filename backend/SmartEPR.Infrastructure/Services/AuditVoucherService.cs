@@ -30,6 +30,9 @@ public sealed class AuditVoucherService : IAuditVoucherService
         };
     }
 
+    public Task<IReadOnlyList<OrgOptionDto>> GetSansthaOrgsAsync(long userId, CancellationToken cancellationToken = default)
+        => _repository.GetSansthaOrgsAsync(userId, cancellationToken);
+
     public Task<IReadOnlyList<AccountRegisterOptionDto>> GetAccountRegistersAsync(long orgId, CancellationToken cancellationToken = default)
         => _repository.GetAccountRegistersAsync(orgId, cancellationToken);
 

@@ -115,9 +115,12 @@
               <input type="number" required [ngModel]="holidayForm().year" (ngModelChange)="updateHolidayField('year', +$event)" name="holidayYear">
             </label>
           </div>
-          <label>
+          <label [class.field-invalid]="fieldError('nameMr')">
             नाव (मराठी) *
             <input type="text" required [ngModel]="holidayForm().nameMr" (ngModelChange)="updateHolidayField('nameMr', $event)" name="nameMr" placeholder="उदा. प्रजासत्ताक दिन">
+            @if (fieldError('nameMr')) {
+              <span class="field-error">{{ fieldError('nameMr') }}</span>
+            }
           </label>
           <div class="form-row">
             <label>
@@ -144,9 +147,12 @@
               <input type="number" required [ngModel]="festivalForm().year" (ngModelChange)="updateFestivalField('year', +$event)" name="festivalYear">
             </label>
           </div>
-          <label>
+          <label [class.field-invalid]="fieldError('nameMr')">
             नाव (मराठी) *
             <input type="text" required [ngModel]="festivalForm().nameMr" (ngModelChange)="updateFestivalField('nameMr', $event)" name="festNameMr" placeholder="उदा. गणेश चतुर्थी">
+            @if (fieldError('nameMr')) {
+              <span class="field-error">{{ fieldError('nameMr') }}</span>
+            }
           </label>
           <label>
             Color
@@ -154,8 +160,8 @@
           </label>
         }
 
-        @if (errorMessage()) {
-          <p class="error">{{ errorMessage() }}</p>
+        @if (saveError()) {
+          <p class="form-save-error">{{ saveError() }}</p>
         }
 
         <footer class="modal-footer">

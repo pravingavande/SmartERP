@@ -15,6 +15,7 @@ import {
   DonationLookups,
   DRHeadOption
 } from '../../../core/models/donation.model';
+import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 
 type FormMode = 'new' | 'edit' | 'view';
 
@@ -34,6 +35,8 @@ export class DonationEntryComponent {
   readonly loading = signal(false);
   readonly lookupsLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly fieldErrors = signal<FieldErrors>({});
+  readonly saveError = signal<string | null>(null);
   readonly lookups = signal<DonationLookups | null>(null);
   readonly drHeads = signal<DRHeadOption[]>([]);
   readonly donations = signal<DonationListItem[]>([]);
@@ -154,6 +157,8 @@ export class DonationEntryComponent {
     this.formMode.set('new');
     this.formVisible.set(true);
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.form.set({
       ...this.emptyForm(),
       orgID: orgId,
@@ -230,21 +235,23 @@ export class DonationEntryComponent {
 
   save(): void {
     if (this.isViewMode()) return;
-    const validationError = this.validateForm();
-    if (validationError) {
-      this.errorMessage.set(validationError);
+    const errors = this.validateForm();
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
+      this.saveError.set(null);
       return;
     }
 
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.donation
       .save(this.form())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
         this.loading.set(false);
         if (!saved) {
-          this.errorMessage.set('Unable to save donation entry.');
+          this.saveError.set('Unable to save donation entry.');
           return;
         }
         this.loadList();
@@ -253,54 +260,61 @@ export class DonationEntryComponent {
       });
   }
 
-  private validateForm(): string | null {
+  private validateForm(): FieldErrors {
     const f = this.form();
+    const errors: FieldErrors = {};
 
     if (!f.drHeadID) {
-      return 'Please select Donation Head.';
+      errors['drHeadID'] = 'Please select Donation Head.';
     }
     if (!f.donorName.trim()) {
-      return 'Please enter Donor Name.';
+      errors['donorName'] = 'Please enter Donor Name.';
     }
     if (f.amount <= 0) {
-      return 'Please enter Amount.';
+      errors['amount'] = 'Please enter Amount.';
     }
     if (!f.paymentTypeID) {
-      return 'Please select Payment Type.';
+      errors['paymentTypeID'] = 'Please select Payment Type.';
     }
 
     const mobile = f.mobileNo.trim();
     if (mobile && !/^\d{10}$/.test(mobile)) {
-      return 'Please enter a valid 10-digit Mobile Number.';
+      errors['mobileNo'] = 'Please enter a valid 10-digit Mobile Number.';
     }
 
     const aadhar = f.aadharNo.trim();
     if (aadhar && !/^\d{12}$|^\d{14}$/.test(aadhar)) {
-      return 'Please enter a valid Aadhaar Number.';
+      errors['aadharNo'] = 'Please enter a valid Aadhaar Number.';
     }
 
     if (this.isChequePayment()) {
-      if (!f.transactionNo?.trim()) {
-        return 'Please enter Cheque Number.';
-      }
       if (!f.bankName?.trim()) {
-        return 'Please enter Bank Name.';
+        errors['bankName'] = 'Please enter Bank Name.';
+      }
+      if (!f.transactionNo?.trim()) {
+        errors['transactionNo'] = 'Please enter Cheque Number.';
       }
       if (!f.ledgerHeadBankID) {
-        return 'Please select Deposit Bank.';
+        errors['ledgerHeadBankID'] = 'Please select Deposit Bank.';
       }
     }
 
-    return null;
+    return errors;
+  }
+
+  fieldError(key: string): string | null {
+    return this.fieldErrors()[key] ?? null;
   }
 
   onMobileInput(value: string): void {
     const digits = value.replace(/\D/g, '').slice(0, 10);
+    this.fieldErrors.update((e) => removeFieldError(e, 'mobileNo'));
     this.updateForm('mobileNo', digits);
   }
 
   onAadharInput(value: string): void {
     const digits = value.replace(/\D/g, '').slice(0, 14);
+    this.fieldErrors.update((e) => removeFieldError(e, 'aadharNo'));
     this.updateForm('aadharNo', digits);
   }
 
@@ -339,6 +353,7 @@ export class DonationEntryComponent {
   }
 
   updateForm<K extends keyof DonationFormState>(key: K, value: DonationFormState[K]): void {
+    this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((x) => ({ ...x, [key]: value }));
   }
 

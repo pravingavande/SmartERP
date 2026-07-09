@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AuditPrintService } from '../../../core/services/audit-print.service';
 import { AuditService } from '../../../core/services/audit.service';
@@ -18,12 +19,18 @@ import {
   VoucherFormState,
   VoucherListItem
 } from '../../../core/models/audit.model';
+import {
+  FieldErrors,
+  detailFieldKey,
+  hasFieldErrors,
+  removeFieldError
+} from '../../../core/utils/form-field-errors';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-voucher-entry',
-  imports: [FormsModule, DatePipe, CurrencyPipe],
+  imports: [FormsModule, DatePipe, CurrencyPipe, RouterLink],
   templateUrl: './voucher-entry.component.html',
   styleUrl: './voucher-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -41,6 +48,8 @@ export class VoucherEntryComponent {
   readonly loading = signal(false);
   readonly lookupsLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly fieldErrors = signal<FieldErrors>({});
+  readonly saveError = signal<string | null>(null);
   readonly lookups = signal<AuditLookups | null>(null);
   readonly accountRegisters = signal<AccountRegisterOption[]>([]);
   readonly parties = signal<PartyOption[]>([]);
@@ -57,8 +66,11 @@ export class VoucherEntryComponent {
   readonly showPartyModal = signal(false);
   readonly partySaving = signal(false);
   readonly partyForm = signal({ partyName: '', mobNo: '', address: '' });
+  readonly partyFieldErrors = signal<FieldErrors>({});
   readonly pendingAttachmentFile = signal<File | null>(null);
   readonly attachmentPreviewUrl = signal<string | null>(null);
+  readonly listPageSize = signal(10);
+  readonly listPageIndex = signal(0);
 
   private detailRowSeq = 0;
 
@@ -82,6 +94,26 @@ export class VoucherEntryComponent {
     if (!regId) return list;
     return list.filter((v) => v.accountRegisterID === regId);
   });
+  readonly listPageCount = computed(() => {
+    const total = this.displayedVouchers().length;
+    return Math.max(1, Math.ceil(total / this.listPageSize()));
+  });
+  readonly paginatedVouchers = computed(() => {
+    const list = this.displayedVouchers();
+    const start = this.listPageIndex() * this.listPageSize();
+    return list.slice(start, start + this.listPageSize());
+  });
+  readonly listPageStart = computed(() => {
+    const total = this.displayedVouchers().length;
+    if (!total) return 0;
+    return this.listPageIndex() * this.listPageSize() + 1;
+  });
+  readonly listPageEnd = computed(() => {
+    const total = this.displayedVouchers().length;
+    if (!total) return 0;
+    return Math.min(total, (this.listPageIndex() + 1) * this.listPageSize());
+  });
+  readonly partyFieldLocked = computed(() => this.isViewMode() || (!this.isReceiptVoucher() && this.isEditMode()));
   readonly activeFy = computed(() => {
     const fyId = this.formVisible() ? (this.form().fyID ?? this.listFyID()) : this.listFyID();
     return this.lookups()?.fyList.find((fy) => fy.fyID === fyId) ?? null;
@@ -137,6 +169,7 @@ export class VoucherEntryComponent {
 
   onListOrgChange(orgId: number | null): void {
     this.listOrgID.set(orgId);
+    this.listPageIndex.set(0);
     this.listAccountRegisterID.set(null);
     this.form.update((f) => ({ ...f, orgID: orgId }));
     if (!orgId) {
@@ -151,6 +184,7 @@ export class VoucherEntryComponent {
 
   onListFyChange(fyId: number | null): void {
     this.listFyID.set(fyId);
+    this.listPageIndex.set(0);
     this.form.update((f) => ({ ...f, fyID: fyId }));
     this.closeForm();
     this.loadVoucherList();
@@ -158,7 +192,18 @@ export class VoucherEntryComponent {
 
   onListAccountRegisterChange(accountRegisterId: number | null): void {
     this.listAccountRegisterID.set(accountRegisterId);
+    this.listPageIndex.set(0);
     this.closeForm();
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPageIndex.set(0);
+  }
+
+  goToListPage(index: number): void {
+    const max = this.listPageCount() - 1;
+    this.listPageIndex.set(Math.max(0, Math.min(index, max)));
   }
 
   onOrgChange(orgId: number | null): void {
@@ -212,7 +257,13 @@ export class VoucherEntryComponent {
     this.audit
       .getVouchers(orgId, this.vType(), this.listFyID())
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((list) => this.vouchers.set(list));
+      .subscribe((list) => {
+        this.vouchers.set(list);
+        const maxPage = Math.max(0, Math.ceil(list.length / this.listPageSize()) - 1);
+        if (this.listPageIndex() > maxPage) {
+          this.listPageIndex.set(maxPage);
+        }
+      });
   }
 
   loadNarrations(ledgerHeadId: number | null): void {
@@ -261,6 +312,8 @@ export class VoucherEntryComponent {
     this.formMode.set('new');
     this.formVisible.set(true);
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.form.set({
       ...this.emptyForm(),
       orgID: orgId,
@@ -288,6 +341,21 @@ export class VoucherEntryComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((v) => {
         if (v) this.printService.printVoucher(v);
+      });
+  }
+
+  confirmDeleteVoucher(item: VoucherListItem): void {
+    if (!confirm(`Delete ${this.isReceiptVoucher() ? 'receipt' : 'payment'} voucher #${item.vCode}?`)) return;
+    this.audit
+      .deleteVoucher(item.voucherID)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((ok) => {
+        if (!ok) {
+          this.errorMessage.set('Unable to delete voucher.');
+          return;
+        }
+        this.errorMessage.set(null);
+        this.loadVoucherList();
       });
   }
 
@@ -336,8 +404,9 @@ export class VoucherEntryComponent {
   save(): void {
     if (this.isViewMode()) return;
     const validationError = this.validateForm();
-    if (validationError) {
-      this.errorMessage.set(validationError);
+    if (hasFieldErrors(validationError)) {
+      this.fieldErrors.set(validationError);
+      this.saveError.set(null);
       return;
     }
 
@@ -348,14 +417,15 @@ export class VoucherEntryComponent {
     }
 
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.audit
       .saveVoucher(this.vType(), { ...f, vDate })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
         this.loading.set(false);
         if (!saved) {
-          this.errorMessage.set('Unable to save voucher. Please check all required fields and try again.');
+          this.saveError.set('Unable to save voucher. Please check all required fields and try again.');
           return;
         }
         this.loadVoucherList();
@@ -364,65 +434,82 @@ export class VoucherEntryComponent {
       });
   }
 
-  private validateForm(): string | null {
+  private validateForm(): FieldErrors {
     const f = this.form();
+    const errors: FieldErrors = {};
 
     if (!f.accountRegisterID) {
-      return 'Please select Account Register.';
+      errors['accountRegisterID'] = 'Please select Account Register.';
     }
 
     const vDate = f.vDate?.trim() || this.todayDateString();
     if (!vDate) {
-      return 'Please enter Voucher Date.';
-    }
-    if (!this.isDateWithinFy(vDate)) {
-      return 'Voucher Date must be within the selected Financial Year.';
+      errors['vDate'] = 'Please enter Voucher Date.';
+    } else if (!this.isDateWithinFy(vDate)) {
+      errors['vDate'] = 'Voucher Date must be within the selected Financial Year.';
     }
 
     if (!f.partyTID) {
-      return 'Please select Party Name.';
+      errors['partyTID'] = 'Please select Party Name.';
     }
 
     if (!f.paymentTypeID) {
-      return 'Please select Payment Type.';
+      errors['paymentTypeID'] = 'Please select Payment Type.';
     }
 
     if (f.details.length < 1) {
-      return 'Please add at least one voucher detail row.';
+      errors['details'] = 'Please add at least one voucher detail row.';
     }
 
-    for (const line of f.details) {
+    for (let i = 0; i < f.details.length; i++) {
+      const line = f.details[i];
       if (!line.ledgerHeadId) {
-        return `Please select Ledger Head on row ${line.srNo}.`;
+        errors[detailFieldKey(i, 'ledgerHeadId')] = 'Please select Ledger Head.';
       }
       if (!line.amount || line.amount <= 0) {
-        return `Please enter Amount on row ${line.srNo}.`;
+        errors[detailFieldKey(i, 'amount')] = 'Please enter Amount.';
       }
     }
 
     if (this.totalAmount() <= 0) {
-      return 'Please enter Amount.';
+      errors['detailsTotal'] = 'Please enter Amount.';
     }
 
     if (this.isChequePayment()) {
-      if (!f.transactionNo?.trim()) {
-        return 'Please enter Cheque Number.';
-      }
       if (this.isReceiptVoucher()) {
         if (!f.bankName?.trim()) {
-          return 'Please enter Bank Name.';
+          errors['bankName'] = 'Please enter Bank Name.';
         }
         if (!f.ledgerHeadBankID) {
-          return 'Please select Deposit Bank.';
+          errors['ledgerHeadBankID'] = 'Please select Deposit Bank.';
         }
       } else if (this.isPaymentVoucher()) {
         if (!f.ledgerHeadBankID) {
-          return 'Please select Bank Name.';
+          errors['ledgerHeadBankID'] = 'Please select Bank Name.';
+        }
+      }
+      if (!f.transactionNo?.trim()) {
+        errors['transactionNo'] = 'Please enter Cheque Number.';
+      }
+      if (this.isReceiptVoucher()) {
+        if (!f.transactionDate?.trim()) {
+          errors['transactionDate'] = 'Please enter Transaction/UTR/Cheque Date.';
+        }
+        if (!f.depositDate?.trim()) {
+          errors['depositDate'] = 'Please enter Deposit Date.';
         }
       }
     }
 
-    return null;
+    return errors;
+  }
+
+  fieldError(key: string): string | null {
+    return this.fieldErrors()[key] ?? null;
+  }
+
+  detailFieldError(index: number, field: string): string | null {
+    return this.fieldError(detailFieldKey(index, field));
   }
 
   confirmPrint(): void {
@@ -451,6 +538,8 @@ export class VoucherEntryComponent {
   cancel(): void {
     this.closeForm();
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
   }
 
   closeForm(): void {
@@ -458,6 +547,8 @@ export class VoucherEntryComponent {
     this.formVisible.set(false);
     this.formMode.set('new');
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.loadVoucherList();
   }
 
@@ -503,14 +594,20 @@ export class VoucherEntryComponent {
   }
 
   onVoucherDateChange(value: string): void {
+    this.fieldErrors.update((e) => removeFieldError(e, 'vDate'));
     this.updateForm('vDate', this.clampDateToFy(value, this.activeFy()));
   }
 
   updateForm<K extends keyof VoucherFormState>(key: K, value: VoucherFormState[K]): void {
+    this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((f) => ({ ...f, [key]: value }));
   }
 
   updateDetail(index: number, field: keyof VoucherFormState['details'][0], value: unknown): void {
+    this.fieldErrors.update((e) => removeFieldError(e, detailFieldKey(index, String(field))));
+    if (field === 'amount') {
+      this.fieldErrors.update((e) => removeFieldError(e, 'detailsTotal'));
+    }
     this.form.update((f) => {
       const details = [...f.details];
       details[index] = { ...details[index], [field]: value };
@@ -533,7 +630,7 @@ export class VoucherEntryComponent {
   }
 
   openPartyModal(): void {
-    if (this.isViewMode() || this.isEditMode() || !this.form().orgID) return;
+    if (this.partyFieldLocked() || !this.form().orgID) return;
     this.partyForm.set({ partyName: '', mobNo: '', address: '' });
     this.showPartyModal.set(true);
   }
@@ -546,9 +643,10 @@ export class VoucherEntryComponent {
     const orgId = this.form().orgID;
     const pf = this.partyForm();
     if (!orgId || !pf.partyName.trim()) {
-      this.errorMessage.set('Party name is required.');
+      this.partyFieldErrors.set({ partyName: 'Party name is required.' });
       return;
     }
+    this.partyFieldErrors.set({});
     this.partySaving.set(true);
     this.audit
       .saveParty({
@@ -565,7 +663,7 @@ export class VoucherEntryComponent {
       .subscribe((saved) => {
         this.partySaving.set(false);
         if (!saved?.partyID) {
-          this.errorMessage.set('Unable to save party.');
+          this.saveError.set('Unable to save party.');
           return;
         }
         const newParty: PartyOption = {
@@ -580,10 +678,14 @@ export class VoucherEntryComponent {
         this.form.update((f) => ({ ...f, partyTID: saved.partyID }));
         this.loadParties(orgId, saved.partyID, () => {
           this.form.update((f) => ({ ...f, partyTID: saved.partyID }));
-          this.closePartyModal();
-          this.errorMessage.set(null);
-        });
+            this.closePartyModal();
+            this.errorMessage.set(null);
+          });
       });
+  }
+
+  partyFieldError(key: string): string | null {
+    return this.partyFieldErrors()[key] ?? null;
   }
 
   private loadParties(orgId: number, selectedPartyId?: number | null, onLoaded?: () => void): void {
@@ -597,6 +699,7 @@ export class VoucherEntryComponent {
   }
 
   updatePartyForm(field: 'partyName' | 'mobNo' | 'address', value: string): void {
+    this.partyFieldErrors.update((e) => removeFieldError(e, field));
     this.partyForm.update((p) => ({ ...p, [field]: value }));
   }
 

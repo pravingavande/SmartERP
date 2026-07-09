@@ -6,6 +6,7 @@ public sealed class OrgOptionDto
     public string OrganizationName { get; init; } = string.Empty;
     public string? ShortName { get; init; }
     public long? SchoolCode { get; init; }
+    public long? UnderOrgID { get; init; }
 }
 
 public sealed class AccountRegisterOptionDto

@@ -123,7 +123,7 @@
               }
             </select>
           </label>
-          <label>
+          <label [class.field-invalid]="fieldError('location')">
             Location *
             <select required [ngModel]="form().location" (ngModelChange)="updateFormField('location', $event)" name="location">
               <option value="">-- Select --</option>
@@ -131,12 +131,18 @@
                 <option [value]="loc">{{ loc }}</option>
               }
             </select>
+            @if (fieldError('location')) {
+              <span class="field-error">{{ fieldError('location') }}</span>
+            }
           </label>
         </div>
 
-        <label>
+        <label [class.field-invalid]="fieldError('title')">
           Title *
           <input type="text" required [ngModel]="form().title" (ngModelChange)="updateFormField('title', $event)" name="title" placeholder="e.g. Parent Meeting, Sports Day...">
+          @if (fieldError('title')) {
+            <span class="field-error">{{ fieldError('title') }}</span>
+          }
         </label>
 
         <label>
@@ -176,8 +182,8 @@
           <textarea rows="2" [ngModel]="form().notes" (ngModelChange)="updateFormField('notes', $event)" name="notes"></textarea>
         </label>
 
-        @if (errorMessage()) {
-          <p class="error">{{ errorMessage() }}</p>
+        @if (saveError()) {
+          <p class="form-save-error">{{ saveError() }}</p>
         }
 
         <footer class="modal-footer">

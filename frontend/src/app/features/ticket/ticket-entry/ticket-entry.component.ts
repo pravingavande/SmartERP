@@ -7,6 +7,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { Ticket, TicketFormState, TicketListItem, TicketLookups } from '../../../core/models/ticket.model';
+import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 
 type FormMode = 'new' | 'edit' | 'view';
 
@@ -25,6 +26,8 @@ export class TicketEntryComponent {
   readonly loading = signal(false);
   readonly lookupsLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly fieldErrors = signal<FieldErrors>({});
+  readonly saveError = signal<string | null>(null);
   readonly lookups = signal<TicketLookups | null>(null);
   readonly tickets = signal<TicketListItem[]>([]);
   readonly form = signal<TicketFormState>(this.emptyForm());
@@ -92,6 +95,7 @@ export class TicketEntryComponent {
 
   onOrgChange(orgId: number | null): void {
     if (this.isViewMode() || this.schoolDisabled()) return;
+    this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
     this.form.update((f) => ({ ...f, orgID: orgId, ticketID: null }));
   }
 
@@ -166,24 +170,37 @@ export class TicketEntryComponent {
   save(): void {
     if (this.isViewMode()) return;
     const f = this.form();
-    if (!f.orgID || !f.ticketStatusID) {
-      this.errorMessage.set('शाळा आणि स्थिती आवश्यक आहेत.');
+    const errors: FieldErrors = {};
+    if (!f.orgID) {
+      errors['orgID'] = 'शाळा आवश्यक आहे.';
+    }
+    if (!f.ticketStatusID) {
+      errors['ticketStatusID'] = 'स्थिती आवश्यक आहे.';
+    }
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
+      this.saveError.set(null);
       return;
     }
 
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.ticketService
       .save(f)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
         this.loading.set(false);
         if (!saved) {
-          this.errorMessage.set('टिकिट जतन करता आले नाही. API deploy आवश्यक असू शकते — admin ला सांगा.');
+          this.saveError.set('टिकिट जतन करता आले नाही. API deploy आवश्यक असू शकते — admin ला सांगा.');
           return;
         }
         this.closeForm();
       });
+  }
+
+  fieldError(key: string): string | null {
+    return this.fieldErrors()[key] ?? null;
   }
 
   cancel(): void {
@@ -199,6 +216,7 @@ export class TicketEntryComponent {
   }
 
   updateForm<K extends keyof TicketFormState>(key: K, value: TicketFormState[K]): void {
+    this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((x) => ({ ...x, [key]: value }));
   }
 

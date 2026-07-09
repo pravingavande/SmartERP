@@ -65,12 +65,18 @@
     @if (formVisible()) {
       <div class="form-panel">
         <form class="voucher-form" (ngSubmit)="save()">
+          @if (saveError()) {
+            <p class="form-save-error">{{ saveError() }}</p>
+          }
           <div class="form-section">
             <h3>{{ formMode() === 'edit' ? 'Edit Party' : 'New Party' }}</h3>
             <div class="form-grid">
-              <label class="field full">
+              <label class="field full" [class.field-invalid]="fieldError('partyName')">
                 <span class="field-label">Party Name *</span>
                 <input class="field-control" type="text" required [ngModel]="form().partyName" (ngModelChange)="updateForm('partyName', $event)" name="partyName">
+                @if (fieldError('partyName')) {
+                  <span class="field-error">{{ fieldError('partyName') }}</span>
+                }
               </label>
               <label class="field full">
                 <span class="field-label">Address</span>
@@ -94,10 +100,6 @@
               </label>
             </div>
           </div>
-
-          @if (errorMessage()) {
-            <p class="error">{{ errorMessage() }}</p>
-          }
 
           <footer class="form-footer">
             <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>

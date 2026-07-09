@@ -40,6 +40,16 @@ public sealed class AuditController : ControllerBase
         return Ok(ApiResponse<AuditLookupsDto>.Ok(lookups));
     }
 
+    [HttpGet("sanstha-orgs")]
+    public async Task<IActionResult> GetSansthaOrgs(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(ApiResponse<IReadOnlyList<OrgOptionDto>>.Fail("Invalid token."));
+
+        var orgs = await _auditService.GetSansthaOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<OrgOptionDto>>.Ok(orgs));
+    }
+
     [HttpGet("account-registers")]
     public async Task<IActionResult> GetAccountRegisters([FromQuery] long orgId, CancellationToken cancellationToken)
     {

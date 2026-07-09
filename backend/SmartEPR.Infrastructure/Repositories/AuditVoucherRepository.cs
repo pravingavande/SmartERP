@@ -22,6 +22,13 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         return _executor.QueryListAsync<OrgOptionDto>("dbo.sp_Audit_GetUserOrgs", p, cancellationToken);
     }
 
+    public Task<IReadOnlyList<OrgOptionDto>> GetSansthaOrgsAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserID", userId);
+        return _executor.QueryListAsync<OrgOptionDto>("dbo.sp_Audit_GetSansthaOrgs", p, cancellationToken);
+    }
+
     public Task<IReadOnlyList<AccountRegisterOptionDto>> GetAccountRegistersAsync(long orgId, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();

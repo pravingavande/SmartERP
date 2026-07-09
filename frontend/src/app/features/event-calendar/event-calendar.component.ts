@@ -13,6 +13,7 @@ import {
   monthRange,
   toIsoDate
 } from '../../core/constants/calendar.constants';
+import { FieldErrors, hasFieldErrors, removeFieldError } from '../../core/utils/form-field-errors';
 
 @Component({
   selector: 'app-event-calendar',
@@ -35,6 +36,8 @@ export class EventCalendarComponent {
   readonly loading = signal(false);
   readonly showModal = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly fieldErrors = signal<FieldErrors>({});
+  readonly saveError = signal<string | null>(null);
   readonly searchText = signal('');
   readonly events = signal<CalendarEvent[]>([]);
   readonly eventTypes = signal<EventType[]>([]);
@@ -89,6 +92,8 @@ export class EventCalendarComponent {
 
   openNew(dateIso?: string): void {
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.form.set({
       ...this.emptyForm(),
       eventDate: dateIso ?? toIsoDate(new Date())
@@ -98,6 +103,8 @@ export class EventCalendarComponent {
 
   editEvent(ev: CalendarEvent): void {
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.form.set({
       eventId: ev.eventId,
       title: ev.title,
@@ -123,13 +130,22 @@ export class EventCalendarComponent {
 
   saveEvent(): void {
     const f = this.form();
-    if (!f.title.trim() || !f.location.trim()) {
-      this.errorMessage.set('Title and location are required.');
+    const errors: FieldErrors = {};
+    if (!f.title.trim()) {
+      errors['title'] = 'Title is required.';
+    }
+    if (!f.location.trim()) {
+      errors['location'] = 'Location is required.';
+    }
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
+      this.saveError.set(null);
       return;
     }
 
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
 
     this.calendarService
       .saveEvent({
@@ -146,12 +162,16 @@ export class EventCalendarComponent {
       .subscribe((saved) => {
         this.loading.set(false);
         if (!saved) {
-          this.errorMessage.set('Unable to save event.');
+          this.saveError.set('Unable to save event.');
           return;
         }
         this.showModal.set(false);
         this.loadMonth();
       });
+  }
+
+  fieldError(key: string): string | null {
+    return this.fieldErrors()[key] ?? null;
   }
 
   deleteCurrentEvent(): void {
@@ -192,6 +212,7 @@ export class EventCalendarComponent {
   }
 
   updateFormField<K extends keyof ReturnType<typeof this.emptyForm>>(key: K, value: ReturnType<typeof this.emptyForm>[K]): void {
+    this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((f) => ({ ...f, [key]: value }));
   }
 

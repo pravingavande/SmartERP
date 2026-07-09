@@ -2,21 +2,32 @@
   <header class="page-header">
     <div>
       <h1>Ledger Head Master</h1>
-      <p>Org-wise ledger heads for voucher entries</p>
+      <p>Sanstha-wise ledger heads for voucher entries</p>
     </div>
     @if (!formVisible()) {
       <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
+    } @else {
+      <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
     }
   </header>
 
   @if (!formVisible()) {
   <div class="list-filters">
     <label class="field">
-      <span class="field-label">Org / School</span>
+      <span class="field-label">Sanstha / Org</span>
       <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
-        <option [ngValue]="null">-- Select School --</option>
-        @for (o of lookups()?.orgs ?? []; track o.orgID) {
+        <option [ngValue]="null">-- Select Sanstha --</option>
+        @for (o of sansthaOrgs(); track o.orgID) {
           <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">Ledger Type</span>
+      <select class="field-control" [ngModel]="listLedgerTypeID()" (ngModelChange)="onListLedgerTypeChange($event ? +$event : null)" name="listLedgerTypeID">
+        <option [ngValue]="null">-- All Types --</option>
+        @for (t of ledgerTypes(); track t.ledgerTypeID) {
+          <option [ngValue]="t.ledgerTypeID">{{ t.ledgerType }}</option>
         }
       </select>
     </label>
@@ -29,7 +40,7 @@
   <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
     @if (!formVisible()) {
     <aside class="list-panel">
-      <h3>All Ledger Heads</h3>
+      <h3>All Ledger Heads @if (listOrgID()) { — {{ selectedOrgName() }} }</h3>
       <div class="records-table-wrap">
         <table class="records-table">
           <thead>
@@ -43,7 +54,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (h of ledgerHeads(); track h.ledgerHeadID) {
+            @for (h of paginatedLedgerHeads(); track h.ledgerHeadID) {
               <tr [class.active]="form().ledgerHeadID === h.ledgerHeadID">
                 <td class="code">{{ h.srNo }}</td>
                 <td>{{ h.ledgerHead }}</td>
@@ -56,26 +67,54 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="empty">No ledger heads for selected school</td>
+                <td colspan="6" class="empty">No ledger heads for selected Sanstha / type</td>
               </tr>
             }
           </tbody>
         </table>
+        @if (filteredLedgerHeads().length > 0) {
+          <div class="list-pagination">
+            <label class="page-size-field">
+              <span>Rows</span>
+              <select [ngModel]="listPageSize()" (ngModelChange)="onListPageSizeChange(+$event)" name="ledgerListPageSize">
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="25">25</option>
+                <option [ngValue]="50">50</option>
+              </select>
+            </label>
+            <span class="page-info">{{ listPageStart() }}–{{ listPageEnd() }} of {{ filteredLedgerHeads().length }}</span>
+            <div class="page-nav">
+              <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() === 0" (click)="goToListPage(listPageIndex() - 1)">Prev</button>
+              <span class="page-num">Page {{ listPageIndex() + 1 }} / {{ listPageCount() }}</span>
+              <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() >= listPageCount() - 1" (click)="goToListPage(listPageIndex() + 1)">Next</button>
+            </div>
+          </div>
+        }
       </div>
     </aside>
     }
 
     @if (formVisible()) {
       <div class="form-panel">
+        @if (lookupsLoading()) {
+          <p class="loading-hint">Loading masters...</p>
+        }
         <form class="voucher-form" (ngSubmit)="save()">
+          @if (saveError()) {
+            <p class="form-save-error">{{ saveError() }}</p>
+          }
           <div class="form-section">
             <h3>{{ formMode() === 'edit' ? 'Edit Ledger Head' : 'New Ledger Head' }}</h3>
             <div class="form-grid">
+              <label class="field full">
+                <span class="field-label">Sanstha / Org</span>
+                <input class="field-control field-readonly" type="text" readonly [value]="selectedOrgName()">
+              </label>
               <label class="field">
                 <span class="field-label">Sr.No</span>
                 <input class="field-control field-readonly" type="number" readonly [ngModel]="form().srNo" name="srNo">
               </label>
-              <label class="field">
+              <label class="field" [class.field-invalid]="fieldError('ledgerTypeID')">
                 <span class="field-label">Ledger Type *</span>
                 <select class="field-control" required [ngModel]="form().ledgerTypeID" (ngModelChange)="updateForm('ledgerTypeID', $event ? +$event : null)" name="ledgerTypeID">
                   <option [ngValue]="null">-- Select Type --</option>
@@ -83,10 +122,16 @@
                     <option [ngValue]="t.ledgerTypeID">{{ t.ledgerType }}</option>
                   }
                 </select>
+                @if (fieldError('ledgerTypeID')) {
+                  <span class="field-error">{{ fieldError('ledgerTypeID') }}</span>
+                }
               </label>
-              <label class="field full">
+              <label class="field full" [class.field-invalid]="fieldError('ledgerHead')">
                 <span class="field-label">Ledger Head *</span>
                 <input class="field-control" type="text" required [ngModel]="form().ledgerHead" (ngModelChange)="updateForm('ledgerHead', $event)" name="ledgerHead">
+                @if (fieldError('ledgerHead')) {
+                  <span class="field-error">{{ fieldError('ledgerHead') }}</span>
+                }
               </label>
               <label class="field full">
                 <span class="field-label">Ledger Head Short</span>
@@ -98,10 +143,6 @@
               </label>
             </div>
           </div>
-
-          @if (errorMessage()) {
-            <p class="error">{{ errorMessage() }}</p>
-          }
 
           <footer class="form-footer">
             <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>

@@ -11,6 +11,7 @@ import {
   monthRange,
   toIsoDate
 } from '../../core/constants/calendar.constants';
+import { FieldErrors, hasFieldErrors, removeFieldError } from '../../core/utils/form-field-errors';
 
 type EntryType = 'holiday' | 'festival';
 
@@ -33,6 +34,8 @@ export class AcademicCalendarComponent {
   readonly loading = signal(false);
   readonly showModal = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly fieldErrors = signal<FieldErrors>({});
+  readonly saveError = signal<string | null>(null);
   readonly entryType = signal<EntryType>('holiday');
   readonly holidays = signal<Holiday[]>([]);
   readonly festivals = signal<Festival[]>([]);
@@ -80,6 +83,8 @@ export class AcademicCalendarComponent {
 
   openNew(type: EntryType, dateIso?: string): void {
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.entryType.set(type);
     const year = this.viewYear();
     const date = dateIso ?? toIsoDate(new Date(year, this.viewMonth(), 1));
@@ -90,6 +95,8 @@ export class AcademicCalendarComponent {
 
   editHoliday(item: Holiday): void {
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.entryType.set('holiday');
     this.holidayForm.set({
       holidayId: item.holidayId,
@@ -105,6 +112,8 @@ export class AcademicCalendarComponent {
 
   editFestival(item: Festival): void {
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.entryType.set('festival');
     this.festivalForm.set({
       festivalId: item.festivalId,
@@ -122,7 +131,22 @@ export class AcademicCalendarComponent {
   }
 
   saveEntry(): void {
-    this.errorMessage.set(null);
+    const errors: FieldErrors = {};
+    if (this.entryType() === 'holiday') {
+      if (!this.holidayForm().nameMr.trim()) {
+        errors['nameMr'] = 'नाव (मराठी) आवश्यक आहे.';
+      }
+    } else if (!this.festivalForm().nameMr.trim()) {
+      errors['nameMr'] = 'नाव (मराठी) आवश्यक आहे.';
+    }
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
+      this.saveError.set(null);
+      return;
+    }
+
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.loading.set(true);
 
     if (this.entryType() === 'holiday') {
@@ -134,7 +158,7 @@ export class AcademicCalendarComponent {
         .subscribe((saved) => {
           this.loading.set(false);
           if (!saved) {
-            this.errorMessage.set('Unable to save holiday.');
+            this.saveError.set('Unable to save holiday.');
             return;
           }
           this.showModal.set(false);
@@ -151,12 +175,16 @@ export class AcademicCalendarComponent {
       .subscribe((saved) => {
         this.loading.set(false);
         if (!saved) {
-          this.errorMessage.set('Unable to save festival.');
+          this.saveError.set('Unable to save festival.');
           return;
         }
         this.showModal.set(false);
         this.loadMonth();
       });
+  }
+
+  fieldError(key: string): string | null {
+    return this.fieldErrors()[key] ?? null;
   }
 
   deleteHoliday(item: Holiday): void {
@@ -226,10 +254,12 @@ export class AcademicCalendarComponent {
   }
 
   updateHolidayField<K extends keyof ReturnType<typeof this.emptyHolidayForm>>(key: K, value: ReturnType<typeof this.emptyHolidayForm>[K]): void {
+    this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.holidayForm.update((f) => ({ ...f, [key]: value }));
   }
 
   updateFestivalField<K extends keyof ReturnType<typeof this.emptyFestivalForm>>(key: K, value: ReturnType<typeof this.emptyFestivalForm>[K]): void {
+    this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.festivalForm.update((f) => ({ ...f, [key]: value }));
   }
 }

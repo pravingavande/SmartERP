@@ -9,6 +9,7 @@ export interface OrgOption {
   organizationName: string;
   shortName?: string | null;
   schoolCode?: number | null;
+  underOrgID?: number | null;
 }
 
 export interface AccountRegisterOption {

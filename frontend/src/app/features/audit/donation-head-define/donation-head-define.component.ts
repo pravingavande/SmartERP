@@ -8,6 +8,7 @@ import { AuditService } from '../../../core/services/audit.service';
 import { DonationService } from '../../../core/services/donation.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
+import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 
 @Component({
   selector: 'app-donation-head-define',
@@ -25,6 +26,8 @@ export class DonationHeadDefineComponent {
   readonly loading = signal(false);
   readonly lookupsLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly fieldErrors = signal<FieldErrors>({});
+  readonly saveError = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly lookups = signal<AuditLookups | null>(null);
   readonly allHeads = signal<DRHeadOption[]>([]);
@@ -75,10 +78,16 @@ export class DonationHeadDefineComponent {
 
   onOrgChange(orgId: number | null): void {
     this.selectedOrgID.set(orgId);
+    this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
     this.errorMessage.set(null);
+    this.saveError.set(null);
     this.successMessage.set(null);
     if (orgId) this.loadMapping(orgId);
     else this.selectedHeadIds.set(new Set());
+  }
+
+  fieldError(key: string): string | null {
+    return this.fieldErrors()[key] ?? null;
   }
 
   loadMapping(orgId: number): void {
@@ -106,12 +115,14 @@ export class DonationHeadDefineComponent {
   save(): void {
     const orgId = this.selectedOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select a school / org first.');
+      this.fieldErrors.set({ orgID: 'Select a school / org first.' });
+      this.saveError.set(null);
       return;
     }
 
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.successMessage.set(null);
     const ids = Array.from(this.selectedHeadIds());
     this.donation
@@ -120,7 +131,7 @@ export class DonationHeadDefineComponent {
       .subscribe((ok) => {
         this.loading.set(false);
         if (!ok) {
-          this.errorMessage.set('Unable to save donation head mapping.');
+          this.saveError.set('Unable to save donation head mapping.');
           return;
         }
         this.successMessage.set('Donation heads saved successfully.');
