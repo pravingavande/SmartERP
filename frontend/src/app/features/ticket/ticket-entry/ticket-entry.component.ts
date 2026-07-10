@@ -8,12 +8,14 @@ import { TicketService } from '../../../core/services/ticket.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { Ticket, TicketFormState, TicketListItem, TicketLookups } from '../../../core/models/ticket.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
+import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
+import { coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-ticket-entry',
-  imports: [FormsModule, DatePipe, CurrencyPipe],
+  imports: [FormsModule, DatePipe, CurrencyPipe, MarathiNumberInputDirective],
   templateUrl: './ticket-entry.component.html',
   styleUrl: './ticket-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -169,6 +171,7 @@ export class TicketEntryComponent {
 
   save(): void {
     if (this.isViewMode()) return;
+    this.form.update((f) => ({ ...f, amount: coerceEnglishNumber(f.amount) }));
     const f = this.form();
     const errors: FieldErrors = {};
     if (!f.orgID) {

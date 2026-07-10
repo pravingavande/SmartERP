@@ -11,6 +11,7 @@ import {
   DRHeadDefine,
   DRHeadOption
 } from '../models/donation.model';
+import { coerceEnglishIntegerString, coerceEnglishNumber } from '../utils/marathi-numerals';
 
 @Injectable({ providedIn: 'root' })
 export class DonationService {
@@ -70,9 +71,9 @@ export class DonationService {
       donorName: form.donorName,
       address: form.address || null,
       panNo: form.panNo || null,
-      aadharNo: form.aadharNo || null,
-      mobileNo: form.mobileNo || null,
-      amount: form.amount,
+      aadharNo: coerceEnglishIntegerString(form.aadharNo, 14) || null,
+      mobileNo: coerceEnglishIntegerString(form.mobileNo, 10) || null,
+      amount: coerceEnglishNumber(form.amount),
       paymentTypeID: form.paymentTypeID,
       transactionNo: form.transactionNo || null,
       transactionDate: form.transactionDate || null,

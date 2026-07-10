@@ -84,7 +84,7 @@
               </label>
               <label class="field">
                 <span class="field-label">Mobile No</span>
-                <input class="field-control" type="text" [ngModel]="form().mobNo" (ngModelChange)="updateForm('mobNo', $event)" name="mobNo">
+                <input class="field-control" appMarathiNumber mode="int" [maxLength]="10" [ngModel]="form().mobNo" (ngModelChange)="updateForm('mobNo', $event)" name="mobNo">
               </label>
               <label class="field">
                 <span class="field-label">PAN No</span>

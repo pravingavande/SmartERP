@@ -12,12 +12,14 @@ import {
   toIsoDate
 } from '../../core/constants/calendar.constants';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../core/utils/form-field-errors';
+import { MarathiNumberInputDirective } from '../../core/directives/marathi-number-input.directive';
+import { coerceEnglishIntegerString } from '../../core/utils/marathi-numerals';
 
 type EntryType = 'holiday' | 'festival';
 
 @Component({
   selector: 'app-academic-calendar',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, MarathiNumberInputDirective],
   templateUrl: './academic-calendar.component.html',
   styleUrl: './academic-calendar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -151,7 +153,8 @@ export class AcademicCalendarComponent {
 
     if (this.entryType() === 'holiday') {
       const form = this.holidayForm();
-      const payload = { ...form, nameEn: form.nameMr.trim() };
+      const year = +coerceEnglishIntegerString(String(form.year), 4) || form.year;
+      const payload = { ...form, year, nameEn: form.nameMr.trim() };
       this.calendarService
         .saveHoliday(payload)
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -168,7 +171,8 @@ export class AcademicCalendarComponent {
     }
 
     const form = this.festivalForm();
-    const payload = { ...form, nameEn: form.nameMr.trim() };
+    const year = +coerceEnglishIntegerString(String(form.year), 4) || form.year;
+    const payload = { ...form, year, nameEn: form.nameMr.trim() };
     this.calendarService
       .saveFestival(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))

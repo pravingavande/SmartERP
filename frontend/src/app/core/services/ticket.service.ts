@@ -10,6 +10,7 @@ import {
   TicketLookups,
   TicketStatusOption
 } from '../models/ticket.model';
+import { coerceEnglishNumber } from '../utils/marathi-numerals';
 
 /** Matches dbo.TicketStatusMaster seed IDs when ticket API is unavailable. */
 const FALLBACK_STATUSES: TicketStatusOption[] = [
@@ -67,7 +68,7 @@ export class TicketService {
       orgID: form.orgID,
       ticketDate: form.ticketDate,
       description: form.description || null,
-      amount: form.amount,
+      amount: coerceEnglishNumber(form.amount),
       ticketStatusID: form.ticketStatusID,
       attachment: form.attachment || null
     };

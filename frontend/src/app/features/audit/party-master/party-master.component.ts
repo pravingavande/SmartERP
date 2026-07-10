@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AuditLookups, PartyFormState, PartyMaster } from '../../../core/models/audit.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
+import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
+import { coerceEnglishIntegerString } from '../../../core/utils/marathi-numerals';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
@@ -12,7 +14,7 @@ type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-party-master',
-  imports: [FormsModule],
+  imports: [FormsModule, MarathiNumberInputDirective],
   templateUrl: './party-master.component.html',
   styleUrl: './party-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -119,6 +121,10 @@ export class PartyMasterComponent {
   }
 
   save(): void {
+    this.form.update((f) => ({
+      ...f,
+      mobNo: coerceEnglishIntegerString(f.mobNo, 10)
+    }));
     const f = this.form();
     const errors: FieldErrors = {};
     if (!f.orgID) {

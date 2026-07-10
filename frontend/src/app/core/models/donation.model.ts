@@ -23,6 +23,8 @@ export interface PaymentTypeOption {
 export interface FyOption {
   fyID: number;
   fyName: string;
+  fromDate: string;
+  toDate: string;
 }
 
 export interface DonationLookups {

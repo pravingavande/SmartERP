@@ -112,7 +112,7 @@
             </label>
             <label>
               वर्ष *
-              <input type="number" required [ngModel]="holidayForm().year" (ngModelChange)="updateHolidayField('year', +$event)" name="holidayYear">
+              <input appMarathiNumber mode="int" [maxLength]="4" required [ngModel]="holidayForm().year" (ngModelChange)="updateHolidayField('year', +$event)" name="holidayYear">
             </label>
           </div>
           <label [class.field-invalid]="fieldError('nameMr')">
@@ -144,7 +144,7 @@
             </label>
             <label>
               वर्ष *
-              <input type="number" required [ngModel]="festivalForm().year" (ngModelChange)="updateFestivalField('year', +$event)" name="festivalYear">
+              <input appMarathiNumber mode="int" [maxLength]="4" required [ngModel]="festivalForm().year" (ngModelChange)="updateFestivalField('year', +$event)" name="festivalYear">
             </label>
           </div>
           <label [class.field-invalid]="fieldError('nameMr')">

@@ -25,12 +25,14 @@ import {
   hasFieldErrors,
   removeFieldError
 } from '../../../core/utils/form-field-errors';
+import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
+import { coerceEnglishIntegerString, coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-voucher-entry',
-  imports: [FormsModule, DatePipe, CurrencyPipe, RouterLink],
+  imports: [FormsModule, DatePipe, CurrencyPipe, RouterLink, MarathiNumberInputDirective],
   templateUrl: './voucher-entry.component.html',
   styleUrl: './voucher-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -113,7 +115,7 @@ export class VoucherEntryComponent {
     if (!total) return 0;
     return Math.min(total, (this.listPageIndex() + 1) * this.listPageSize());
   });
-  readonly partyFieldLocked = computed(() => this.isViewMode() || (!this.isReceiptVoucher() && this.isEditMode()));
+  readonly partyFieldLocked = computed(() => this.isViewMode());
   readonly activeFy = computed(() => {
     const fyId = this.formVisible() ? (this.form().fyID ?? this.listFyID()) : this.listFyID();
     return this.lookups()?.fyList.find((fy) => fy.fyID === fyId) ?? null;
@@ -403,6 +405,7 @@ export class VoucherEntryComponent {
 
   save(): void {
     if (this.isViewMode()) return;
+    this.normalizeNumericFields();
     const validationError = this.validateForm();
     if (hasFieldErrors(validationError)) {
       this.fieldErrors.set(validationError);
@@ -432,6 +435,16 @@ export class VoucherEntryComponent {
         this.pendingPrintVoucher.set(saved);
         this.showPrintPrompt.set(true);
       });
+  }
+
+  private normalizeNumericFields(): void {
+    this.form.update((f) => ({
+      ...f,
+      details: f.details.map((d) => ({
+        ...d,
+        amount: coerceEnglishNumber(d.amount)
+      }))
+    }));
   }
 
   private validateForm(): FieldErrors {
@@ -476,28 +489,20 @@ export class VoucherEntryComponent {
     }
 
     if (this.isChequePayment()) {
-      if (this.isReceiptVoucher()) {
-        if (!f.bankName?.trim()) {
-          errors['bankName'] = 'Please enter Bank Name.';
-        }
-        if (!f.ledgerHeadBankID) {
-          errors['ledgerHeadBankID'] = 'Please select Deposit Bank.';
-        }
-      } else if (this.isPaymentVoucher()) {
-        if (!f.ledgerHeadBankID) {
-          errors['ledgerHeadBankID'] = 'Please select Bank Name.';
-        }
+      if (!f.bankName?.trim()) {
+        errors['bankName'] = 'Please enter Bank Name.';
+      }
+      if (!f.ledgerHeadBankID) {
+        errors['ledgerHeadBankID'] = 'Please select Deposit Bank.';
       }
       if (!f.transactionNo?.trim()) {
         errors['transactionNo'] = 'Please enter Cheque Number.';
       }
-      if (this.isReceiptVoucher()) {
-        if (!f.transactionDate?.trim()) {
-          errors['transactionDate'] = 'Please enter Transaction/UTR/Cheque Date.';
-        }
-        if (!f.depositDate?.trim()) {
-          errors['depositDate'] = 'Please enter Deposit Date.';
-        }
+      if (!f.transactionDate?.trim()) {
+        errors['transactionDate'] = 'Please enter Transaction/UTR/Cheque Date.';
+      }
+      if (!f.depositDate?.trim()) {
+        errors['depositDate'] = 'Please enter Deposit Date.';
       }
     }
 
@@ -622,11 +627,10 @@ export class VoucherEntryComponent {
   }
 
   bankLedgerHeads(): LedgerHeadOption[] {
-    if (!this.isReceiptVoucher()) {
-      return this.lookups()?.bankLedgerHeads ?? [];
-    }
     const heads = this.lookups()?.ledgerHeads ?? [];
-    return heads.filter((h) => [5, 6, 7, 8, 9].includes(h.ledgerTypeID ?? 0));
+    const filtered = heads.filter((h) => [5, 6, 7, 8, 9].includes(h.ledgerTypeID ?? 0));
+    if (filtered.length) return filtered;
+    return this.lookups()?.bankLedgerHeads ?? [];
   }
 
   openPartyModal(): void {
@@ -654,7 +658,7 @@ export class VoucherEntryComponent {
         orgID: orgId,
         partyName: pf.partyName.trim(),
         address: pf.address,
-        mobNo: pf.mobNo,
+        mobNo: coerceEnglishIntegerString(pf.mobNo, 10),
         panNo: '',
         gstNo: '',
         isActive: true

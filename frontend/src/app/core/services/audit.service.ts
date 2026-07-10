@@ -21,6 +21,7 @@ import {
   Voucher,
   VoucherListItem
 } from '../models/audit.model';
+import { coerceEnglishIntegerString, coerceEnglishNumber } from '../utils/marathi-numerals';
 import { VoucherFormState } from '../models/audit.model';
 
 @Injectable({ providedIn: 'root' })
@@ -182,7 +183,7 @@ export class AuditService {
           srNo: d.srNo,
           ledgerHeadId: d.ledgerHeadId!,
           ledgerHeadNarration: d.ledgerHeadNarration || null,
-          amount: d.amount
+          amount: coerceEnglishNumber(d.amount)
         }))
     };
 
@@ -242,7 +243,7 @@ export class AuditService {
       orgID: form.orgID,
       partyName: form.partyName.trim(),
       address: form.address || null,
-      mobNo: form.mobNo || null,
+      mobNo: coerceEnglishIntegerString(form.mobNo, 10) || null,
       panNo: form.panNo || null,
       gstNo: form.gstNo || null,
       isActive: form.isActive

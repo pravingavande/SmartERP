@@ -5,9 +5,7 @@
     </div>
     <div class="header-actions">
       @if (!formVisible()) {
-        @if (isReceiptVoucher()) {
-          <a routerLink="/audit/dashboard" class="btn btn-outline btn-back">← Back</a>
-        }
+        <a routerLink="/audit/dashboard" class="btn btn-outline btn-back">← Back</a>
         <button type="button" class="btn btn-primary" (click)="newVoucher()">+ Add New</button>
       } @else {
         <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
@@ -55,7 +53,6 @@
     <aside class="list-panel">
       <h3>All Vouchers</h3>
       <div class="records-table-wrap">
-        @if (isReceiptVoucher()) {
         <table class="records-table receipt-list-table">
           <thead>
             <tr>
@@ -107,38 +104,6 @@
               <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() >= listPageCount() - 1" (click)="goToListPage(listPageIndex() + 1)">Next</button>
             </div>
           </div>
-        }
-        } @else {
-        <table class="records-table">
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (v of displayedVouchers(); track v.voucherID) {
-              <tr [class.active]="form().voucherID === v.voucherID">
-                <td class="code">#{{ v.vCode }}</td>
-                <td>{{ v.vDate | date:'dd/MM/yyyy' }}</td>
-                <td class="amt">{{ v.totalAmount | currency:'INR':'symbol':'1.0-0' }}</td>
-                <td class="actions">
-                  <div class="action-group">
-                    <button type="button" class="action-btn view" title="View" (click)="viewVoucher(v)">View</button>
-                    <button type="button" class="action-btn edit" title="Edit" (click)="editVoucher(v)">Edit</button>
-                    <button type="button" class="action-btn print" title="Reprint" (click)="reprintVoucher(v)">Print</button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="empty">No vouchers for selected org / FY</td>
-              </tr>
-            }
-          </tbody>
-        </table>
         }
       </div>
     </aside>
@@ -261,7 +226,7 @@
                           </datalist>
                         </td>
                         <td class="amount-col" [class.cell-invalid]="detailFieldError(i, 'amount')">
-                          <input type="number" step="0.01" min="0" [disabled]="isViewMode()" [ngModel]="line.amount" (ngModelChange)="updateDetail(i, 'amount', +$event)" [name]="'amt' + i">
+                          <input appMarathiNumber mode="decimal" [disabled]="isViewMode()" [ngModel]="line.amount" (ngModelChange)="updateDetail(i, 'amount', $event)" [name]="'amt' + i">
                           @if (detailFieldError(i, 'amount')) {
                             <span class="field-error">{{ detailFieldError(i, 'amount') }}</span>
                           }
@@ -309,72 +274,46 @@
                   }
                 </label>
                 @if (showBankFields()) {
-                  @if (isPaymentVoucher()) {
-                    <label class="field" [class.field-invalid]="fieldError('ledgerHeadBankID')">
-                      <span class="field-label">Bank Name@if (isChequePayment()) { *}</span>
-                      <select class="field-control" [disabled]="isViewMode()" [ngModel]="form().ledgerHeadBankID" (ngModelChange)="updateForm('ledgerHeadBankID', $event ? +$event : null)" name="ledgerHeadBankID">
-                        <option [ngValue]="null">-- Select Bank --</option>
-                        @for (b of bankLedgerHeads(); track b.ledgerHeadID) {
-                          <option [ngValue]="b.ledgerHeadID">{{ b.ledgerHead }}</option>
-                        }
-                      </select>
-                      @if (fieldError('ledgerHeadBankID')) {
-                        <span class="field-error">{{ fieldError('ledgerHeadBankID') }}</span>
+                  <label class="field" [class.field-invalid]="fieldError('bankName')">
+                    <span class="field-label">Bank Name@if (isChequePayment()) { * }</span>
+                    <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().bankName" (ngModelChange)="updateForm('bankName', $event)" name="bankName">
+                    @if (fieldError('bankName')) {
+                      <span class="field-error">{{ fieldError('bankName') }}</span>
+                    }
+                  </label>
+                  <label class="field" [class.field-invalid]="fieldError('transactionNo')">
+                    <span class="field-label">@if (isChequePayment()) { Cheque Number * } @else { Transaction/UTR/Cheque No }</span>
+                    <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
+                    @if (fieldError('transactionNo')) {
+                      <span class="field-error">{{ fieldError('transactionNo') }}</span>
+                    }
+                  </label>
+                  <label class="field" [class.field-invalid]="fieldError('transactionDate')">
+                    <span class="field-label">Transaction/UTR/Cheque Date@if (isChequePayment()) { * }</span>
+                    <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
+                    @if (fieldError('transactionDate')) {
+                      <span class="field-error">{{ fieldError('transactionDate') }}</span>
+                    }
+                  </label>
+                  <label class="field" [class.field-invalid]="fieldError('ledgerHeadBankID')">
+                    <span class="field-label">Deposit Bank@if (isChequePayment()) { * }</span>
+                    <select class="field-control" [disabled]="isViewMode()" [ngModel]="form().ledgerHeadBankID" (ngModelChange)="updateForm('ledgerHeadBankID', $event ? +$event : null)" name="ledgerHeadBankID">
+                      <option [ngValue]="null">-- Select Deposit Bank --</option>
+                      @for (b of bankLedgerHeads(); track b.ledgerHeadID) {
+                        <option [ngValue]="b.ledgerHeadID">{{ b.ledgerHead }}</option>
                       }
-                    </label>
-                    <label class="field" [class.field-invalid]="fieldError('transactionNo')">
-                      <span class="field-label">@if (isChequePayment()) { Cheque Number * } @else { Transaction No }</span>
-                      <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
-                      @if (fieldError('transactionNo')) {
-                        <span class="field-error">{{ fieldError('transactionNo') }}</span>
-                      }
-                    </label>
-                    <label class="field">
-                      <span class="field-label">Transaction Date</span>
-                      <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
-                    </label>
-                  } @else {
-                    <label class="field" [class.field-invalid]="fieldError('bankName')">
-                      <span class="field-label">Bank Name@if (isChequePayment()) { * }</span>
-                      <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().bankName" (ngModelChange)="updateForm('bankName', $event)" name="bankName">
-                      @if (fieldError('bankName')) {
-                        <span class="field-error">{{ fieldError('bankName') }}</span>
-                      }
-                    </label>
-                    <label class="field" [class.field-invalid]="fieldError('transactionNo')">
-                      <span class="field-label">@if (isChequePayment()) { Cheque Number * } @else { Transaction/UTR/Cheque No }</span>
-                      <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
-                      @if (fieldError('transactionNo')) {
-                        <span class="field-error">{{ fieldError('transactionNo') }}</span>
-                      }
-                    </label>
-                    <label class="field" [class.field-invalid]="fieldError('transactionDate')">
-                      <span class="field-label">Transaction/UTR/Cheque Date@if (isChequePayment()) { * }</span>
-                      <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
-                      @if (fieldError('transactionDate')) {
-                        <span class="field-error">{{ fieldError('transactionDate') }}</span>
-                      }
-                    </label>
-                    <label class="field" [class.field-invalid]="fieldError('ledgerHeadBankID')">
-                      <span class="field-label">Deposit Bank@if (isChequePayment()) { * }</span>
-                      <select class="field-control" [disabled]="isViewMode()" [ngModel]="form().ledgerHeadBankID" (ngModelChange)="updateForm('ledgerHeadBankID', $event ? +$event : null)" name="ledgerHeadBankID">
-                        <option [ngValue]="null">-- Select Deposit Bank --</option>
-                        @for (b of bankLedgerHeads(); track b.ledgerHeadID) {
-                          <option [ngValue]="b.ledgerHeadID">{{ b.ledgerHead }}</option>
-                        }
-                      </select>
-                      @if (fieldError('ledgerHeadBankID')) {
-                        <span class="field-error">{{ fieldError('ledgerHeadBankID') }}</span>
-                      }
-                    </label>
-                    <label class="field" [class.field-invalid]="fieldError('depositDate')">
-                      <span class="field-label">Deposit Date@if (isChequePayment()) { * }</span>
-                      <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().depositDate" (ngModelChange)="updateForm('depositDate', $event)" name="depositDate">
-                      @if (fieldError('depositDate')) {
-                        <span class="field-error">{{ fieldError('depositDate') }}</span>
-                      }
-                    </label>
-                  }
+                    </select>
+                    @if (fieldError('ledgerHeadBankID')) {
+                      <span class="field-error">{{ fieldError('ledgerHeadBankID') }}</span>
+                    }
+                  </label>
+                  <label class="field" [class.field-invalid]="fieldError('depositDate')">
+                    <span class="field-label">Deposit Date@if (isChequePayment()) { * }</span>
+                    <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().depositDate" (ngModelChange)="updateForm('depositDate', $event)" name="depositDate">
+                    @if (fieldError('depositDate')) {
+                      <span class="field-error">{{ fieldError('depositDate') }}</span>
+                    }
+                  </label>
                 }
                 <label class="field full">
                   <span class="field-label">Remark</span>
@@ -403,7 +342,7 @@
           <footer class="form-footer">
             @if (isViewMode()) {
               <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
-              <button type="button" class="btn btn-primary" (click)="printCurrent()">Print Receipt</button>
+              <button type="button" class="btn btn-primary" (click)="printCurrent()">{{ isReceiptVoucher() ? 'Print Receipt' : 'Print Voucher' }}</button>
             } @else {
               <button type="button" class="btn btn-outline" (click)="cancel()">Back</button>
               <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
@@ -419,9 +358,9 @@
   <div class="modal-overlay" (click)="dismissPrintPrompt()">
     <div class="modal-box" (click)="$event.stopPropagation()">
       <header class="modal-header">
-        <h2>Print Receipt</h2>
+        <h2>{{ isReceiptVoucher() ? 'Print Receipt' : 'Print Payment Voucher' }}</h2>
       </header>
-      <p class="modal-message">Do you want to Print the Receipt?</p>
+      <p class="modal-message">Do you want to print this {{ isReceiptVoucher() ? 'receipt' : 'payment voucher' }}?</p>
       <footer class="modal-footer">
         <button type="button" class="btn btn-outline" (click)="dismissPrintPrompt()">No</button>
         <button type="button" class="btn btn-primary" (click)="confirmPrint()">Yes, Print</button>
@@ -446,7 +385,7 @@
         </label>
         <label class="field">
           <span class="field-label">Mobile No</span>
-          <input class="field-control" type="text" [ngModel]="partyForm().mobNo" (ngModelChange)="updatePartyForm('mobNo', $event)" name="quickPartyMob">
+          <input class="field-control" appMarathiNumber mode="int" [maxLength]="10" [ngModel]="partyForm().mobNo" (ngModelChange)="updatePartyForm('mobNo', $event)" name="quickPartyMob">
         </label>
         <label class="field full">
           <span class="field-label">Address</span>

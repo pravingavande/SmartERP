@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -13,15 +13,19 @@ import {
   DonationFormState,
   DonationListItem,
   DonationLookups,
-  DRHeadOption
+  DRHeadOption,
+  FyOption,
+  BankLedgerHeadOption
 } from '../../../core/models/donation.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
+import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
+import { coerceEnglishIntegerString, coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-donation-entry',
-  imports: [FormsModule, CurrencyPipe],
+  imports: [FormsModule, CurrencyPipe, DatePipe, MarathiNumberInputDirective],
   templateUrl: './donation-entry.component.html',
   styleUrl: './donation-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -47,8 +51,32 @@ export class DonationEntryComponent {
   readonly pendingPrintDonation = signal<Donation | null>(null);
   readonly listOrgID = signal<number | null>(null);
   readonly listFyID = signal<number | null>(null);
+  readonly listPageSize = signal(10);
+  readonly listPageIndex = signal(0);
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
+  readonly paginatedDonations = computed(() => {
+    const list = this.donations();
+    const start = this.listPageIndex() * this.listPageSize();
+    return list.slice(start, start + this.listPageSize());
+  });
+  readonly listPageCount = computed(() => Math.max(1, Math.ceil(this.donations().length / this.listPageSize())));
+  readonly listPageStart = computed(() => {
+    const total = this.donations().length;
+    if (!total) return 0;
+    return this.listPageIndex() * this.listPageSize() + 1;
+  });
+  readonly listPageEnd = computed(() => {
+    const total = this.donations().length;
+    if (!total) return 0;
+    return Math.min(total, (this.listPageIndex() + 1) * this.listPageSize());
+  });
+  readonly activeFy = computed(() => {
+    const fyId = this.formVisible() ? (this.form().fyID ?? this.listFyID()) : this.listFyID();
+    return this.lookups()?.fyList.find((fy) => fy.fyID === fyId) ?? null;
+  });
+  readonly receiptDateMin = computed(() => this.activeFy()?.fromDate?.slice(0, 10) ?? '');
+  readonly receiptDateMax = computed(() => this.activeFy()?.toDate?.slice(0, 10) ?? '');
   readonly isCashPayment = computed(() => this.form().paymentTypeID === CASH_PAYMENT_TYPE_ID);
   readonly isChequePayment = computed(() => {
     const paymentTypeId = this.form().paymentTypeID;
@@ -103,14 +131,26 @@ export class DonationEntryComponent {
 
   onListOrgChange(orgId: number | null): void {
     this.listOrgID.set(orgId);
+    this.listPageIndex.set(0);
     this.closeForm();
     this.loadList();
   }
 
   onListFyChange(fyId: number | null): void {
     this.listFyID.set(fyId);
+    this.listPageIndex.set(0);
     this.closeForm();
     this.loadList();
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPageIndex.set(0);
+  }
+
+  goToListPage(index: number): void {
+    const max = this.listPageCount() - 1;
+    this.listPageIndex.set(Math.max(0, Math.min(index, max)));
   }
 
   onOrgChange(orgId: number | null): void {
@@ -144,7 +184,13 @@ export class DonationEntryComponent {
     this.donation
       .getList(this.listOrgID(), this.listFyID())
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((list) => this.donations.set(list));
+      .subscribe((list) => {
+        this.donations.set(list);
+        const maxPage = Math.max(0, Math.ceil(list.length / this.listPageSize()) - 1);
+        if (this.listPageIndex() > maxPage) {
+          this.listPageIndex.set(maxPage);
+        }
+      });
   }
 
   newEntry(): void {
@@ -163,7 +209,7 @@ export class DonationEntryComponent {
       ...this.emptyForm(),
       orgID: orgId,
       fyID: fyId,
-      receiptDate: new Date().toISOString().slice(0, 10)
+      receiptDate: this.clampDateToFy(new Date().toISOString().slice(0, 10), this.lookups()?.fyList.find((f) => f.fyID === fyId) ?? null) || new Date().toISOString().slice(0, 10)
     });
     this.refreshReceiptNumbers();
     this.loadDRHeads(orgId);
@@ -190,6 +236,21 @@ export class DonationEntryComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((d) => {
         if (d) this.printService.printDonation(d);
+      });
+  }
+
+  confirmDeleteEntry(item: DonationListItem): void {
+    if (!confirm(`Delete donation receipt #${item.receiptNo}?`)) return;
+    this.donation
+      .delete(item.drID)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((ok) => {
+        if (!ok) {
+          this.errorMessage.set('Unable to delete donation receipt.');
+          return;
+        }
+        this.errorMessage.set(null);
+        this.loadList();
       });
   }
 
@@ -235,6 +296,7 @@ export class DonationEntryComponent {
 
   save(): void {
     if (this.isViewMode()) return;
+    this.normalizeNumericFields();
     const errors = this.validateForm();
     if (hasFieldErrors(errors)) {
       this.fieldErrors.set(errors);
@@ -260,9 +322,25 @@ export class DonationEntryComponent {
       });
   }
 
+  private normalizeNumericFields(): void {
+    this.form.update((f) => ({
+      ...f,
+      mobileNo: coerceEnglishIntegerString(f.mobileNo, 10),
+      aadharNo: coerceEnglishIntegerString(f.aadharNo, 14),
+      amount: coerceEnglishNumber(f.amount)
+    }));
+  }
+
   private validateForm(): FieldErrors {
     const f = this.form();
     const errors: FieldErrors = {};
+
+    const receiptDate = f.receiptDate?.trim();
+    if (!receiptDate) {
+      errors['receiptDate'] = 'Please enter Receipt Date.';
+    } else if (!this.isDateWithinFy(receiptDate)) {
+      errors['receiptDate'] = 'Receipt Date must be within the selected Financial Year.';
+    }
 
     if (!f.drHeadID) {
       errors['drHeadID'] = 'Please select Donation Head.';
@@ -297,6 +375,12 @@ export class DonationEntryComponent {
       if (!f.ledgerHeadBankID) {
         errors['ledgerHeadBankID'] = 'Please select Deposit Bank.';
       }
+      if (!f.transactionDate?.trim()) {
+        errors['transactionDate'] = 'Please enter Transaction/UTR/Cheque Date.';
+      }
+      if (!f.depositDate?.trim()) {
+        errors['depositDate'] = 'Please enter Deposit Date.';
+      }
     }
 
     return errors;
@@ -304,18 +388,6 @@ export class DonationEntryComponent {
 
   fieldError(key: string): string | null {
     return this.fieldErrors()[key] ?? null;
-  }
-
-  onMobileInput(value: string): void {
-    const digits = value.replace(/\D/g, '').slice(0, 10);
-    this.fieldErrors.update((e) => removeFieldError(e, 'mobileNo'));
-    this.updateForm('mobileNo', digits);
-  }
-
-  onAadharInput(value: string): void {
-    const digits = value.replace(/\D/g, '').slice(0, 14);
-    this.fieldErrors.update((e) => removeFieldError(e, 'aadharNo'));
-    this.updateForm('aadharNo', digits);
   }
 
   confirmPrint(): void {
@@ -355,6 +427,30 @@ export class DonationEntryComponent {
   updateForm<K extends keyof DonationFormState>(key: K, value: DonationFormState[K]): void {
     this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((x) => ({ ...x, [key]: value }));
+  }
+
+  onReceiptDateChange(value: string): void {
+    this.fieldErrors.update((e) => removeFieldError(e, 'receiptDate'));
+    this.updateForm('receiptDate', this.clampDateToFy(value, this.activeFy()));
+  }
+
+  bankLedgerHeads(): BankLedgerHeadOption[] {
+    return this.lookups()?.bankLedgerHeads ?? [];
+  }
+
+  private isDateWithinFy(date: string): boolean {
+    const fy = this.activeFy();
+    if (!fy || !date) return true;
+    return date >= fy.fromDate.slice(0, 10) && date <= fy.toDate.slice(0, 10);
+  }
+
+  private clampDateToFy(date: string, fy: FyOption | null): string {
+    if (!fy || !date) return date;
+    const min = fy.fromDate.slice(0, 10);
+    const max = fy.toDate.slice(0, 10);
+    if (date < min) return min;
+    if (date > max) return max;
+    return date;
   }
 
   private emptyForm(): DonationFormState {

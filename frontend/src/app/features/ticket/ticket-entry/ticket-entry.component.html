@@ -149,11 +149,10 @@
                   <span class="field-label">रक्कम (Amount)</span>
                   <input
                     class="field-control"
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    appMarathiNumber
+                    mode="decimal"
                     [ngModel]="form().amount"
-                    (ngModelChange)="updateForm('amount', +$event)"
+                    (ngModelChange)="updateForm('amount', $event)"
                     name="amount"
                   >
                 </label>
