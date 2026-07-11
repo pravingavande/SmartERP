@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin, map } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
@@ -12,6 +13,7 @@ interface StatTile {
   icon: string;
   tone: string;
   hint?: string;
+  route?: string;
 }
 
 interface BreakdownCard {
@@ -25,7 +27,7 @@ interface BreakdownCard {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -72,7 +74,8 @@ export class DashboardComponent {
         value: summary.totalTeacher,
         icon: 'staff',
         tone: 'orange',
-        hint: `Male ${summary.maleTeachers} | Female ${summary.femaleTeachers}`
+        hint: `Male ${summary.maleTeachers} | Female ${summary.femaleTeachers}`,
+        route: '/staff'
       },
       {
         label: 'Teaching Staff',

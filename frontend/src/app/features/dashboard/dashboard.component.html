@@ -47,18 +47,33 @@
         <h4 class="section-label">Quick Statistics</h4>
         <div class="stat-tiles">
           @for (tile of statTiles(s); track tile.label) {
-            <article class="stat-tile" [class]="'tone-' + tile.tone">
-              <div class="tile-icon-wrap">
-                <div class="tile-icon" [attr.data-icon]="tile.icon" aria-hidden="true"></div>
-              </div>
-              <div class="tile-body">
-                <span class="tile-value">{{ tile.value | number }}</span>
-                <span class="tile-label">{{ tile.label }}</span>
-                @if (tile.hint) {
-                  <span class="tile-hint">{{ tile.hint }}</span>
-                }
-              </div>
-            </article>
+            @if (tile.route) {
+              <a class="stat-tile stat-tile-link" [class]="'tone-' + tile.tone" [routerLink]="tile.route">
+                <div class="tile-icon-wrap">
+                  <div class="tile-icon" [attr.data-icon]="tile.icon" aria-hidden="true"></div>
+                </div>
+                <div class="tile-body">
+                  <span class="tile-value">{{ tile.value | number }}</span>
+                  <span class="tile-label">{{ tile.label }}</span>
+                  @if (tile.hint) {
+                    <span class="tile-hint">{{ tile.hint }}</span>
+                  }
+                </div>
+              </a>
+            } @else {
+              <article class="stat-tile" [class]="'tone-' + tile.tone">
+                <div class="tile-icon-wrap">
+                  <div class="tile-icon" [attr.data-icon]="tile.icon" aria-hidden="true"></div>
+                </div>
+                <div class="tile-body">
+                  <span class="tile-value">{{ tile.value | number }}</span>
+                  <span class="tile-label">{{ tile.label }}</span>
+                  @if (tile.hint) {
+                    <span class="tile-hint">{{ tile.hint }}</span>
+                  }
+                </div>
+              </article>
+            }
           }
         </div>
 

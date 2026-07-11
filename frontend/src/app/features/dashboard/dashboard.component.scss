@@ -203,6 +203,12 @@
   }
 }
 
+.stat-tile-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .tile-icon-wrap,
 .card-icon-wrap {
   width: 46px;

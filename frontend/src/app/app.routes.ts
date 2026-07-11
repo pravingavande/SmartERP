@@ -95,8 +95,7 @@ export const routes: Routes = [
       {
         path: 'staff',
         loadComponent: () =>
-          import('./features/placeholder/coming-soon.component').then((m) => m.ComingSoonComponent),
-        data: { title: 'Teachers & Staff' }
+          import('./features/employee/employee-entry/employee-entry.component').then((m) => m.EmployeeEntryComponent)
       },
       {
         path: 'attendance',

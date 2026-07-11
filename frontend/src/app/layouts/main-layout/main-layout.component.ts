@@ -46,8 +46,7 @@ export class MainLayoutComponent {
         { label: 'शैक्षणिक दिनदर्शिका', icon: 'academic-calendar', route: '/academic-calendar' },
         { label: 'Event Calendar', icon: 'event-calendar', route: '/event-calendar' },
         { label: 'Schools', icon: 'school', route: '/schools' },
-        { label: 'Students', icon: 'students', route: '/students' },
-        { label: 'Teachers & Staff', icon: 'staff', route: '/staff' }
+        { label: 'Students', icon: 'students', route: '/students' }
       ]
     },
     {
@@ -62,6 +61,7 @@ export class MainLayoutComponent {
       title: 'Operations',
       items: [
         { label: 'Ticket Raise', icon: 'ticket', route: '/tickets' },
+        { label: 'Employee Entry', icon: 'staff', route: '/staff' },
         { label: 'Attendance', icon: 'attendance', route: '/attendance' },
         { label: 'Notices', icon: 'notice', route: '/notices' },
         { label: 'Reports', icon: 'reports', route: '/reports' }
