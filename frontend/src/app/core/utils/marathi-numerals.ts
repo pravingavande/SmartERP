@@ -69,6 +69,28 @@ export function coerceEnglishNumber(value: unknown): number {
   return parseDecimalValue(String(value ?? ''));
 }
 
+/** Aadhaar typing: digits with optional spaces in 4-digit groups (e.g. 1234 1234 1234). */
+export function filterAadharTyping(value: string): string {
+  const digits = toEnglishDigits(value).replace(/\D/g, '').slice(0, 14);
+  const parts: string[] = [];
+  for (let i = 0; i < digits.length; i += 4) {
+    parts.push(digits.slice(i, i + 4));
+  }
+  return parts.join(' ');
+}
+
+/** Strip spaces; keep up to 14 digits for storage. */
+export function normalizeAadharDigits(value: string): string {
+  return toEnglishDigits(value).replace(/\D/g, '').slice(0, 14);
+}
+
+/** Display stored Aadhaar with 4-digit groups. */
+export function formatAadharDisplay(value: string): string {
+  const digits = normalizeAadharDigits(value);
+  if (!digits) return '';
+  return filterAadharTyping(digits);
+}
+
 /** True if string contains any Marathi digit. */
 export function hasMarathiDigits(value: string): boolean {
   return /[\u0966-\u096F]/.test(value);

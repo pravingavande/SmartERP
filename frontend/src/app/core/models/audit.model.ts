@@ -46,6 +46,7 @@ export interface LedgerHeadOption {
 
 export interface AuditLookups {
   orgs: OrgOption[];
+  sansthaOrgs: OrgOption[];
   paymentTypes: PaymentTypeOption[];
   fyList: FyOption[];
   ledgerHeads: LedgerHeadOption[];

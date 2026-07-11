@@ -150,44 +150,19 @@
 
 
 .file-row {
-
   display: flex;
-
-  flex-wrap: wrap;
-
-  gap: 0.5rem;
-
-  align-items: center;
-
-
-
-  .field-control {
-
-    flex: 1;
-
-    min-width: 180px;
-
-  }
-
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-
-
-.btn-danger-outline {
-  color: #c62828;
-  border-color: #e8b4b4;
-
-  &:hover {
-    background: #fff5f5;
-  }
+.file-name {
+  font-size: 0.82rem;
+  color: var(--epr-navy);
+  font-weight: 600;
 }
 
-
-
-.hidden-file {
-
-  display: none;
-
+.file-input {
+  padding: 0.38rem 0.5rem;
 }
 
 
@@ -368,7 +343,6 @@
 
   .party-col,
   .remark-col {
-    max-width: 9rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -380,13 +354,76 @@
 
   .actions {
     white-space: nowrap;
-    min-width: 11rem;
     text-align: center;
+    padding: 0.35rem 0.3rem;
   }
 
 }
 
 .receipt-list-table {
+  table-layout: fixed;
+
+  col.col-vno { width: 4.25rem; }
+  col.col-vdate { width: 5.75rem; }
+  col.col-party { width: 26%; }
+  col.col-amt { width: 6.25rem; }
+  col.col-remark { width: 32%; }
+  col.col-actions { width: 8.75rem; }
+
+  th.col-vno,
+  td.code {
+    width: 4.25rem;
+    max-width: 4.25rem;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+    text-align: center;
+  }
+
+  th.col-vdate,
+  td.date-col {
+    width: 5.75rem;
+    max-width: 5.75rem;
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  th.col-party,
+  td.party-col {
+    min-width: 8rem;
+  }
+
+  th.col-amt,
+  td.amt {
+    width: 6.25rem;
+    max-width: 6.25rem;
+    text-align: right;
+    padding-left: 0.35rem;
+    padding-right: 0.45rem;
+  }
+
+  th.col-remark,
+  td.remark-col {
+    min-width: 9rem;
+  }
+
+  th.col-actions,
+  td.actions {
+    width: 8.75rem;
+    max-width: 8.75rem;
+    min-width: 8.75rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .action-group {
+    gap: 0.5rem;
+  }
+
+  .action-btn {
+    padding: 0.26rem 0.38rem;
+    font-size: 0.68rem;
+  }
+
   th:nth-child(4),
   td.amt {
     text-align: right;
@@ -531,6 +568,100 @@ fieldset {
 }
 
 
+
+.audit-layout.form-only {
+  gap: 0.5rem;
+
+  .form-panel {
+    padding: 0.65rem 0.85rem;
+  }
+
+  .page-header {
+    margin-bottom: 0.4rem;
+  }
+}
+
+.voucher-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.form-section-unified {
+  margin-bottom: 0;
+  padding: 0.55rem 0.65rem;
+  background: #fbfdff;
+
+  .voucher-header-grid {
+    margin-bottom: 0.35rem;
+    gap: 0.55rem;
+  }
+
+  .detail-block {
+    margin: 1.1rem 0 0.35rem;
+  }
+
+  .detail-table-wrap {
+    padding-top: 0.35rem;
+  }
+
+  .detail-error-bar {
+    margin-bottom: 0.35rem;
+  }
+
+  .payment-grid-compact {
+    gap: 0.55rem;
+    margin-top: 0.35rem;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .remark-attach-row {
+    grid-template-columns: minmax(120px, 0.9fr) minmax(220px, 2fr);
+    gap: 0.55rem;
+    align-items: end;
+    margin-top: 0.35rem;
+  }
+
+  .field-label {
+    margin-bottom: 0.2rem;
+    font-size: 0.78rem;
+  }
+
+  .field-control,
+  .detail-table select,
+  .detail-table input {
+    padding: 0.38rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .narration-input {
+    min-height: 2rem;
+    padding: 0.32rem 0.45rem;
+    font-size: 0.85rem;
+    resize: none;
+  }
+
+  .detail-table {
+    th, td {
+      padding: 0.32rem 0.38rem;
+    }
+
+    th {
+      font-size: 0.8rem;
+      padding-top: 0.65rem;
+    }
+
+    th.action-col {
+      padding: 0.28rem 0.32rem;
+      vertical-align: middle;
+    }
+  }
+}
+
+.audit-layout.form-only .form-footer {
+  margin-top: 0.25rem;
+  padding-top: 0.35rem;
+}
 
 .form-section {
 
@@ -769,6 +900,7 @@ fieldset {
 .detail-table-wrap {
 
   overflow-x: auto;
+  margin-top: 0.75rem;
 
 }
 
@@ -803,7 +935,7 @@ fieldset {
   }
 
   col.col-action {
-    width: 4.5rem;
+    width: 6.75rem;
   }
 
 
@@ -828,6 +960,26 @@ fieldset {
     vertical-align: middle;
     white-space: nowrap;
     padding: 0.35rem;
+
+    .btn-add-row {
+      width: 100%;
+      min-width: 0;
+      padding: 0.28rem 0.35rem;
+      font-size: 0.72rem;
+      line-height: 1.15;
+      white-space: nowrap;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff6ed, #ffe8d4);
+      border: 1.5px solid var(--epr-orange);
+      color: #b45309;
+      box-shadow: 0 1px 3px rgba(232, 119, 34, 0.15);
+
+      &:hover {
+        background: linear-gradient(135deg, var(--epr-orange), var(--epr-orange-hover));
+        border-color: var(--epr-orange-hover);
+        color: #fff;
+      }
+    }
   }
 
   .row-delete-btn {
@@ -1169,6 +1321,10 @@ fieldset {
 
 
   .form-grid.receipt-header-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-section-unified .remark-attach-row {
     grid-template-columns: 1fr;
   }
 

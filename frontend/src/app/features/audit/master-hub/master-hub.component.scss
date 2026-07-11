@@ -1,0 +1,82 @@
+.master-hub {
+  padding: 0;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+    color: var(--epr-navy);
+    font-size: 1.4rem;
+  }
+
+  p {
+    margin: 0.25rem 0 0;
+    color: var(--epr-muted);
+    font-size: 0.85rem;
+  }
+}
+
+.master-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.master-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #c5d0de;
+  border-radius: var(--epr-radius);
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 35, 65, 0.06);
+  text-decoration: none;
+  color: inherit;
+  min-height: 8.5rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: var(--epr-orange);
+    box-shadow: 0 4px 14px rgba(232, 119, 34, 0.15);
+    transform: translateY(-1px);
+  }
+
+  &.tone-party { border-top: 3px solid #1a3f6e; }
+  &.tone-ledger { border-top: 3px solid var(--epr-orange); }
+  &.tone-account { border-top: 3px solid #2e7d32; }
+  &.tone-donation { border-top: 3px solid #1565c0; }
+}
+
+.tile-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  background: #eef4ff;
+
+  &[data-icon='party'] {
+    background: linear-gradient(135deg, #e8f0fb, #dce8f8);
+  }
+
+  &[data-icon='register'] {
+    background: linear-gradient(135deg, #fff8f2, #ffe8d6);
+  }
+
+  &[data-icon='donation-head'] {
+    background: linear-gradient(135deg, #e3f2fd, #d0e8fc);
+  }
+}
+
+.tile-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--epr-navy);
+}
+
+.tile-desc {
+  font-size: 0.8rem;
+  color: var(--epr-muted);
+  line-height: 1.35;
+}

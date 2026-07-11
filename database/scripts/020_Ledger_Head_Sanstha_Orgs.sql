@@ -1,4 +1,5 @@
--- Ledger Head Master: Sanstha org list (OrgID = UnderOrgID only)
+-- Ledger Head Master: Sanstha org list (UnderOrgID = sanstha root; OrgGroupID from login view).
+-- Rules: no SELECT *, no MERGE, no BETWEEN
 
 USE SmartERP;
 GO
@@ -9,17 +10,38 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @AppUserName VARCHAR(50);
     DECLARE @UserOrgID BIGINT;
     DECLARE @UserSchoolCode BIGINT;
     DECLARE @SansthaOrgID BIGINT;
-    DECLARE @IsSansthaUser BIT = 0;
 
     SELECT
+        @AppUserName = um.AppUserName,
         @UserOrgID = um.OrgID,
         @UserSchoolCode = um.SchoolCode
     FROM dbo.UserMaster um
     WHERE um.UserID = @UserID
       AND um.IsActive = 1;
+
+    IF @AppUserName IS NULL
+        RETURN;
+
+    SELECT DISTINCT
+        san.OrgID,
+        san.OrganizationName,
+        san.ShortName,
+        san.SchoolCode,
+        san.UnderOrgID
+    FROM dbo.vw_UserloginWithOrgIDAndORGGROUP v
+    INNER JOIN dbo.OrgMaster san
+        ON san.OrgID = v.OrgGroupID
+       AND san.Status = 1
+       AND san.OrgID = san.UnderOrgID
+    WHERE v.AppUserName = @AppUserName
+    ORDER BY san.OrganizationName;
+
+    IF @@ROWCOUNT > 0
+        RETURN;
 
     SELECT TOP 1
         @SansthaOrgID = s.OrgID
@@ -31,7 +53,7 @@ BEGIN
           OR EXISTS (
               SELECT 1
               FROM dbo.OrgMaster sch
-              WHERE sch.SchoolCode = @UserSchoolCode
+              WHERE sch.OrgID = @UserOrgID
                 AND sch.Status = 1
                 AND sch.UnderOrgID = s.OrgID
           )
@@ -39,50 +61,17 @@ BEGIN
     ORDER BY s.OrgID;
 
     IF @SansthaOrgID IS NULL
-    BEGIN
-        SELECT @SansthaOrgID = om.UnderOrgID
-        FROM dbo.OrgMaster om
-        WHERE om.OrgID = @UserOrgID
-          AND om.Status = 1;
+        RETURN;
 
-        IF @SansthaOrgID IS NULL
-            SET @SansthaOrgID = @UserOrgID;
-    END
-
-    IF EXISTS (
-        SELECT 1
-        FROM dbo.OrgMaster s
-        WHERE s.OrgID = @SansthaOrgID
-          AND s.OrgID = s.UnderOrgID
-          AND (
-              s.SchoolCode = @UserSchoolCode
-              OR @UserOrgID = @SansthaOrgID
-          )
-    )
-        SET @IsSansthaUser = 1;
-
-    SELECT DISTINCT
+    SELECT
         san.OrgID,
         san.OrganizationName,
         san.ShortName,
         san.SchoolCode,
         san.UnderOrgID
     FROM dbo.OrgMaster san
-    WHERE san.Status = 1
-      AND san.OrgID = san.UnderOrgID
-      AND (
-          (@IsSansthaUser = 1 AND san.OrgID = @SansthaOrgID)
-          OR (
-              @IsSansthaUser = 0
-              AND EXISTS (
-                  SELECT 1
-                  FROM dbo.OrgMaster om
-                  WHERE om.Status = 1
-                    AND om.UnderOrgID = san.OrgID
-                    AND (om.OrgID = @UserOrgID OR om.SchoolCode = @UserSchoolCode)
-              )
-          )
-      )
-    ORDER BY san.OrganizationName;
+    WHERE san.OrgID = @SansthaOrgID
+      AND san.Status = 1
+      AND san.OrgID = san.UnderOrgID;
 END
 GO

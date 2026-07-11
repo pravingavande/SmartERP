@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AuditPrintService } from '../../../core/services/audit-print.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
@@ -19,13 +20,13 @@ import {
 } from '../../../core/models/donation.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
-import { coerceEnglishIntegerString, coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
+import { coerceEnglishIntegerString, coerceEnglishNumber, formatAadharDisplay, filterAadharTyping, normalizeAadharDigits } from '../../../core/utils/marathi-numerals';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-donation-entry',
-  imports: [FormsModule, CurrencyPipe, DatePipe, MarathiNumberInputDirective],
+  imports: [FormsModule, CurrencyPipe, DatePipe, MarathiNumberInputDirective, RouterLink],
   templateUrl: './donation-entry.component.html',
   styleUrl: './donation-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -279,7 +280,7 @@ export class DonationEntryComponent {
       donorName: d.donorName ?? '',
       address: d.address ?? '',
       panNo: d.panNo ?? '',
-      aadharNo: d.aadharNo ?? '',
+      aadharNo: formatAadharDisplay(d.aadharNo ?? ''),
       mobileNo: d.mobileNo ?? '',
       amount: d.amount ?? 0,
       paymentTypeID: d.paymentTypeID ?? CASH_PAYMENT_TYPE_ID,
@@ -326,7 +327,7 @@ export class DonationEntryComponent {
     this.form.update((f) => ({
       ...f,
       mobileNo: coerceEnglishIntegerString(f.mobileNo, 10),
-      aadharNo: coerceEnglishIntegerString(f.aadharNo, 14),
+      aadharNo: normalizeAadharDigits(f.aadharNo),
       amount: coerceEnglishNumber(f.amount)
     }));
   }
@@ -360,9 +361,9 @@ export class DonationEntryComponent {
       errors['mobileNo'] = 'Please enter a valid 10-digit Mobile Number.';
     }
 
-    const aadhar = f.aadharNo.trim();
+    const aadhar = normalizeAadharDigits(f.aadharNo);
     if (aadhar && !/^\d{12}$|^\d{14}$/.test(aadhar)) {
-      errors['aadharNo'] = 'Please enter a valid Aadhaar Number.';
+      errors['aadharNo'] = 'Please enter a valid Aadhaar Number (12 or 14 digits).';
     }
 
     if (this.isChequePayment()) {
@@ -370,7 +371,7 @@ export class DonationEntryComponent {
         errors['bankName'] = 'Please enter Bank Name.';
       }
       if (!f.transactionNo?.trim()) {
-        errors['transactionNo'] = 'Please enter Cheque Number.';
+        errors['transactionNo'] = 'Please enter Transaction/UTR/Cheque No.';
       }
       if (!f.ledgerHeadBankID) {
         errors['ledgerHeadBankID'] = 'Please select Deposit Bank.';
@@ -427,6 +428,11 @@ export class DonationEntryComponent {
   updateForm<K extends keyof DonationFormState>(key: K, value: DonationFormState[K]): void {
     this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((x) => ({ ...x, [key]: value }));
+  }
+
+  onAadharChange(value: string): void {
+    this.fieldErrors.update((e) => removeFieldError(e, 'aadharNo'));
+    this.updateForm('aadharNo', filterAadharTyping(value));
   }
 
   onReceiptDateChange(value: string): void {

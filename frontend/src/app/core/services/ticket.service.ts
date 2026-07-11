@@ -11,6 +11,7 @@ import {
   TicketStatusOption
 } from '../models/ticket.model';
 import { coerceEnglishNumber } from '../utils/marathi-numerals';
+import { AuthService } from './auth.service';
 
 /** Matches dbo.TicketStatusMaster seed IDs when ticket API is unavailable. */
 const FALLBACK_STATUSES: TicketStatusOption[] = [
@@ -29,7 +30,10 @@ export class TicketService {
   private readonly ticketBase = `${environment.apiBaseUrl}/ticket`;
   private readonly donationBase = `${environment.apiBaseUrl}/donation`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly auth: AuthService
+  ) {}
 
   getLookups(): Observable<TicketLookups | null> {
     return this.fetchLookups(`${this.ticketBase}/lookups`).pipe(
@@ -98,7 +102,13 @@ export class TicketService {
 
   private fetchLookups(url: string): Observable<TicketLookups | null> {
     return this.http.get<ApiResponse<TicketLookups>>(url).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
+      map((r) => {
+        if (!r.success || !r.data) return null;
+        return {
+          ...r.data,
+          orgs: this.auth.filterSchoolOrgs(r.data.orgs ?? [])
+        };
+      }),
       catchError(() => of(null))
     );
   }
@@ -114,7 +124,7 @@ export class TicketService {
       map((r) => {
         if (!r.success || !r.data?.orgs?.length) return null;
         return {
-          orgs: r.data.orgs,
+          orgs: this.auth.filterSchoolOrgs(r.data.orgs),
           statuses: FALLBACK_STATUSES,
           isSansthaUser: r.data.orgs.length > 1
         } satisfies TicketLookups;

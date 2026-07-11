@@ -1,0 +1,18 @@
+<section class="master-hub">
+  <header class="page-header">
+    <div>
+      <h1>Masters</h1>
+      <p>Configure party, ledger and mapping masters for audit modules</p>
+    </div>
+  </header>
+
+  <div class="master-tiles">
+    @for (tile of tiles; track tile.route) {
+      <a class="master-tile" [class]="'tone-' + tile.tone" [routerLink]="tile.route">
+        <div class="tile-icon" [attr.data-icon]="tile.icon" aria-hidden="true"></div>
+        <span class="tile-title">{{ tile.label }}</span>
+        <span class="tile-desc">{{ tile.description }}</span>
+      </a>
+    }
+  </div>
+</section>

@@ -3,9 +3,14 @@
     <div>
       <h1>Donation Entry</h1>
     </div>
-    @if (!formVisible()) {
-      <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
-    }
+    <div class="header-actions">
+      @if (!formVisible()) {
+        <a routerLink="/audit/dashboard" class="btn btn-outline btn-back">← Back</a>
+        <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
+      } @else {
+        <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
+      }
+    </div>
   </header>
 
   @if (!formVisible()) {
@@ -107,9 +112,8 @@
             <p class="form-save-error">{{ saveError() }}</p>
           }
           <fieldset [disabled]="isViewMode()">
-            <div class="form-section">
-              <h3>Receipt Details</h3>
-              <div class="form-grid">
+            <div class="form-section form-section-unified">
+              <div class="donation-form-grid">
                 <label class="field">
                   <span class="field-label">Receipt No</span>
                   <input class="field-control field-readonly" type="number" readonly [ngModel]="form().receiptNo" name="receiptNo">
@@ -121,6 +125,7 @@
                     <span class="field-error">{{ fieldError('receiptDate') }}</span>
                   }
                 </label>
+
                 <label class="field" [class.field-invalid]="fieldError('donorName')">
                   <span class="field-label">Donor Name *</span>
                   <input class="field-control" type="text" required [ngModel]="form().donorName" (ngModelChange)="updateForm('donorName', $event)" name="donorName">
@@ -135,27 +140,22 @@
                     <span class="field-error">{{ fieldError('mobileNo') }}</span>
                   }
                 </label>
-                <label class="field full">
+
+                <label class="field field-address">
                   <span class="field-label">Address</span>
-                  <textarea class="field-control" rows="2" [ngModel]="form().address" (ngModelChange)="updateForm('address', $event)" name="address"></textarea>
+                  <input class="field-control" type="text" [ngModel]="form().address" (ngModelChange)="updateForm('address', $event)" name="address">
                 </label>
-                <label class="field">
+                <label class="field field-pan">
                   <span class="field-label">PAN No</span>
-                  <input class="field-control" type="text" [ngModel]="form().panNo" (ngModelChange)="updateForm('panNo', $event)" name="panNo">
+                  <input class="field-control" type="text" maxlength="10" [ngModel]="form().panNo" (ngModelChange)="updateForm('panNo', $event)" name="panNo" placeholder="ABCDE1234F">
                 </label>
-                <label class="field" [class.field-invalid]="fieldError('aadharNo')">
+                <label class="field field-aadhar" [class.field-invalid]="fieldError('aadharNo')">
                   <span class="field-label">Aadhar No</span>
-                  <input class="field-control" appMarathiNumber mode="int" [maxLength]="14" [ngModel]="form().aadharNo" (ngModelChange)="updateForm('aadharNo', $event)" name="aadharNo" placeholder="12 or 14 digits">
+                  <input class="field-control" type="text" inputmode="numeric" autocomplete="off" [ngModel]="form().aadharNo" (ngModelChange)="onAadharChange($event)" name="aadharNo" placeholder="1234 1234 1234">
                   @if (fieldError('aadharNo')) {
                     <span class="field-error">{{ fieldError('aadharNo') }}</span>
                   }
                 </label>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h3>Donation &amp; Payment Details</h3>
-              <div class="form-grid">
                 <label class="field" [class.field-invalid]="fieldError('drHeadID')">
                   <span class="field-label">Head Name *</span>
                   <select class="field-control" required [ngModel]="form().drHeadID" (ngModelChange)="updateForm('drHeadID', $event ? +$event : null)" name="drHeadID">
@@ -168,6 +168,9 @@
                     <span class="field-error">{{ fieldError('drHeadID') }}</span>
                   }
                 </label>
+
+                <div class="form-divider field-span-full" aria-hidden="true"></div>
+
                 <label class="field" [class.field-invalid]="fieldError('amount')">
                   <span class="field-label">Amount *</span>
                   <input class="field-control" appMarathiNumber mode="decimal" required [ngModel]="form().amount" (ngModelChange)="updateForm('amount', $event)" name="amount">
@@ -175,6 +178,7 @@
                     <span class="field-error">{{ fieldError('amount') }}</span>
                   }
                 </label>
+
                 <label class="field" [class.field-invalid]="fieldError('paymentTypeID')">
                   <span class="field-label">Payment Type *</span>
                   <select class="field-control" required [ngModel]="form().paymentTypeID" (ngModelChange)="updateForm('paymentTypeID', $event ? +$event : null)" name="paymentTypeID">
@@ -186,41 +190,39 @@
                     <span class="field-error">{{ fieldError('paymentTypeID') }}</span>
                   }
                 </label>
-                <label class="field full">
-                  <span class="field-label">Remark</span>
-                  <textarea class="field-control" rows="2" [ngModel]="form().remark" (ngModelChange)="updateForm('remark', $event)" name="remark"></textarea>
-                </label>
-              </div>
-            </div>
 
-            @if (showBankFields()) {
-              <div class="form-section bank-section">
-                <h3>Bank / Cheque Details</h3>
-                <div class="form-grid">
-                  <label class="field" [class.field-invalid]="fieldError('bankName')">
+                @if (!showBankFields()) {
+                  <label class="field field-remark">
+                    <span class="field-label">Remark</span>
+                    <input class="field-control" type="text" [ngModel]="form().remark" (ngModelChange)="updateForm('remark', $event)" name="remark">
+                  </label>
+                }
+
+                @if (showBankFields()) {
+                  <label class="field field-bank" [class.field-invalid]="fieldError('bankName')">
                     <span class="field-label">Bank Name@if (isChequePayment()) { * }</span>
-                    <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().bankName" (ngModelChange)="updateForm('bankName', $event)" name="bankName">
+                    <input class="field-control" type="text" [ngModel]="form().bankName" (ngModelChange)="updateForm('bankName', $event)" name="bankName">
                     @if (fieldError('bankName')) {
                       <span class="field-error">{{ fieldError('bankName') }}</span>
                     }
                   </label>
-                  <label class="field" [class.field-invalid]="fieldError('transactionNo')">
-                    <span class="field-label">@if (isChequePayment()) { Cheque Number * } @else { Transaction/UTR/Cheque No }</span>
-                    <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
+                  <label class="field field-bank" [class.field-invalid]="fieldError('transactionNo')">
+                    <span class="field-label">Transaction/UTR/Cheque No@if (isChequePayment()) { * }</span>
+                    <input class="field-control" type="text" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
                     @if (fieldError('transactionNo')) {
                       <span class="field-error">{{ fieldError('transactionNo') }}</span>
                     }
                   </label>
-                  <label class="field" [class.field-invalid]="fieldError('transactionDate')">
+                  <label class="field field-bank" [class.field-invalid]="fieldError('transactionDate')">
                     <span class="field-label">Transaction/UTR/Cheque Date@if (isChequePayment()) { * }</span>
-                    <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
+                    <input class="field-control" type="date" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
                     @if (fieldError('transactionDate')) {
                       <span class="field-error">{{ fieldError('transactionDate') }}</span>
                     }
                   </label>
-                  <label class="field" [class.field-invalid]="fieldError('ledgerHeadBankID')">
+                  <label class="field field-bank" [class.field-invalid]="fieldError('ledgerHeadBankID')">
                     <span class="field-label">Deposit Bank@if (isChequePayment()) { * }</span>
-                    <select class="field-control" [disabled]="isViewMode()" [ngModel]="form().ledgerHeadBankID" (ngModelChange)="updateForm('ledgerHeadBankID', $event ? +$event : null)" name="ledgerHeadBankID">
+                    <select class="field-control" [ngModel]="form().ledgerHeadBankID" (ngModelChange)="updateForm('ledgerHeadBankID', $event ? +$event : null)" name="ledgerHeadBankID">
                       <option [ngValue]="null">-- Select Deposit Bank --</option>
                       @for (b of bankLedgerHeads(); track b.ledgerHeadID) {
                         <option [ngValue]="b.ledgerHeadID">{{ b.ledgerHead }}</option>
@@ -230,16 +232,20 @@
                       <span class="field-error">{{ fieldError('ledgerHeadBankID') }}</span>
                     }
                   </label>
-                  <label class="field" [class.field-invalid]="fieldError('depositDate')">
+                  <label class="field field-bank" [class.field-invalid]="fieldError('depositDate')">
                     <span class="field-label">Deposit Date@if (isChequePayment()) { * }</span>
-                    <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().depositDate" (ngModelChange)="updateForm('depositDate', $event)" name="depositDate">
+                    <input class="field-control" type="date" [ngModel]="form().depositDate" (ngModelChange)="updateForm('depositDate', $event)" name="depositDate">
                     @if (fieldError('depositDate')) {
                       <span class="field-error">{{ fieldError('depositDate') }}</span>
                     }
                   </label>
-                </div>
+                  <label class="field field-remark">
+                    <span class="field-label">Remark</span>
+                    <input class="field-control" type="text" [ngModel]="form().remark" (ngModelChange)="updateForm('remark', $event)" name="remark">
+                  </label>
+                }
               </div>
-            }
+            </div>
           </fieldset>
 
           <footer class="form-footer">

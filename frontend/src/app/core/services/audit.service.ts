@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 import {
   AccountRegisterDefine,
   AccountRegisterMasterOption,
@@ -28,7 +29,10 @@ import { VoucherFormState } from '../models/audit.model';
 export class AuditService {
   private readonly base = `${environment.apiBaseUrl}/audit`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly auth: AuthService
+  ) {}
 
   getDashboard(fyId?: number | null): Observable<AuditDashboardPage> {
     let params = new HttpParams();
@@ -87,9 +91,11 @@ export class AuditService {
     return this.http.get<ApiResponse<AuditLookups>>(`${this.base}/lookups`).pipe(
       map((r) => {
         if (!r.success || !r.data) return null;
+        const data = r.data as AuditLookups & { SansthaOrgs?: OrgOption[] };
         return {
-          ...r.data,
-          orgs: (r.data.orgs ?? []).map((o) => this.normalizeOrgOption(o))
+          ...data,
+          orgs: this.auth.filterSchoolOrgs((data.orgs ?? []).map((o) => this.normalizeOrgOption(o))),
+          sansthaOrgs: (data.sansthaOrgs ?? data.SansthaOrgs ?? []).map((o) => this.normalizeOrgOption(o))
         };
       }),
       catchError(() => of(null))
@@ -373,9 +379,18 @@ export class AuditService {
 
   getLedgerTypes(): Observable<LedgerTypeOption[]> {
     return this.http.get<ApiResponse<LedgerTypeOption[]>>(`${this.base}/ledger-types`).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
+      map((r) => (r.success && r.data ? r.data.map((t) => this.normalizeLedgerTypeOption(t)) : [])),
       catchError(() => of([]))
     );
+  }
+
+  private normalizeLedgerTypeOption(
+    raw: LedgerTypeOption & { LedgerTypeID?: number; LedgerType?: string }
+  ): LedgerTypeOption {
+    return {
+      ledgerTypeID: raw.ledgerTypeID ?? raw.LedgerTypeID ?? 0,
+      ledgerType: raw.ledgerType ?? raw.LedgerType ?? ''
+    };
   }
 
   getLedgerHeadList(underOrgId: number): Observable<LedgerHeadMaster[]> {

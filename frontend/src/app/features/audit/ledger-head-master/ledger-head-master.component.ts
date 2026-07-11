@@ -3,12 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import {
+  AuditLookups,
   LedgerHeadFormState,
   LedgerHeadMaster,
   LedgerTypeOption,
   OrgOption
 } from '../../../core/models/audit.model';
 import { AuditService } from '../../../core/services/audit.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
@@ -24,6 +26,7 @@ type FormMode = 'new' | 'edit';
 })
 export class LedgerHeadMasterComponent {
   private readonly audit = inject(AuditService);
+  private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -32,7 +35,7 @@ export class LedgerHeadMasterComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly saveError = signal<string | null>(null);
-  readonly sansthaOrgs = signal<OrgOption[]>([]);
+  readonly lookups = signal<AuditLookups | null>(null);
   readonly ledgerTypes = signal<LedgerTypeOption[]>([]);
   readonly ledgerHeads = signal<LedgerHeadMaster[]>([]);
   readonly form = signal<LedgerHeadFormState>(this.emptyForm());
@@ -42,6 +45,8 @@ export class LedgerHeadMasterComponent {
   readonly listLedgerTypeID = signal<number | null>(null);
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
+
+  readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
 
   readonly filteredLedgerHeads = computed(() => {
     const typeId = this.listLedgerTypeID();
@@ -80,17 +85,18 @@ export class LedgerHeadMasterComponent {
   loadLookups(): void {
     this.lookupsLoading.set(true);
     forkJoin({
-      sansthaOrgs: this.audit.getSansthaOrgs(),
+      lookups: this.audit.getLookups(),
       ledgerTypes: this.audit.getLedgerTypes(),
       profile: this.dashboardService.getProfile()
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ sansthaOrgs, ledgerTypes, profile }) => {
+      .subscribe(({ lookups: data, ledgerTypes, profile }) => {
         this.lookupsLoading.set(false);
-        this.sansthaOrgs.set(sansthaOrgs);
+        const sansthaOrgs = this.resolveSansthaOrgs(data?.sansthaOrgs ?? []);
+        this.lookups.set(data ? { ...data, sansthaOrgs } : null);
         this.ledgerTypes.set(ledgerTypes);
         if (!sansthaOrgs.length) {
-          this.errorMessage.set('No Sanstha schools found for your login.');
+          this.errorMessage.set('No Sanstha found for your login.');
           return;
         }
         if (!ledgerTypes.length) {
@@ -103,9 +109,37 @@ export class LedgerHeadMasterComponent {
       });
   }
 
+  private resolveSansthaOrgs(fromApi: OrgOption[]): OrgOption[] {
+    if (fromApi.length) return fromApi;
+
+    const session = this.auth.currentUser();
+    const orgs: OrgOption[] = [];
+
+    for (const ctx of session?.schoolContexts ?? []) {
+      if (!orgs.some((o) => o.orgID === ctx.sansthaId)) {
+        orgs.push({
+          orgID: ctx.sansthaId,
+          organizationName: ctx.sansthaName,
+          schoolCode: ctx.sansthaId
+        });
+      }
+    }
+
+    if (!orgs.length && session?.sansthaId && session.sansthaName) {
+      orgs.push({
+        orgID: session.sansthaId,
+        organizationName: session.sansthaName,
+        schoolCode: session.sansthaId
+      });
+    }
+
+    return orgs;
+  }
+
   private resolveDefaultOrgId(orgs: OrgOption[], profile: UserProfile | null): number | null {
-    if (profile?.orgId) {
-      const match = orgs.find((o) => o.orgID === profile.orgId);
+    const session = this.auth.currentUser();
+    if (session?.sansthaId) {
+      const match = orgs.find((o) => o.orgID === session.sansthaId);
       if (match) return match.orgID;
     }
     if (profile?.schoolCode) {
@@ -160,7 +194,7 @@ export class LedgerHeadMasterComponent {
   newEntry(): void {
     const orgId = this.listOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select Sanstha / Org on the list page before adding new.');
+      this.errorMessage.set('Select Org / Sanstha on the list page before adding new.');
       return;
     }
     this.formMode.set('new');
@@ -200,7 +234,7 @@ export class LedgerHeadMasterComponent {
     const f = this.form();
     const errors: FieldErrors = {};
     if (!f.underOrgID) {
-      errors['underOrgID'] = 'Please select Sanstha / Org.';
+      errors['underOrgID'] = 'Please select Org / Sanstha.';
     }
     if (!f.ledgerHead.trim()) {
       errors['ledgerHead'] = 'Please enter Ledger Head.';

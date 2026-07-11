@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 import {
   ApiResponse,
   Donation,
@@ -11,19 +12,26 @@ import {
   DRHeadDefine,
   DRHeadOption
 } from '../models/donation.model';
-import { coerceEnglishIntegerString, coerceEnglishNumber } from '../utils/marathi-numerals';
+import { coerceEnglishIntegerString, coerceEnglishNumber, normalizeAadharDigits } from '../utils/marathi-numerals';
 
 @Injectable({ providedIn: 'root' })
 export class DonationService {
   private readonly base = `${environment.apiBaseUrl}/donation`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly auth: AuthService
+  ) {}
 
   getLookups(): Observable<DonationLookups | null> {
     return this.http.get<ApiResponse<DonationLookups>>(`${this.base}/lookups`).pipe(
       map((r) => {
         if (!r.success || !r.data) return null;
-        return { ...r.data, bankLedgerHeads: r.data.bankLedgerHeads ?? [] };
+        return {
+          ...r.data,
+          orgs: this.auth.filterSchoolOrgs(r.data.orgs ?? []),
+          bankLedgerHeads: r.data.bankLedgerHeads ?? []
+        };
       }),
       catchError(() => of(null))
     );
@@ -71,7 +79,7 @@ export class DonationService {
       donorName: form.donorName,
       address: form.address || null,
       panNo: form.panNo || null,
-      aadharNo: coerceEnglishIntegerString(form.aadharNo, 14) || null,
+      aadharNo: normalizeAadharDigits(form.aadharNo) || null,
       mobileNo: coerceEnglishIntegerString(form.mobileNo, 10) || null,
       amount: coerceEnglishNumber(form.amount),
       paymentTypeID: form.paymentTypeID,

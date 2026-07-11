@@ -52,21 +52,11 @@ export class MainLayoutComponent {
     },
     {
       title: 'Audit',
-      items: [
-        { label: 'Audit Dashboard', icon: 'audit-dashboard', route: '/audit/dashboard' },
-        { label: 'Receipt Voucher', icon: 'receipt-voucher', route: '/audit/receipt-voucher' },
-        { label: 'Payment Voucher', icon: 'payment-voucher', route: '/audit/payment-voucher' },
-        { label: 'Donation Entry', icon: 'donation', route: '/audit/donation' }
-      ]
+      items: [{ label: 'Audit Dashboard', icon: 'audit-dashboard', route: '/audit/dashboard' }]
     },
     {
       title: 'Masters',
-      items: [
-        { label: 'Party Master', icon: 'party', route: '/audit/party-master' },
-        { label: 'Ledger Head Master', icon: 'register', route: '/audit/ledger-head-master' },
-        { label: 'Account Register Define', icon: 'register', route: '/audit/account-register-define' },
-        { label: 'Donation Head Define', icon: 'donation-head', route: '/audit/donation-head-define' }
-      ]
+      items: [{ label: 'Masters', icon: 'register', route: '/audit/masters' }]
     },
     {
       title: 'Operations',

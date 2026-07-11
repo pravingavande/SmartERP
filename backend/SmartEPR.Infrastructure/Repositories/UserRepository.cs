@@ -36,4 +36,17 @@ public sealed class UserRepository : IUserRepository
             parameters,
             cancellationToken);
     }
+
+    public Task<IReadOnlyList<UserLoginOrgGroup>> GetLoginOrgGroupsByAppUserNameAsync(
+        string appUserName,
+        CancellationToken cancellationToken = default)
+    {
+        var parameters = new DynamicParameters();
+        parameters.Add("@AppUserName", appUserName);
+
+        return _executor.QueryListAsync<UserLoginOrgGroup>(
+            "dbo.sp_UserLogin_GetOrgGroupByAppUserName",
+            parameters,
+            cancellationToken);
+    }
 }

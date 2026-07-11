@@ -9,6 +9,15 @@ export interface LoginRequest {
   password: string;
 }
 
+/** Login school/sanstha row from vw_UserloginWithOrgIDAndORGGROUP */
+export interface UserLoginSchoolContext {
+  schoolId: number;
+  sansthaId: number;
+  appUserName: string;
+  schoolName: string;
+  sansthaName: string;
+}
+
 export interface LoginResponse {
   token: string;
   expiresAt: string;
@@ -16,6 +25,13 @@ export interface LoginResponse {
   userName: string;
   displayName: string;
   roleCode: string;
+  schoolId?: number;
+  sansthaId?: number;
+  schoolName?: string;
+  sansthaName?: string;
+  userTypeId?: number;
+  userTypeName?: string;
+  schoolContexts?: UserLoginSchoolContext[];
 }
 
 export interface AuthUser {
@@ -25,4 +41,11 @@ export interface AuthUser {
   roleCode: string;
   token: string;
   expiresAt: string;
+  schoolId?: number;
+  sansthaId?: number;
+  schoolName?: string;
+  sansthaName?: string;
+  userTypeId?: number;
+  userTypeName?: string;
+  schoolContexts?: UserLoginSchoolContext[];
 }

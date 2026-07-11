@@ -8,4 +8,11 @@ public sealed class LoginResponseDto
     public string UserName { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
     public string RoleCode { get; init; } = string.Empty;
+    public int? SchoolId { get; init; }
+    public int? SansthaId { get; init; }
+    public string? SchoolName { get; init; }
+    public string? SansthaName { get; init; }
+    public int? UserTypeId { get; init; }
+    public string? UserTypeName { get; init; }
+    public IReadOnlyList<UserLoginSchoolContextDto> SchoolContexts { get; init; } = Array.Empty<UserLoginSchoolContextDto>();
 }

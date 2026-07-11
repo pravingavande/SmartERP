@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -45,7 +45,6 @@ export class VoucherEntryComponent {
   private readonly printService = inject(AuditPrintService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
   readonly loading = signal(false);
   readonly lookupsLoading = signal(true);
@@ -69,8 +68,7 @@ export class VoucherEntryComponent {
   readonly partySaving = signal(false);
   readonly partyForm = signal({ partyName: '', mobNo: '', address: '' });
   readonly partyFieldErrors = signal<FieldErrors>({});
-  readonly pendingAttachmentFile = signal<File | null>(null);
-  readonly attachmentPreviewUrl = signal<string | null>(null);
+  readonly selectedFileName = signal<string | null>(null);
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
 
@@ -310,7 +308,7 @@ export class VoucherEntryComponent {
     const fy = this.activeFy();
     const today = this.todayDateString();
     this.detailRowSeq = 0;
-    this.clearAttachmentState();
+    this.selectedFileName.set(null);
     this.formMode.set('new');
     this.formVisible.set(true);
     this.errorMessage.set(null);
@@ -380,7 +378,7 @@ export class VoucherEntryComponent {
 
   private applyVoucherToForm(v: Voucher): void {
     this.detailRowSeq = 0;
-    this.clearAttachmentState();
+    this.selectedFileName.set(v.filePath ?? null);
     this.form.set({
       voucherID: v.voucherID,
       orgID: v.orgID,
@@ -496,7 +494,7 @@ export class VoucherEntryComponent {
         errors['ledgerHeadBankID'] = 'Please select Deposit Bank.';
       }
       if (!f.transactionNo?.trim()) {
-        errors['transactionNo'] = 'Please enter Cheque Number.';
+        errors['transactionNo'] = 'Please enter Transaction/UTR/Cheque No.';
       }
       if (!f.transactionDate?.trim()) {
         errors['transactionDate'] = 'Please enter Transaction/UTR/Cheque Date.';
@@ -548,7 +546,7 @@ export class VoucherEntryComponent {
   }
 
   closeForm(): void {
-    this.clearAttachmentState();
+    this.selectedFileName.set(null);
     this.formVisible.set(false);
     this.formMode.set('new');
     this.errorMessage.set(null);
@@ -557,45 +555,12 @@ export class VoucherEntryComponent {
     this.loadVoucherList();
   }
 
-  browseFile(): void {
-    this.fileInput()?.nativeElement.click();
-  }
-
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    this.revokeAttachmentPreview();
-    this.pendingAttachmentFile.set(file);
-    const previewUrl = URL.createObjectURL(file);
-    this.attachmentPreviewUrl.set(previewUrl);
+    this.selectedFileName.set(file.name);
     this.updateForm('filePath', file.name);
-    input.value = '';
-  }
-
-  viewAttachment(): void {
-    const previewUrl = this.attachmentPreviewUrl();
-    if (previewUrl) {
-      window.open(previewUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    const filePath = this.form().filePath?.trim();
-    if (!filePath) return;
-    if (/^https?:\/\//i.test(filePath)) {
-      window.open(filePath, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    alert(`Attachment saved as: ${filePath}\n\nRe-select the file using Browse to preview before saving.`);
-  }
-
-  removeAttachment(): void {
-    if (!confirm('Remove this attachment?')) return;
-    this.clearAttachmentState();
-    this.updateForm('filePath', '');
-  }
-
-  hasAttachment(): boolean {
-    return !!(this.form().filePath?.trim() || this.pendingAttachmentFile());
   }
 
   onVoucherDateChange(value: string): void {
@@ -747,19 +712,6 @@ export class VoucherEntryComponent {
       ledgerHeadNarration,
       amount
     };
-  }
-
-  private clearAttachmentState(): void {
-    this.revokeAttachmentPreview();
-    this.pendingAttachmentFile.set(null);
-  }
-
-  private revokeAttachmentPreview(): void {
-    const url = this.attachmentPreviewUrl();
-    if (url) {
-      URL.revokeObjectURL(url);
-    }
-    this.attachmentPreviewUrl.set(null);
   }
 
   private emptyForm(): VoucherFormState {

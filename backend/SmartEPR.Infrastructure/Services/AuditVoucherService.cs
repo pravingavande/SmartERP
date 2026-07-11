@@ -15,6 +15,7 @@ public sealed class AuditVoucherService : IAuditVoucherService
     public async Task<AuditLookupsDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default)
     {
         var orgs = await _repository.GetUserOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
+        var sansthaOrgs = await _repository.GetSansthaOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
         var paymentTypes = await _repository.GetPaymentTypesAsync(cancellationToken).ConfigureAwait(false);
         var fyList = await _repository.GetFyListAsync(cancellationToken).ConfigureAwait(false);
         var ledgerHeads = await _repository.GetLedgerHeadsAsync(cancellationToken).ConfigureAwait(false);
@@ -23,6 +24,7 @@ public sealed class AuditVoucherService : IAuditVoucherService
         return new AuditLookupsDto
         {
             Orgs = orgs,
+            SansthaOrgs = sansthaOrgs,
             PaymentTypes = paymentTypes,
             FyList = fyList,
             LedgerHeads = ledgerHeads,

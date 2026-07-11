@@ -1,4 +1,4 @@
--- Dashboard and user profile stored procedures.
+-- Fix profile school/sanstha names: um.OrgID = school, um.SchoolCode = sanstha (parent org).
 -- Rules: no SELECT *, no MERGE, no BETWEEN
 
 USE SmartERP;
@@ -37,31 +37,5 @@ BEGIN
     LEFT JOIN dbo.DesignationMaster dm ON um.DesignationCode = dm.DesignationCode
     WHERE um.UserID = @UserID
       AND um.IsActive = 1;
-END
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Dashboard_GetSummary
-    @OrgID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Placeholder summary counts until live reporting tables are wired.
-    SELECT
-        ISNULL(om.OrganizationName, N'Sanstha') AS SansthaName,
-        25 AS TotalSchool,
-        500 AS TotalStudent,
-        200 AS TotalTeacher,
-        150 AS TeachingStaff,
-        50 AS NonTeachingStaff,
-        170 AS PermanentStaff,
-        30 AS TemporaryStaff,
-        200 AS MaleStudents,
-        300 AS FemaleStudents,
-        120 AS MaleTeachers,
-        80 AS FemaleTeachers
-    FROM dbo.OrgMaster om
-    WHERE om.OrgID = @OrgID
-      AND om.Status = 1;
 END
 GO

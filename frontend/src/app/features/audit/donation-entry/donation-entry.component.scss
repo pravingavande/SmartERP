@@ -7,6 +7,15 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 0.65rem;
+  gap: 0.75rem;
+
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
 
   h1 {
     margin: 0;
@@ -258,6 +267,10 @@
   font-size: 0.78rem;
 }
 
+.btn-back {
+  font-weight: 700;
+}
+
 .view-banner {
   margin: 0 0 1rem;
   padding: 0.5rem 0.75rem;
@@ -274,6 +287,95 @@ fieldset {
   margin: 0;
   padding: 0;
   min-width: 0;
+}
+
+.donation-layout.form-only {
+  gap: 0.5rem;
+
+  .form-panel {
+    padding: 0.65rem 0.85rem;
+  }
+}
+
+.form-section-unified {
+  margin-bottom: 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid #d8e2ee;
+  border-radius: 10px;
+  background: #fbfdff;
+
+  .field-label {
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
+  }
+
+  .field-control {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.9rem;
+  }
+
+  .field {
+    gap: 0.25rem;
+  }
+}
+
+.donation-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem 0.85rem;
+  align-items: start;
+
+  .field {
+    min-width: 0;
+  }
+
+  .field-control {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+.field-span-full {
+  grid-column: 1 / -1;
+}
+
+.form-divider {
+  height: 1px;
+  margin: 0.1rem 0;
+  background: linear-gradient(90deg, transparent, #d8e2ee 8%, #d8e2ee 92%, transparent);
+}
+
+.field-bank .field-control,
+.field-bank select.field-control {
+  background: #f8fbff;
+}
+
+.field-address,
+.field-remark,
+.field-pan,
+.field-aadhar {
+  min-width: 0;
+}
+
+.field-pan .field-control {
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.field-aadhar .field-control {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.donation-form {
+  .form-footer {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e8eef6;
+  }
 }
 
 .form-section {
@@ -425,6 +527,12 @@ fieldset {
   gap: 0.5rem;
 }
 
+@media (max-width: 1100px) {
+  .donation-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 900px) {
   .donation-layout {
     grid-template-columns: 1fr;
@@ -433,5 +541,10 @@ fieldset {
   .list-panel,
   .form-panel {
     order: unset;
+  }
+
+  .donation-form-grid {
+    grid-template-columns: 1fr;
+    max-width: none;
   }
 }

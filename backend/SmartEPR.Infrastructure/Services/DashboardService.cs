@@ -19,19 +19,31 @@ public sealed class DashboardService : IDashboardService
     {
         var profile = await _userRepository.GetProfileByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
-        if (profile is null || !profile.IsUserActive || profile.OrgID is null)
+        if (profile is null || !profile.IsUserActive)
+            return null;
+
+        var orgGroups = await _userRepository
+            .GetLoginOrgGroupsByAppUserNameAsync(profile.AppUserName, cancellationToken)
+            .ConfigureAwait(false);
+        var primary = orgGroups.FirstOrDefault();
+        var summaryOrgId = primary?.OrgGroupID
+            ?? (profile.SchoolCode is > 0 ? (int)profile.SchoolCode.Value : profile.OrgID);
+
+        if (summaryOrgId is null or <= 0)
             return null;
 
         var summary = await _dashboardRepository
-            .GetSummaryByOrgIdAsync(profile.OrgID.Value, cancellationToken)
+            .GetSummaryByOrgIdAsync(summaryOrgId.Value, cancellationToken)
             .ConfigureAwait(false);
 
         if (summary is null)
             return null;
 
+        var sansthaName = primary?.OrganizationGroupName ?? summary.SansthaName;
+
         return new DashboardSummaryDto
         {
-            SansthaName = summary.SansthaName,
+            SansthaName = sansthaName,
             TotalSchool = summary.TotalSchool,
             TotalStudent = summary.TotalStudent,
             TotalTeacher = summary.TotalTeacher,

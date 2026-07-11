@@ -237,6 +237,7 @@ public sealed class AuditDashboardResponseDto
 public sealed class AuditLookupsDto
 {
     public IReadOnlyList<OrgOptionDto> Orgs { get; init; } = [];
+    public IReadOnlyList<OrgOptionDto> SansthaOrgs { get; init; } = [];
     public IReadOnlyList<PaymentTypeOptionDto> PaymentTypes { get; init; } = [];
     public IReadOnlyList<FyOptionDto> FyList { get; init; } = [];
     public IReadOnlyList<LedgerHeadOptionDto> LedgerHeads { get; init; } = [];

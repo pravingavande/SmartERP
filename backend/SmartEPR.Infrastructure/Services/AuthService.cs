@@ -34,8 +34,15 @@ public sealed class AuthService : IAuthService
         if (user is null || !user.IsUserActive)
             return null;
 
+        var orgGroups = await _userRepository
+            .GetLoginOrgGroupsByAppUserNameAsync(user.AppUserName, cancellationToken)
+            .ConfigureAwait(false);
+        var schoolContexts = orgGroups.Select(MapSchoolContext).ToList();
+        var primarySchool = schoolContexts.FirstOrDefault();
+        var primaryOrgGroup = orgGroups.FirstOrDefault();
+
         var expiresAt = DateTime.UtcNow.AddHours(GetTokenExpiryHours());
-        var token = GenerateToken(user, expiresAt);
+        var token = GenerateToken(user, expiresAt, primarySchool);
 
         return new LoginResponseDto
         {
@@ -44,7 +51,14 @@ public sealed class AuthService : IAuthService
             UserId = (int)user.UserID,
             UserName = user.AppUserName,
             DisplayName = user.DisplayName,
-            RoleCode = "USER"
+            RoleCode = "USER",
+            SchoolId = primarySchool?.SchoolId,
+            SansthaId = primarySchool?.SansthaId,
+            SchoolName = primarySchool?.SchoolName,
+            SansthaName = primarySchool?.SansthaName,
+            UserTypeId = primaryOrgGroup?.UserTypeID,
+            UserTypeName = primaryOrgGroup?.UserTypeName,
+            SchoolContexts = schoolContexts
         };
     }
 
@@ -55,7 +69,40 @@ public sealed class AuthService : IAuthService
         if (profile is null || !profile.IsUserActive)
             return null;
 
-        return MapProfile(profile);
+        var dto = MapProfile(profile);
+        var orgGroups = await _userRepository
+            .GetLoginOrgGroupsByAppUserNameAsync(profile.AppUserName, cancellationToken)
+            .ConfigureAwait(false);
+        var primary = orgGroups.FirstOrDefault();
+
+        if (primary is null)
+            return dto;
+
+        return new UserProfileDto
+        {
+            UserId = dto.UserId,
+            UserName = dto.UserName,
+            DisplayName = dto.DisplayName,
+            FirstName = dto.FirstName,
+            MiddleName = dto.MiddleName,
+            LastName = dto.LastName,
+            Email = dto.Email,
+            MobileNo1 = dto.MobileNo1,
+            MobileNo2 = dto.MobileNo2,
+            SchoolCode = dto.SchoolCode,
+            OrgId = primary.OrgID,
+            SchoolName = primary.OrganizationName,
+            SansthaName = primary.OrganizationGroupName,
+            DesignationName = dto.DesignationName,
+            DesignationCode = dto.DesignationCode,
+            UserTypeId = dto.UserTypeId,
+            GenderCode = dto.GenderCode,
+            DateOfBirth = dto.DateOfBirth,
+            PanNo = dto.PanNo,
+            ShalarthId = dto.ShalarthId,
+            RoleCode = dto.RoleCode,
+            IsActive = dto.IsActive
+        };
     }
 
     private static UserProfileDto MapProfile(UserProfileDetail profile) =>
@@ -85,19 +132,35 @@ public sealed class AuthService : IAuthService
             IsActive = profile.IsUserActive
         };
 
-    private string GenerateToken(UserMaster user, DateTime expiresAt)
+    private static UserLoginSchoolContextDto MapSchoolContext(UserLoginOrgGroup row) =>
+        new()
+        {
+            SchoolId = row.OrgID,
+            SansthaId = row.OrgGroupID,
+            AppUserName = row.AppUserName,
+            SchoolName = row.OrganizationName,
+            SansthaName = row.OrganizationGroupName
+        };
+
+    private string GenerateToken(UserMaster user, DateTime expiresAt, UserLoginSchoolContextDto? schoolContext)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(GetJwtSecret()));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserID.ToString()),
-            new Claim(JwtRegisteredClaimNames.UniqueName, user.AppUserName),
-            new Claim(ClaimTypes.Name, user.DisplayName),
-            new Claim(ClaimTypes.Role, "USER"),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, user.UserID.ToString()),
+            new(JwtRegisteredClaimNames.UniqueName, user.AppUserName),
+            new(ClaimTypes.Name, user.DisplayName),
+            new(ClaimTypes.Role, "USER"),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (schoolContext is not null)
+        {
+            claims.Add(new Claim("school_id", schoolContext.SchoolId.ToString()));
+            claims.Add(new Claim("sanstha_id", schoolContext.SansthaId.ToString()));
+        }
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],

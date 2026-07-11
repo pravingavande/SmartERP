@@ -36,6 +36,11 @@ export const routes: Routes = [
           import('./features/audit/audit-dashboard/audit-dashboard.component').then((m) => m.AuditDashboardComponent)
       },
       {
+        path: 'audit/masters',
+        loadComponent: () =>
+          import('./features/audit/master-hub/master-hub.component').then((m) => m.MasterHubComponent)
+      },
+      {
         path: 'audit/receipt-voucher',
         loadComponent: () =>
           import('./features/audit/receipt-voucher/receipt-voucher.component').then((m) => m.ReceiptVoucherComponent)
