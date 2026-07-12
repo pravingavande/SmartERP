@@ -1,0 +1,205 @@
+<section class="employee-page">
+  <header class="page-header">
+    <div>
+      <h1>Employee Leave Apply</h1>
+      <p>Apply and manage employee leave requests</p>
+    </div>
+    <div class="header-actions">
+      @if (!formVisible()) {
+        <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add Leave</button>
+      } @else {
+        <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
+      }
+    </div>
+  </header>
+
+  @if (!formVisible()) {
+    <div class="list-filters">
+      <label class="field">
+        <span class="field-label">Org / School</span>
+        <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
+          <option [ngValue]="null">-- All --</option>
+          @for (o of schoolOrgs(); track o.orgID) {
+            <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Academic Year (Ay)</span>
+        <select class="field-control" [ngModel]="listAyID()" (ngModelChange)="onListAyChange($event ? +$event : null)" name="listAyID">
+          <option [ngValue]="null">-- All --</option>
+          @for (ay of masterLookups()?.ayList ?? []; track ay.ayID) {
+            <option [ngValue]="ay.ayID">{{ ay.ayName }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    @if (errorMessage()) {
+      <p class="error list-error">{{ errorMessage() }}</p>
+    }
+  }
+
+  <div class="employee-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
+    @if (!formVisible()) {
+      <aside class="list-panel">
+        <h3>Leave Applications @if (!listLoading()) { <span class="list-count">({{ items().length }})</span> }</h3>
+        @if (listLoading()) {
+          <p class="loading-hint list-loading">Loading leave applications...</p>
+        }
+        <div class="list-panel-content">
+          <div class="records-table-scroll">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Date</th>
+                  <th>Employee</th>
+                  <th>Leave Type</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Days</th>
+                  <th>Permission</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of paginatedItems(); track item.userLeaveApplyID) {
+                  <tr [class.active]="form().userLeaveApplyID === item.userLeaveApplyID">
+                    <td class="code">{{ item.recordNo ?? '—' }}</td>
+                    <td>{{ item.tDate ? (item.tDate | date:'dd/MM/yyyy') : '—' }}</td>
+                    <td class="name">{{ employeeName(item) }}</td>
+                    <td>{{ item.leaveTypeName || '—' }}</td>
+                    <td>{{ item.fromDate ? (item.fromDate | date:'dd/MM/yyyy') : '—' }}</td>
+                    <td>{{ item.toDate ? (item.toDate | date:'dd/MM/yyyy') : '—' }}</td>
+                    <td>{{ item.noOfDay ?? '—' }}</td>
+                    <td>{{ item.leavePermissionName || '—' }}</td>
+                    <td class="actions">
+                      <button type="button" class="action-btn view" (click)="viewEntry(item)">View</button>
+                      <button type="button" class="action-btn edit" (click)="editEntry(item)">Edit</button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="9" class="empty">No leave applications found</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (items().length > 0) {
+            <div class="list-pagination">
+              <label class="page-size-field">
+                <span>Rows</span>
+                <select [ngModel]="listPageSize()" (ngModelChange)="onListPageSizeChange(+$event)" name="listPageSize">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                </select>
+              </label>
+              <span class="page-info">{{ listPageStart() }}–{{ listPageEnd() }} of {{ items().length }}</span>
+              <div class="page-nav">
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() === 0" (click)="goToListPage(listPageIndex() - 1)">Prev</button>
+                <span class="page-num">Page {{ listPageIndex() + 1 }} / {{ listPageCount() }}</span>
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() >= listPageCount() - 1" (click)="goToListPage(listPageIndex() + 1)">Next</button>
+              </div>
+            </div>
+          }
+        </div>
+      </aside>
+    }
+
+    @if (formVisible()) {
+      <div class="form-panel">
+        @if (isViewMode()) {
+          <p class="view-banner">View mode — Record #{{ form().recordNo ?? '—' }}</p>
+        }
+        @if (saveError()) {
+          <p class="form-save-error">{{ saveError() }}</p>
+        }
+        <form class="employee-form" (ngSubmit)="save()">
+          <fieldset [disabled]="isViewMode()">
+            <div class="form-section">
+              <div class="form-grid">
+                <label class="field" [class.field-invalid]="fieldError('orgID')">
+                  <span class="field-label">Org / School *</span>
+                  <select class="field-control" [ngModel]="form().orgID" (ngModelChange)="onFormOrgChange($event ? +$event : null)" name="orgID">
+                    <option [ngValue]="null">-- Select --</option>
+                    @for (o of schoolOrgs(); track o.orgID) {
+                      <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+                    }
+                  </select>
+                  @if (fieldError('orgID')) { <span class="field-error">{{ fieldError('orgID') }}</span> }
+                </label>
+                <label class="field">
+                  <span class="field-label">Record No</span>
+                  <input class="field-control" readonly [ngModel]="form().recordNo" name="recordNo">
+                </label>
+                <label class="field">
+                  <span class="field-label">Transaction Date</span>
+                  <input class="field-control" type="date" [ngModel]="form().tDate" (ngModelChange)="updateForm('tDate', $event)" name="tDate">
+                </label>
+                <label class="field" [class.field-invalid]="fieldError('userID')">
+                  <span class="field-label">Employee *</span>
+                  <select class="field-control" [ngModel]="form().userID" (ngModelChange)="updateForm('userID', $event ? +$event : null)" name="userID">
+                    <option [ngValue]="null">-- Select --</option>
+                    @for (e of employees(); track e.userID) {
+                      <option [ngValue]="e.userID">{{ e.displayName }} @if (e.mobileNo1) { ({{ e.mobileNo1 }}) }</option>
+                    }
+                  </select>
+                  @if (fieldError('userID')) { <span class="field-error">{{ fieldError('userID') }}</span> }
+                </label>
+                <label class="field" [class.field-invalid]="fieldError('leaveTypeID')">
+                  <span class="field-label">Leave Type *</span>
+                  <select class="field-control" [ngModel]="form().leaveTypeID" (ngModelChange)="updateForm('leaveTypeID', $event ? +$event : null)" name="leaveTypeID">
+                    <option [ngValue]="null">-- Select --</option>
+                    @for (lt of masterLookups()?.leaveTypes ?? []; track lt.id) {
+                      <option [ngValue]="lt.id">{{ lt.name }}</option>
+                    }
+                  </select>
+                  @if (fieldError('leaveTypeID')) { <span class="field-error">{{ fieldError('leaveTypeID') }}</span> }
+                </label>
+                <label class="field">
+                  <span class="field-label">Leave Permission</span>
+                  <select class="field-control" [ngModel]="form().leavePermissionID" (ngModelChange)="updateForm('leavePermissionID', $event ? +$event : null)" name="leavePermissionID">
+                    <option [ngValue]="null">-- Select --</option>
+                    @for (lp of masterLookups()?.leavePermissions ?? []; track lp.id) {
+                      <option [ngValue]="lp.id">{{ lp.name }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="field field-span-2">
+                  <span class="field-label">Leave Reason</span>
+                  <textarea class="field-control" rows="3" [ngModel]="form().leaveReason" (ngModelChange)="updateForm('leaveReason', $event)" name="leaveReason"></textarea>
+                </label>
+                <label class="field" [class.field-invalid]="fieldError('fromDate')">
+                  <span class="field-label">From Date *</span>
+                  <input class="field-control" type="date" [ngModel]="form().fromDate" (ngModelChange)="updateForm('fromDate', $event)" name="fromDate">
+                  @if (fieldError('fromDate')) { <span class="field-error">{{ fieldError('fromDate') }}</span> }
+                </label>
+                <label class="field" [class.field-invalid]="fieldError('toDate')">
+                  <span class="field-label">To Date *</span>
+                  <input class="field-control" type="date" [ngModel]="form().toDate" (ngModelChange)="updateForm('toDate', $event)" name="toDate">
+                  @if (fieldError('toDate')) { <span class="field-error">{{ fieldError('toDate') }}</span> }
+                </label>
+                <label class="field">
+                  <span class="field-label">No. of Days</span>
+                  <input class="field-control" readonly [ngModel]="form().noOfDay" name="noOfDay">
+                </label>
+                <label class="field field-span-2">
+                  <span class="field-label">Admin Remark</span>
+                  <textarea class="field-control" rows="3" [ngModel]="form().adminRemak" (ngModelChange)="updateForm('adminRemak', $event)" name="adminRemak"></textarea>
+                </label>
+              </div>
+            </div>
+          </fieldset>
+          <footer class="form-footer">
+            @if (isViewMode()) {
+              <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
+            } @else {
+              <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading()">Save Leave</button>
+            }
+          </footer>
+        </form>
+      </div>
+    }
+  </div>
+</section>

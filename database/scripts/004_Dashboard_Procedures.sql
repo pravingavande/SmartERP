@@ -34,7 +34,7 @@ BEGIN
     FROM dbo.UserMaster um
     LEFT JOIN dbo.OrgMaster om ON um.OrgID = om.OrgID
     LEFT JOIN dbo.OrgMaster sch ON um.SchoolCode = sch.SchoolCode
-    LEFT JOIN dbo.DesignationMaster dm ON um.DesignationCode = dm.DesignationCode
+    LEFT JOIN dbo.DesignationMaster dm ON um.DesignationCode = dm.DesignationID
     WHERE um.UserID = @UserID
       AND um.IsActive = 1;
 END

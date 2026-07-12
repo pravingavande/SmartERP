@@ -38,7 +38,12 @@ export class MainLayoutComponent {
   readonly navSections: NavSection[] = [
     {
       title: 'Main',
-      items: [{ label: 'Dashboard', icon: 'dashboard', route: '/dashboard' }]
+      items: [
+        { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
+        { label: 'Teachers & Staff', icon: 'staff', route: '/staff' },
+        { label: 'Leave Type Master', icon: 'attendance', route: '/staff/leave-type-master' },
+        { label: 'Employee Leave Apply', icon: 'attendance', route: '/staff/leave-apply' }
+      ]
     },
     {
       title: 'Academic',
@@ -61,7 +66,6 @@ export class MainLayoutComponent {
       title: 'Operations',
       items: [
         { label: 'Ticket Raise', icon: 'ticket', route: '/tickets' },
-        { label: 'Employee Entry', icon: 'staff', route: '/staff' },
         { label: 'Attendance', icon: 'attendance', route: '/attendance' },
         { label: 'Notices', icon: 'notice', route: '/notices' },
         { label: 'Reports', icon: 'reports', route: '/reports' }

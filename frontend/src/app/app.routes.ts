@@ -98,6 +98,16 @@ export const routes: Routes = [
           import('./features/employee/employee-entry/employee-entry.component').then((m) => m.EmployeeEntryComponent)
       },
       {
+        path: 'staff/leave-type-master',
+        loadComponent: () =>
+          import('./features/employee/leave-type-master/leave-type-master.component').then((m) => m.LeaveTypeMasterComponent)
+      },
+      {
+        path: 'staff/leave-apply',
+        loadComponent: () =>
+          import('./features/employee/leave-apply/leave-apply.component').then((m) => m.LeaveApplyComponent)
+      },
+      {
         path: 'attendance',
         loadComponent: () =>
           import('./features/placeholder/coming-soon.component').then((m) => m.ComingSoonComponent),

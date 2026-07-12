@@ -1,0 +1,80 @@
+<section class="audit-page">
+  <header class="page-header">
+    <div>
+      <h1>Leave Type Master</h1>
+      <p>Manage leave types for employee leave applications</p>
+    </div>
+    @if (!formVisible()) {
+      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Leave Type</button>
+    } @else {
+      <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
+    }
+  </header>
+
+  <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
+    @if (!formVisible()) {
+      <aside class="list-panel">
+        <h3>Leave Types</h3>
+        @if (listLoading()) {
+          <p class="loading-hint">Loading leave types...</p>
+        }
+        <div class="records-table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Leave Type Name</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of items(); track item.leaveTypeID) {
+                <tr [class.active]="form().leaveTypeID === item.leaveTypeID">
+                  <td class="code">{{ item.leaveTypeID }}</td>
+                  <td>{{ item.leaveTypeName }}</td>
+                  <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+                  <td class="actions">
+                    <button type="button" class="action-btn edit" (click)="editItem(item)">Edit</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty">No leave types found</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </aside>
+    }
+
+    @if (formVisible()) {
+      <div class="form-panel">
+        <form class="voucher-form" (ngSubmit)="save()">
+          @if (saveError()) {
+            <p class="form-save-error">{{ saveError() }}</p>
+          }
+          <div class="form-section">
+            <h3>{{ formMode() === 'edit' ? 'Edit Leave Type' : 'New Leave Type' }}</h3>
+            <div class="form-grid">
+              <label class="field full" [class.field-invalid]="fieldError('leaveTypeName')">
+                <span class="field-label">Leave Type Name *</span>
+                <input class="field-control" required [ngModel]="form().leaveTypeName" (ngModelChange)="updateForm('leaveTypeName', $event)" name="leaveTypeName">
+                @if (fieldError('leaveTypeName')) {
+                  <span class="field-error">{{ fieldError('leaveTypeName') }}</span>
+                }
+              </label>
+              <label class="field field-check">
+                <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
+                <span>Active</span>
+              </label>
+            </div>
+          </div>
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
+          </footer>
+        </form>
+      </div>
+    }
+  </div>
+</section>

@@ -17,32 +17,34 @@ BEGIN
     ORDER BY ut.UserTypeName;
 
     SELECT
-        dm.DesignationCode,
+        dm.DesignationID AS DesignationCode,
         dm.DesignationName
     FROM dbo.DesignationMaster dm
-    WHERE dm.DesignationCode IS NOT NULL
+    WHERE dm.DesignationID IS NOT NULL
+      AND ISNULL(dm.IsActive, 1) = 1
     ORDER BY dm.DesignationName;
 
     SELECT
-        gm.GenderCode,
+        gm.GenderID AS GenderCode,
         gm.GenderName
     FROM dbo.GenderMaster gm
-    WHERE gm.GenderCode IS NOT NULL
+    WHERE gm.GenderID IS NOT NULL
+      AND ISNULL(gm.IsActive, 1) = 1
     ORDER BY gm.GenderName;
 
     SELECT
-        em.EducationCode,
+        em.EducationID AS EducationCode,
         em.EducationName
     FROM dbo.EducationMaster em
-    WHERE ISNULL(em.DeleteFlag, 'N') <> 'Y'
+    WHERE ISNULL(em.IsActive, 1) = 1
     ORDER BY em.EducationName;
 
     SELECT
-        dm.DocumentCode,
-        dm.DocumentName
-    FROM dbo.DocumentMaster dm
-    WHERE ISNULL(dm.DeleteFlag, 'N') <> 'Y'
-    ORDER BY dm.DocumentName;
+        doc.DocumentID AS DocumentCode,
+        doc.DocumentName
+    FROM dbo.DocumentMaster doc
+    WHERE ISNULL(doc.IsActive, 1) = 1
+    ORDER BY doc.DocumentName;
 
     SELECT
         qt.QualificationTypeCode,
@@ -52,10 +54,11 @@ BEGIN
     ORDER BY qt.QualificationTypeName;
 
     SELECT
-        es.EducationStatusCode,
+        es.EducationStatusID AS EducationStatusCode,
         es.EducationStatusName
     FROM dbo.EducationStatusMaster es
-    WHERE es.EducationStatusCode IS NOT NULL
+    WHERE es.EducationStatusID IS NOT NULL
+      AND ISNULL(es.IsActive, 1) = 1
     ORDER BY es.EducationStatusName;
 END
 GO
@@ -85,7 +88,7 @@ BEGIN
         ON om.OrgID = um.OrgID
        AND om.Status = 1
     LEFT JOIN dbo.DesignationMaster dm
-        ON dm.DesignationCode = um.DesignationCode
+        ON dm.DesignationID = um.DesignationCode
     LEFT JOIN dbo.UserTypeMaster ut
         ON ut.UserTypeID = um.UserTypeID
     WHERE um.IsActive = 1

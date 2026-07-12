@@ -1,0 +1,7 @@
+@import '../employee-entry/employee-entry.component.scss';
+
+.field-control[readonly],
+textarea.field-control {
+  resize: vertical;
+  min-height: 2.5rem;
+}
