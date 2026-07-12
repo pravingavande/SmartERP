@@ -8,7 +8,9 @@ import { MarathiNumberInputDirective } from '../../../core/directives/marathi-nu
 import { coerceEnglishIntegerString } from '../../../core/utils/marathi-numerals';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
+import { toastOnSave } from '../../../core/utils/toast-save.util';
 
 type FormMode = 'new' | 'edit';
 
@@ -21,6 +23,7 @@ type FormMode = 'new' | 'edit';
 })
 export class PartyMasterComponent {
   private readonly audit = inject(AuditService);
+  private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -149,8 +152,10 @@ export class PartyMasterComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save party.');
+          toastOnSave(this.toast, false, { entity: 'Party', mode: this.formMode(), errorMessage: 'Unable to save party.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Party', mode: this.formMode() });
         this.closeForm();
         this.loadList();
       });

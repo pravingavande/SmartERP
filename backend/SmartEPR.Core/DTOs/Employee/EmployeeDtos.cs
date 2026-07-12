@@ -1,5 +1,7 @@
 namespace SmartEPR.Core.DTOs.Employee;
 
+using System.Text.Json.Serialization;
+
 public sealed class CodeNameOptionDto
 {
     public long Code { get; init; }
@@ -166,6 +168,8 @@ public sealed class SaveEmployeeSchoolDto
     public DateTime? SchoolJoiningDate { get; init; }
     public DateTime? SchoolLeaveDate { get; init; }
     public string? SansthaTransferOrderNoAndDate { get; init; }
+
+    [JsonPropertyName("zpTransferOrderNoAndDate")]
     public string? ZPTransferOrderNoAndDate { get; init; }
 }
 

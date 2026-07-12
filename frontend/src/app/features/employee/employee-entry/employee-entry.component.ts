@@ -16,7 +16,9 @@ import { OrgOption } from '../../../core/models/audit.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { EmployeeService } from '../../../core/services/employee.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
+import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 
@@ -32,6 +34,7 @@ type FormSection = 'basic' | 'education' | 'documents' | 'schools';
 })
 export class EmployeeEntryComponent {
   private readonly employeeService = inject(EmployeeService);
+  private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
@@ -363,8 +366,10 @@ export class EmployeeEntryComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save employee.');
+          toastOnSave(this.toast, false, { entity: 'Employee', mode: this.formMode(), errorMessage: 'Unable to save employee.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Employee', mode: this.formMode() });
         this.closeForm();
       });
   }

@@ -7,6 +7,7 @@ import { forkJoin } from 'rxjs';
 import { AuditPrintService } from '../../../core/services/audit-print.service';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import {
   AccountRegisterOption,
@@ -27,6 +28,7 @@ import {
 } from '../../../core/utils/form-field-errors';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import { coerceEnglishIntegerString, coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
+import { toastOnSave } from '../../../core/utils/toast-save.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
@@ -42,6 +44,7 @@ export class VoucherEntryComponent {
   readonly title = input.required<string>();
 
   private readonly audit = inject(AuditService);
+  private readonly toast = inject(ToastService);
   private readonly printService = inject(AuditPrintService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -427,8 +430,10 @@ export class VoucherEntryComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save voucher. Please check all required fields and try again.');
+          toastOnSave(this.toast, false, { entity: 'Voucher', mode: this.formMode(), errorMessage: 'Unable to save voucher. Please check all required fields and try again.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Voucher', mode: this.formMode() });
         this.loadVoucherList();
         this.pendingPrintVoucher.set(saved);
         this.showPrintPrompt.set(true);
@@ -633,8 +638,10 @@ export class VoucherEntryComponent {
         this.partySaving.set(false);
         if (!saved?.partyID) {
           this.saveError.set('Unable to save party.');
+          toastOnSave(this.toast, false, { entity: 'Party', mode: 'new', errorMessage: 'Unable to save party.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Party', mode: 'new' });
         const newParty: PartyOption = {
           partyID: saved.partyID,
           partyName: saved.partyName,

@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AcademicCalendarService } from '../../core/services/academic-calendar.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Festival, Holiday } from '../../core/models/calendar.model';
 import {
   buildMonthGrid,
@@ -14,6 +15,7 @@ import {
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../core/utils/form-field-errors';
 import { MarathiNumberInputDirective } from '../../core/directives/marathi-number-input.directive';
 import { coerceEnglishIntegerString } from '../../core/utils/marathi-numerals';
+import { toastOnSave } from '../../core/utils/toast-save.util';
 
 type EntryType = 'holiday' | 'festival';
 
@@ -26,6 +28,7 @@ type EntryType = 'holiday' | 'festival';
 })
 export class AcademicCalendarComponent {
   private readonly calendarService = inject(AcademicCalendarService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly holidayTypes = HOLIDAY_TYPES;
@@ -162,8 +165,10 @@ export class AcademicCalendarComponent {
           this.loading.set(false);
           if (!saved) {
             this.saveError.set('Unable to save holiday.');
+            toastOnSave(this.toast, false, { entity: 'Holiday', mode: form.holidayId ? 'edit' : 'new', errorMessage: 'Unable to save holiday.' });
             return;
           }
+          toastOnSave(this.toast, true, { entity: 'Holiday', mode: form.holidayId ? 'edit' : 'new' });
           this.showModal.set(false);
           this.loadMonth();
         });
@@ -180,8 +185,10 @@ export class AcademicCalendarComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save festival.');
+          toastOnSave(this.toast, false, { entity: 'Festival', mode: form.festivalId ? 'edit' : 'new', errorMessage: 'Unable to save festival.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Festival', mode: form.festivalId ? 'edit' : 'new' });
         this.showModal.set(false);
         this.loadMonth();
       });

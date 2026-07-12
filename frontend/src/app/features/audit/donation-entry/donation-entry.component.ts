@@ -7,6 +7,7 @@ import { forkJoin } from 'rxjs';
 import { AuditPrintService } from '../../../core/services/audit-print.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { DonationService } from '../../../core/services/donation.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import {
   CASH_PAYMENT_TYPE_ID,
@@ -21,6 +22,7 @@ import {
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import { coerceEnglishIntegerString, coerceEnglishNumber, formatAadharDisplay, filterAadharTyping, normalizeAadharDigits } from '../../../core/utils/marathi-numerals';
+import { toastOnSave } from '../../../core/utils/toast-save.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
@@ -33,6 +35,7 @@ type FormMode = 'new' | 'edit' | 'view';
 })
 export class DonationEntryComponent {
   private readonly donation = inject(DonationService);
+  private readonly toast = inject(ToastService);
   private readonly printService = inject(AuditPrintService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -315,8 +318,10 @@ export class DonationEntryComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save donation entry.');
+          toastOnSave(this.toast, false, { entity: 'Donation entry', mode: this.formMode(), errorMessage: 'Unable to save donation entry.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Donation entry', mode: this.formMode() });
         this.loadList();
         this.pendingPrintDonation.set(saved);
         this.showPrintPrompt.set(true);

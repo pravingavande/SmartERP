@@ -1,5 +1,6 @@
 using System.Data;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using SmartEPR.Core.DTOs.Employee;
@@ -10,6 +11,12 @@ namespace SmartEPR.Infrastructure.Repositories;
 
 public sealed class EmployeeRepository : IEmployeeRepository
 {
+    private static readonly JsonSerializerOptions ChildRowJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     private readonly SqlConnectionFactory _connectionFactory;
     private readonly StoredProcedureExecutor _executor;
 
@@ -124,9 +131,9 @@ public sealed class EmployeeRepository : IEmployeeRepository
         p.Add("@AppUserName", request.AppUserName);
         p.Add("@AppPassword", request.AppPassword);
         p.Add("@IsActive", request.IsActive);
-        p.Add("@EducationJson", JsonSerializer.Serialize(request.Education));
-        p.Add("@DocumentsJson", JsonSerializer.Serialize(request.Documents));
-        p.Add("@SchoolsJson", JsonSerializer.Serialize(request.Schools));
+        p.Add("@EducationJson", JsonSerializer.Serialize(request.Education, ChildRowJsonOptions));
+        p.Add("@DocumentsJson", JsonSerializer.Serialize(request.Documents, ChildRowJsonOptions));
+        p.Add("@SchoolsJson", JsonSerializer.Serialize(request.Schools, ChildRowJsonOptions));
 
         await _executor.ExecuteAsync("dbo.sp_Employee_Save", p, cancellationToken).ConfigureAwait(false);
         return p.Get<long>("@UserID");

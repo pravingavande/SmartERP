@@ -5,11 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { TicketService } from '../../../core/services/ticket.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { Ticket, TicketFormState, TicketListItem, TicketLookups } from '../../../core/models/ticket.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import { coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
+import { toastOnSave } from '../../../core/utils/toast-save.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
@@ -22,6 +24,7 @@ type FormMode = 'new' | 'edit' | 'view';
 })
 export class TicketEntryComponent {
   private readonly ticketService = inject(TicketService);
+  private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -196,8 +199,10 @@ export class TicketEntryComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('टिकिट जतन करता आले नाही. API deploy आवश्यक असू शकते — admin ला सांगा.');
+          toastOnSave(this.toast, false, { entity: 'Ticket', mode: this.formMode(), errorMessage: 'टिकिट जतन करता आले नाही.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Ticket', mode: this.formMode() });
         this.closeForm();
       });
   }

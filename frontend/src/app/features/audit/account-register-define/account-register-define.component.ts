@@ -6,6 +6,7 @@ import { AccountRegisterMasterOption, AuditLookups } from '../../../core/models/
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 
 @Component({
@@ -17,6 +18,7 @@ import { UserProfile } from '../../../core/models/dashboard.model';
 })
 export class AccountRegisterDefineComponent {
   private readonly audit = inject(AuditService);
+  private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -25,7 +27,6 @@ export class AccountRegisterDefineComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly saveError = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
   readonly lookups = signal<AuditLookups | null>(null);
   readonly allRegisters = signal<AccountRegisterMasterOption[]>([]);
   readonly selectedOrgID = signal<number | null>(null);
@@ -78,7 +79,6 @@ export class AccountRegisterDefineComponent {
     this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
     this.errorMessage.set(null);
     this.saveError.set(null);
-    this.successMessage.set(null);
     if (orgId) this.loadMapping(orgId);
     else this.selectedRegisterIds.set(new Set());
   }
@@ -120,7 +120,6 @@ export class AccountRegisterDefineComponent {
     this.loading.set(true);
     this.fieldErrors.set({});
     this.saveError.set(null);
-    this.successMessage.set(null);
     const ids = Array.from(this.selectedRegisterIds());
     this.audit
       .saveAccountRegisterDefine(orgId, ids)
@@ -129,9 +128,10 @@ export class AccountRegisterDefineComponent {
         this.loading.set(false);
         if (!ok) {
           this.saveError.set('Unable to save account register mapping.');
+          this.toast.showError('Unable to save account register mapping.', 'Save failed');
           return;
         }
-        this.successMessage.set('Account registers saved successfully.');
+        this.toast.showSuccess('Account registers saved successfully.', 'Saved');
       });
   }
 }

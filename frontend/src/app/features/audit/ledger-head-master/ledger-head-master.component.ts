@@ -13,7 +13,9 @@ import { AuditService } from '../../../core/services/audit.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
+import { toastOnSave } from '../../../core/utils/toast-save.util';
 
 type FormMode = 'new' | 'edit';
 
@@ -26,6 +28,7 @@ type FormMode = 'new' | 'edit';
 })
 export class LedgerHeadMasterComponent {
   private readonly audit = inject(AuditService);
+  private readonly toast = inject(ToastService);
   private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -258,8 +261,10 @@ export class LedgerHeadMasterComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save ledger head.');
+          toastOnSave(this.toast, false, { entity: 'Ledger head', mode: this.formMode(), errorMessage: 'Unable to save ledger head.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Ledger head', mode: this.formMode() });
         this.closeForm();
         this.loadList();
       });

@@ -1,0 +1,18 @@
+<div class="toast-stack" aria-live="polite" aria-atomic="true">
+  @for (item of toast.toasts(); track item.id) {
+    <div class="toast toast-{{ item.type }}" role="status">
+      <span class="toast-accent" aria-hidden="true"></span>
+      <span class="toast-icon" aria-hidden="true"></span>
+      <div class="toast-body">
+        <p class="toast-title">{{ item.title }}</p>
+        <p class="toast-message">{{ item.message }}</p>
+      </div>
+      <button type="button" class="toast-close" (click)="dismiss(item.id)" aria-label="Dismiss">×</button>
+      <span
+        class="toast-progress"
+        aria-hidden="true"
+        [style.animation-duration.ms]="item.duration"
+      ></span>
+    </div>
+  }
+</div>

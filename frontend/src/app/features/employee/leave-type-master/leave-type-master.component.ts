@@ -3,7 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { LeaveTypeFormState, LeaveTypeItem } from '../../../core/models/leave.model';
 import { LeaveService } from '../../../core/services/leave.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
+import { toastOnSave } from '../../../core/utils/toast-save.util';
 
 type FormMode = 'new' | 'edit';
 
@@ -16,6 +18,7 @@ type FormMode = 'new' | 'edit';
 })
 export class LeaveTypeMasterComponent {
   private readonly leaveService = inject(LeaveService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
@@ -90,8 +93,10 @@ export class LeaveTypeMasterComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save leave type.');
+          toastOnSave(this.toast, false, { entity: 'Leave type', mode: this.formMode(), errorMessage: 'Unable to save leave type.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Leave type', mode: this.formMode() });
         this.formVisible.set(false);
         this.loadList();
       });

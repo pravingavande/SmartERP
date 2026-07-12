@@ -51,9 +51,6 @@
       @if (saveError()) {
         <p class="form-save-error">{{ saveError() }}</p>
       }
-      @if (successMessage()) {
-        <p class="success">{{ successMessage() }}</p>
-      }
 
       <footer class="form-footer">
         <button type="submit" class="btn btn-primary" [disabled]="loading() || !selectedOrgID()">Save Mapping</button>

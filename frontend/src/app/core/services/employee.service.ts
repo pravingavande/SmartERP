@@ -225,37 +225,69 @@ export class EmployeeService {
     Documents?: EmployeeFormState['documents'];
     Schools?: EmployeeFormState['schools'];
   }): EmployeeFormState {
-    const education = (raw.education ?? raw.Education ?? []).map((e, i) => ({
-      rowId: e.rowId ?? `edu-${i}`,
-      srNo: e.srNo ?? i + 1,
-      educationCodePassExam: e.educationCodePassExam ?? null,
-      univercity: e.univercity ?? '',
-      passingYear: e.passingYear ?? '',
-      percentage: e.percentage ?? '',
-      qualificationTypeCode: e.qualificationTypeCode ?? null,
-      educationStatusCode: e.educationStatusCode ?? null
-    }));
+    const education = (raw.education ?? raw.Education ?? []).map((e, i) => {
+      const row = e as EmployeeFormState['education'][number] & {
+        EducationCodePassExam?: number | null;
+        Univercity?: string;
+        PassingYear?: string;
+        Percentage?: string;
+        QualificationTypeCode?: number | null;
+        EducationStatusCode?: number | null;
+        SrNo?: number;
+      };
+      return {
+        rowId: row.rowId ?? `edu-${i}`,
+        srNo: row.srNo ?? row.SrNo ?? i + 1,
+        educationCodePassExam: row.educationCodePassExam ?? row.EducationCodePassExam ?? null,
+        univercity: row.univercity ?? row.Univercity ?? '',
+        passingYear: row.passingYear ?? row.PassingYear ?? '',
+        percentage: row.percentage ?? row.Percentage ?? '',
+        qualificationTypeCode: row.qualificationTypeCode ?? row.QualificationTypeCode ?? null,
+        educationStatusCode: row.educationStatusCode ?? row.EducationStatusCode ?? null
+      };
+    });
 
-    const documents = (raw.documents ?? raw.Documents ?? []).map((d, i) => ({
-      rowId: d.rowId ?? `doc-${i}`,
-      empDocumentCode: d.empDocumentCode ?? null,
-      empDocumentPath: d.empDocumentPath ?? '',
-      selectedFileName: d.empDocumentPath ?? d.selectedFileName ?? null
-    }));
+    const documents = (raw.documents ?? raw.Documents ?? []).map((d, i) => {
+      const row = d as EmployeeFormState['documents'][number] & {
+        EmpDocumentCode?: number | null;
+        EmpDocumentPath?: string;
+      };
+      const path = row.empDocumentPath ?? row.EmpDocumentPath ?? '';
+      return {
+        rowId: row.rowId ?? `doc-${i}`,
+        empDocumentCode: row.empDocumentCode ?? row.EmpDocumentCode ?? null,
+        empDocumentPath: path,
+        selectedFileName: path || (row.selectedFileName ?? null)
+      };
+    });
 
-    const schools = (raw.schools ?? raw.Schools ?? []).map((s, i) => ({
-      rowId: s.rowId ?? `sch-${i}`,
-      srNo: s.srNo ?? i + 1,
-      orgID: s.orgID ?? null,
-      schoolCode: s.schoolCode ?? null,
-      designationCode: s.designationCode ?? null,
-      teachClass: s.teachClass ?? '',
-      teachSubject: s.teachSubject ?? '',
-      schoolJoiningDate: this.toDateInput(s.schoolJoiningDate),
-      schoolLeaveDate: this.toDateInput(s.schoolLeaveDate),
-      sansthaTransferOrderNoAndDate: s.sansthaTransferOrderNoAndDate ?? '',
-      zpTransferOrderNoAndDate: s.zpTransferOrderNoAndDate ?? ''
-    }));
+    const schools = (raw.schools ?? raw.Schools ?? []).map((s, i) => {
+      const row = s as EmployeeFormState['schools'][number] & {
+        OrgID?: number | null;
+        SchoolCode?: number | null;
+        DesignationCode?: number | null;
+        TeachClass?: string;
+        TeachSubject?: string;
+        SchoolJoiningDate?: string | null;
+        SchoolLeaveDate?: string | null;
+        SansthaTransferOrderNoAndDate?: string;
+        ZPTransferOrderNoAndDate?: string;
+        SrNo?: number;
+      };
+      return {
+        rowId: row.rowId ?? `sch-${i}`,
+        srNo: row.srNo ?? row.SrNo ?? i + 1,
+        orgID: row.orgID ?? row.OrgID ?? null,
+        schoolCode: row.schoolCode ?? row.SchoolCode ?? null,
+        designationCode: row.designationCode ?? row.DesignationCode ?? null,
+        teachClass: row.teachClass ?? row.TeachClass ?? '',
+        teachSubject: row.teachSubject ?? row.TeachSubject ?? '',
+        schoolJoiningDate: this.toDateInput(row.schoolJoiningDate ?? row.SchoolJoiningDate),
+        schoolLeaveDate: this.toDateInput(row.schoolLeaveDate ?? row.SchoolLeaveDate),
+        sansthaTransferOrderNoAndDate: row.sansthaTransferOrderNoAndDate ?? row.SansthaTransferOrderNoAndDate ?? '',
+        zpTransferOrderNoAndDate: row.zpTransferOrderNoAndDate ?? row.ZPTransferOrderNoAndDate ?? ''
+      };
+    });
 
     return {
       userID: raw.userID ?? raw.UserID ?? null,

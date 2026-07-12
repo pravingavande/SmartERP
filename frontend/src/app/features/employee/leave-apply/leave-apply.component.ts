@@ -9,7 +9,9 @@ import { OrgOption } from '../../../core/models/audit.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { LeaveService } from '../../../core/services/leave.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
+import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
 
 type FormMode = 'new' | 'edit' | 'view';
@@ -23,6 +25,7 @@ type FormMode = 'new' | 'edit' | 'view';
 })
 export class LeaveApplyComponent {
   private readonly leaveService = inject(LeaveService);
+  private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
@@ -252,8 +255,10 @@ export class LeaveApplyComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save leave application.');
+          toastOnSave(this.toast, false, { entity: 'Leave application', mode: this.formMode(), errorMessage: 'Unable to save leave application.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Leave application', mode: this.formMode() });
         this.closeForm();
       });
   }

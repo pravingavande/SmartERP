@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { EventCalendarService } from '../../core/services/event-calendar.service';
+import { ToastService } from '../../core/services/toast.service';
 import { CalendarEvent, EventType } from '../../core/models/calendar.model';
 import {
   buildMonthGrid,
@@ -14,6 +15,7 @@ import {
   toIsoDate
 } from '../../core/constants/calendar.constants';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../core/utils/form-field-errors';
+import { toastOnSave } from '../../core/utils/toast-save.util';
 
 @Component({
   selector: 'app-event-calendar',
@@ -24,6 +26,7 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../core/utils/
 })
 export class EventCalendarComponent {
   private readonly calendarService = inject(EventCalendarService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly priorities = EVENT_PRIORITIES;
@@ -163,8 +166,10 @@ export class EventCalendarComponent {
         this.loading.set(false);
         if (!saved) {
           this.saveError.set('Unable to save event.');
+          toastOnSave(this.toast, false, { entity: 'Event', mode: f.eventId ? 'edit' : 'new', errorMessage: 'Unable to save event.' });
           return;
         }
+        toastOnSave(this.toast, true, { entity: 'Event', mode: f.eventId ? 'edit' : 'new' });
         this.showModal.set(false);
         this.loadMonth();
       });

@@ -7,6 +7,7 @@ import { DRHeadOption } from '../../../core/models/donation.model';
 import { AuditService } from '../../../core/services/audit.service';
 import { DonationService } from '../../../core/services/donation.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 
@@ -20,6 +21,7 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 export class DonationHeadDefineComponent {
   private readonly audit = inject(AuditService);
   private readonly donation = inject(DonationService);
+  private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -28,7 +30,6 @@ export class DonationHeadDefineComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly saveError = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
   readonly lookups = signal<AuditLookups | null>(null);
   readonly allHeads = signal<DRHeadOption[]>([]);
   readonly selectedOrgID = signal<number | null>(null);
@@ -81,7 +82,6 @@ export class DonationHeadDefineComponent {
     this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
     this.errorMessage.set(null);
     this.saveError.set(null);
-    this.successMessage.set(null);
     if (orgId) this.loadMapping(orgId);
     else this.selectedHeadIds.set(new Set());
   }
@@ -132,9 +132,10 @@ export class DonationHeadDefineComponent {
         this.loading.set(false);
         if (!ok) {
           this.saveError.set('Unable to save donation head mapping.');
+          this.toast.showError('Unable to save donation head mapping.');
           return;
         }
-        this.successMessage.set('Donation heads saved successfully.');
+        this.toast.showSuccess('Donation heads saved successfully.');
       });
   }
 }
