@@ -45,6 +45,13 @@ export class MasterHubComponent {
       icon: 'donation-head',
       route: '/audit/donation-head-define',
       tone: 'donation'
+    },
+    {
+      label: 'Leave Type Master',
+      description: 'Define leave types for employee leave applications',
+      icon: 'attendance',
+      route: '/audit/leave-type-master',
+      tone: 'leave'
     }
   ];
 }

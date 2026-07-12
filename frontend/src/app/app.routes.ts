@@ -76,6 +76,11 @@ export const routes: Routes = [
           import('./features/audit/donation-head-define/donation-head-define.component').then((m) => m.DonationHeadDefineComponent)
       },
       {
+        path: 'audit/leave-type-master',
+        loadComponent: () =>
+          import('./features/employee/leave-type-master/leave-type-master.component').then((m) => m.LeaveTypeMasterComponent)
+      },
+      {
         path: 'tickets',
         loadComponent: () =>
           import('./features/ticket/ticket-entry/ticket-entry.component').then((m) => m.TicketEntryComponent)
@@ -99,8 +104,8 @@ export const routes: Routes = [
       },
       {
         path: 'staff/leave-type-master',
-        loadComponent: () =>
-          import('./features/employee/leave-type-master/leave-type-master.component').then((m) => m.LeaveTypeMasterComponent)
+        redirectTo: 'audit/leave-type-master',
+        pathMatch: 'full'
       },
       {
         path: 'staff/leave-apply',

@@ -48,6 +48,7 @@
   &.tone-ledger { border-top: 3px solid var(--epr-orange); }
   &.tone-account { border-top: 3px solid #2e7d32; }
   &.tone-donation { border-top: 3px solid #1565c0; }
+  &.tone-leave { border-top: 3px solid #6a1b9a; }
 }
 
 .tile-icon {
@@ -66,6 +67,10 @@
 
   &[data-icon='donation-head'] {
     background: linear-gradient(135deg, #e3f2fd, #d0e8fc);
+  }
+
+  &[data-icon='attendance'] {
+    background: linear-gradient(135deg, #f3e5f5, #e1bee7);
   }
 }
 
