@@ -1,0 +1,40 @@
+<div class="modal-backdrop">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <header class="modal-header">
+      <h2>New Ticket Notification</h2>
+      <p>{{ ticket().ticketNo || ('#' + ticket().ticketID) }} — {{ ticket().subject || 'Support ticket' }}</p>
+    </header>
+
+    <section class="modal-body">
+      <p><strong>School(s):</strong> {{ ticket().schoolNames || '—' }}</p>
+      <p><strong>Reply Required:</strong> {{ ticket().replyRequired || '—' }}</p>
+      @if (ticket().submittedDate) {
+        <p><strong>Submitted:</strong> {{ ticket().submittedDate | date:'dd/MM/yyyy HH:mm' }}</p>
+      }
+
+      <label class="field">
+        <span class="field-label">Reply *</span>
+        <textarea
+          class="field-control"
+          rows="4"
+          [ngModel]="replyForm().replyText"
+          (ngModelChange)="updateReplyText($event)"
+          placeholder="Enter your reply..."
+        ></textarea>
+      </label>
+
+      @if (replyError()) {
+        <p class="error">{{ replyError() }}</p>
+      }
+    </section>
+
+    <footer class="modal-footer">
+      @if (!isInstant()) {
+        <button type="button" class="btn btn-outline" (click)="dismissLater()">Remind Later</button>
+      }
+      <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="submitReply()">
+        Submit Reply
+      </button>
+    </footer>
+  </div>
+</div>

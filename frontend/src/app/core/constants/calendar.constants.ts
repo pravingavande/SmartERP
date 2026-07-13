@@ -1,31 +1,15 @@
 import type { CalendarDay } from '../models/calendar.model';
 
-export const EVENT_PRIORITIES = [
-  { value: 'उच्च', label: 'उच्च (High)', color: '#c62828' },
-  { value: 'मध्यम', label: 'मध्यम (Medium)', color: '#f57c00' },
-  { value: 'निम्न', label: 'निम्न (Low)', color: '#43a047' }
-] as const;
-
 export const EVENT_STATUSES = [
-  { value: 'नियोजित', label: 'नियोजित' },
-  { value: 'पूर्ण', label: 'पूर्ण झाले' },
-  { value: 'रद्द', label: 'रद्द' },
-  { value: 'पुढे ढकललेले', label: 'पुढे ढकललेले' }
+  { value: 'नियोजित', label: 'नियोजित (Planned)' },
+  { value: 'पूर्ण झाले', label: 'पूर्ण झाले (Completed)' },
+  { value: 'रद्द झाले', label: 'रद्द झाले (Cancelled)' }
 ] as const;
 
 export const HOLIDAY_TYPES = [
   { value: 'national', label: 'National' },
   { value: 'state', label: 'State' },
   { value: 'public', label: 'Public' }
-] as const;
-
-export const LOCATION_OPTIONS = [
-  'School Campus',
-  'Sanstha Office',
-  'Assembly Hall',
-  'Playground',
-  'Online',
-  'Other'
 ] as const;
 
 export function buildMonthGrid(year: number, month: number): CalendarDay[] {

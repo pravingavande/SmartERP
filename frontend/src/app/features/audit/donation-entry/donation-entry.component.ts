@@ -4,9 +4,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { AuditPrintService } from '../../../core/services/audit-print.service';
-import { DashboardService } from '../../../core/services/dashboard.service';
 import { DonationService } from '../../../core/services/donation.service';
+import { DashboardService } from '../../../core/services/dashboard.service';
+import { ReportPrintService } from '../../../core/services/report-print.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import {
@@ -36,7 +36,7 @@ type FormMode = 'new' | 'edit' | 'view';
 export class DonationEntryComponent {
   private readonly donation = inject(DonationService);
   private readonly toast = inject(ToastService);
-  private readonly printService = inject(AuditPrintService);
+  private readonly reportPrint = inject(ReportPrintService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -235,12 +235,7 @@ export class DonationEntryComponent {
   }
 
   reprintEntry(item: DonationListItem): void {
-    this.donation
-      .getById(item.drID)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((d) => {
-        if (d) this.printService.printDonation(d);
-      });
+    this.printDonationRdlc(item.drID);
   }
 
   confirmDeleteEntry(item: DonationListItem): void {
@@ -398,7 +393,7 @@ export class DonationEntryComponent {
 
   confirmPrint(): void {
     const d = this.pendingPrintDonation();
-    if (d) this.printService.printDonation(d);
+    if (d?.drID) this.printDonationRdlc(d.drID);
     this.dismissPrintPrompt();
   }
 
@@ -411,11 +406,19 @@ export class DonationEntryComponent {
   printCurrent(): void {
     const id = this.form().drID;
     if (!id) return;
+    this.printDonationRdlc(id);
+  }
+
+  private printDonationRdlc(drId: number): void {
     this.donation
-      .getById(id)
+      .downloadReceiptPdf(drId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((d) => {
-        if (d) this.printService.printDonation(d);
+      .subscribe((blob) => {
+        if (!blob) {
+          this.toast.showError('Unable to generate donation receipt PDF.', 'Print failed');
+          return;
+        }
+        this.reportPrint.openPdf(blob, 'Donation Receipt');
       });
   }
 

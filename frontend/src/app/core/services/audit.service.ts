@@ -243,7 +243,7 @@ export class AuditService {
     );
   }
 
-  saveParty(form: PartyFormState): Observable<PartyMaster | null> {
+  saveParty(form: PartyFormState): Observable<{ data: PartyMaster | null; message: string | null }> {
     const payload = {
       partyID: form.partyID,
       orgID: form.orgID,
@@ -255,8 +255,11 @@ export class AuditService {
       isActive: form.isActive
     };
     return this.http.post<ApiResponse<PartyMaster>>(`${this.base}/party-master`, payload).pipe(
-      map((r) => (r.success && r.data ? this.normalizePartyMaster(r.data) : null)),
-      catchError(() => of(null))
+      map((r) => ({
+        data: r.success && r.data ? this.normalizePartyMaster(r.data) : null,
+        message: r.success ? null : (r.message ?? 'Unable to save party.')
+      })),
+      catchError(() => of({ data: null, message: 'Unable to save party.' }))
     );
   }
 
@@ -409,7 +412,7 @@ export class AuditService {
     );
   }
 
-  saveLedgerHead(form: LedgerHeadFormState): Observable<LedgerHeadMaster | null> {
+  saveLedgerHead(form: LedgerHeadFormState): Observable<{ data: LedgerHeadMaster | null; message: string | null }> {
     const payload = {
       ledgerHeadID: form.ledgerHeadID,
       underOrgID: form.underOrgID,
@@ -419,8 +422,11 @@ export class AuditService {
       isActive: form.isActive
     };
     return this.http.post<ApiResponse<LedgerHeadMaster>>(`${this.base}/ledger-head-master`, payload).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
-      catchError(() => of(null))
+      map((r) => ({
+        data: r.success && r.data ? r.data : null,
+        message: r.success ? null : (r.message ?? 'Unable to save ledger head.')
+      })),
+      catchError(() => of({ data: null, message: 'Unable to save ledger head.' }))
     );
   }
 }

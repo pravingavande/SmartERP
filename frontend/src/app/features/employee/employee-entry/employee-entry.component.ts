@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { forkJoin, of, Subject, switchMap, debounceTime, distinctUntilChanged } from 'rxjs';
 import {
   EmployeeDocumentLine,
   EmployeeEducationLine,
@@ -25,6 +24,21 @@ import { MarathiNumberInputDirective } from '../../../core/directives/marathi-nu
 type FormMode = 'new' | 'edit' | 'view';
 type FormSection = 'basic' | 'education' | 'documents' | 'schools';
 
+interface FormStep {
+  id: FormSection;
+  step: number;
+  label: string;
+}
+
+const FORM_STEPS: FormStep[] = [
+  { id: 'basic', step: 1, label: 'Basic Details' },
+  { id: 'education', step: 2, label: 'Education' },
+  { id: 'documents', step: 3, label: 'Documents' },
+  { id: 'schools', step: 4, label: 'School History' }
+];
+
+const SECTION_ORDER: FormSection[] = ['basic', 'education', 'documents', 'schools'];
+
 @Component({
   selector: 'app-employee-entry',
   imports: [FormsModule, MarathiNumberInputDirective],
@@ -39,6 +53,7 @@ export class EmployeeEntryComponent {
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly searchChanges$ = new Subject<string>();
+  private readonly listReload$ = new Subject<void>();
   private searchDebounceSubscribed = false;
 
   readonly loading = signal(false);
@@ -53,6 +68,9 @@ export class EmployeeEntryComponent {
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
   readonly activeSection = signal<FormSection>('basic');
+  readonly wizardActive = signal(false);
+  readonly highestUnlockedStep = signal(1);
+  readonly formSteps = FORM_STEPS;
   readonly listOrgID = signal<number | null>(null);
   readonly listSearch = signal('');
   readonly listPageSize = signal(10);
@@ -83,6 +101,8 @@ export class EmployeeEntryComponent {
     return orgs.filter((o) => o.orgID !== sansthaId);
   });
   readonly isViewMode = computed(() => this.formMode() === 'view');
+  readonly isWizardFlow = computed(() => this.wizardActive() && !this.isViewMode());
+  readonly isLastWizardStep = computed(() => this.activeSection() === 'schools');
   readonly displayName = computed(() => {
     const f = this.form();
     return [f.firstname, f.middleName, f.lastName].filter(Boolean).join(' ').trim() || 'Employee';
@@ -93,6 +113,28 @@ export class EmployeeEntryComponent {
   private schoolSeq = 0;
 
   constructor() {
+    this.listReload$
+      .pipe(
+        switchMap(() => {
+          this.listLoading.set(true);
+          return this.employeeService.getList(this.listOrgID(), this.listSearch());
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((list) => {
+        this.listLoading.set(false);
+        this.employees.set(list);
+        const maxPage = Math.max(0, Math.ceil(list.length / this.listPageSize()) - 1);
+        if (this.listPageIndex() > maxPage) {
+          this.listPageIndex.set(maxPage);
+        }
+      });
+
+    this.destroyRef.onDestroy(() => {
+      this.searchChanges$.complete();
+      this.listReload$.complete();
+    });
+
     this.loadLookups();
   }
 
@@ -174,18 +216,7 @@ export class EmployeeEntryComponent {
   }
 
   loadList(): void {
-    this.listLoading.set(true);
-    this.employeeService
-      .getList(this.listOrgID(), this.listSearch())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((list) => {
-        this.listLoading.set(false);
-        this.employees.set(list);
-        const maxPage = Math.max(0, Math.ceil(list.length / this.listPageSize()) - 1);
-        if (this.listPageIndex() > maxPage) {
-          this.listPageIndex.set(maxPage);
-        }
-      });
+    this.listReload$.next();
   }
 
   newEmployee(): void {
@@ -199,6 +230,8 @@ export class EmployeeEntryComponent {
     this.formMode.set('new');
     this.formVisible.set(true);
     this.activeSection.set('basic');
+    this.wizardActive.set(true);
+    this.highestUnlockedStep.set(1);
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.form.set(this.emptyForm());
@@ -219,6 +252,8 @@ export class EmployeeEntryComponent {
         this.formMode.set('edit');
         this.formVisible.set(true);
         this.activeSection.set('basic');
+        this.wizardActive.set(false);
+        this.highestUnlockedStep.set(4);
         this.fieldErrors.set({});
         this.saveError.set(null);
         this.form.set(this.ensureChildRows(data));
@@ -237,13 +272,49 @@ export class EmployeeEntryComponent {
   closeForm(): void {
     this.formVisible.set(false);
     this.formMode.set('new');
+    this.wizardActive.set(false);
+    this.highestUnlockedStep.set(1);
+    this.activeSection.set('basic');
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.loadList();
   }
 
+  sectionStep(section: FormSection): number {
+    return FORM_STEPS.find((s) => s.id === section)?.step ?? 1;
+  }
+
+  isSectionEnabled(section: FormSection): boolean {
+    if (!this.isWizardFlow()) return true;
+    return this.sectionStep(section) <= this.highestUnlockedStep();
+  }
+
+  isSectionCompleted(section: FormSection): boolean {
+    if (!this.isWizardFlow()) return false;
+    return this.sectionStep(section) < this.sectionStep(this.activeSection());
+  }
+
   setSection(section: FormSection): void {
+    if (!this.isSectionEnabled(section)) return;
     this.activeSection.set(section);
+  }
+
+  saveAndNext(): void {
+    this.persistEmployee({ advance: true, close: false });
+  }
+
+  saveAndFinish(): void {
+    this.persistEmployee({ advance: false, close: true });
+  }
+
+  onFormSubmit(): void {
+    if (this.isViewMode()) return;
+    if (this.isWizardFlow()) {
+      if (this.isLastWizardStep()) this.saveAndFinish();
+      else this.saveAndNext();
+      return;
+    }
+    this.persistEmployee({ advance: false, close: true });
   }
 
   updateForm<K extends keyof EmployeeFormState>(key: K, value: EmployeeFormState[K]): void {
@@ -345,22 +416,18 @@ export class EmployeeEntryComponent {
   }
 
   save(): void {
+    this.persistEmployee({ advance: false, close: true });
+  }
+
+  private persistEmployee(options: { advance: boolean; close: boolean }): void {
     if (this.isViewMode()) return;
-    const f = this.form();
-    const errors: FieldErrors = {};
-    if (!f.firstname?.trim()) errors['firstname'] = 'First name is required.';
-    if (!f.mobileNo1?.trim()) errors['mobileNo1'] = 'Mobile no is required.';
-    if (hasFieldErrors(errors)) {
-      this.fieldErrors.set(errors);
-      this.activeSection.set('basic');
-      return;
-    }
+    if (!this.validateCurrentStep()) return;
 
     this.loading.set(true);
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.employeeService
-      .save(f)
+      .save(this.form())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((saved) => {
         this.loading.set(false);
@@ -369,9 +436,59 @@ export class EmployeeEntryComponent {
           toastOnSave(this.toast, false, { entity: 'Employee', mode: this.formMode(), errorMessage: 'Unable to save employee.' });
           return;
         }
+
+        const wasNew = !this.form().userID;
+        this.form.set(this.ensureChildRows(saved));
+        this.formMode.set('edit');
+
+        if (this.isWizardFlow()) {
+          const currentStep = this.sectionStep(this.activeSection());
+          this.highestUnlockedStep.update((max) => Math.max(max, currentStep + 1));
+
+          if (options.advance) {
+            const next = this.nextSection(this.activeSection());
+            if (next) {
+              this.activeSection.set(next);
+              toastOnSave(this.toast, true, {
+                entity: wasNew && currentStep === 1 ? 'Basic details' : 'Employee',
+                mode: wasNew ? 'new' : 'edit'
+              });
+              return;
+            }
+          }
+
+          if (options.close) {
+            toastOnSave(this.toast, true, { entity: 'Employee', mode: wasNew ? 'new' : 'edit' });
+            this.closeForm();
+            return;
+          }
+        }
+
         toastOnSave(this.toast, true, { entity: 'Employee', mode: this.formMode() });
-        this.closeForm();
+        if (options.close) this.closeForm();
       });
+  }
+
+  private validateCurrentStep(): boolean {
+    if (this.activeSection() !== 'basic') return true;
+
+    const f = this.form();
+    const errors: FieldErrors = {};
+    if (!f.firstname?.trim()) errors['firstname'] = 'First name is required.';
+    if (!f.mobileNo1?.trim()) errors['mobileNo1'] = 'Mobile no is required.';
+    if (!f.orgID) errors['orgID'] = 'Org / School is required.';
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
+      this.activeSection.set('basic');
+      return false;
+    }
+    return true;
+  }
+
+  private nextSection(current: FormSection): FormSection | null {
+    const index = SECTION_ORDER.indexOf(current);
+    if (index < 0 || index >= SECTION_ORDER.length - 1) return null;
+    return SECTION_ORDER[index + 1];
   }
 
   employeeName(item: EmployeeListItem): string {

@@ -32,15 +32,18 @@ export class LeaveService {
     );
   }
 
-  saveLeaveType(form: LeaveTypeFormState): Observable<LeaveTypeItem | null> {
+  saveLeaveType(form: LeaveTypeFormState): Observable<{ data: LeaveTypeItem | null; message: string | null }> {
     const payload = {
       leaveTypeID: form.leaveTypeID ?? 0,
-      leaveTypeName: form.leaveTypeName,
+      leaveTypeName: form.leaveTypeName.trim(),
       isActive: form.isActive
     };
     return this.http.post<ApiResponse<LeaveTypeItem>>(`${this.base}/types`, payload).pipe(
-      map((r) => (r.success && r.data ? this.normalizeLeaveType(r.data) : null)),
-      catchError(() => of(null))
+      map((r) => ({
+        data: r.success && r.data ? this.normalizeLeaveType(r.data) : null,
+        message: r.success ? null : (r.message ?? 'Unable to save leave type.')
+      })),
+      catchError(() => of({ data: null, message: 'Unable to save leave type.' }))
     );
   }
 

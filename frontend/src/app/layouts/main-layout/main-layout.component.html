@@ -181,3 +181,7 @@
     </footer>
   </div>
 </div>
+
+@if (pendingTicket(); as ticket) {
+  <app-ticket-pending-modal [ticket]="ticket" />
+}

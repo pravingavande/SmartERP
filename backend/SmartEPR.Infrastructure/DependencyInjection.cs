@@ -27,12 +27,15 @@ public static class DependencyInjection
         services.AddScoped<IAuditVoucherService, AuditVoucherService>();
         services.AddScoped<IDonationRepository, DonationRepository>();
         services.AddScoped<IDonationService, DonationService>();
+        services.AddScoped<IDonationReportService, DonationReportService>();
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<ITicketService, TicketService>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<ILeaveRepository, LeaveRepository>();
         services.AddScoped<ILeaveService, LeaveService>();
+        services.AddScoped<IMasterRepository, MasterRepository>();
+        services.AddScoped<IMasterService, MasterService>();
 
         return services;
     }

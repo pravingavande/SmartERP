@@ -70,6 +70,12 @@ export class DonationService {
     );
   }
 
+  downloadReceiptPdf(drId: number): Observable<Blob | null> {
+    return this.http.get(`${this.base}/${drId}/report/pdf`, { responseType: 'blob' }).pipe(
+      catchError(() => of(null))
+    );
+  }
+
   save(form: DonationFormState): Observable<Donation | null> {
     const payload = {
       drID: form.drID,

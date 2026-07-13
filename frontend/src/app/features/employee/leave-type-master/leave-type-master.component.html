@@ -11,6 +11,10 @@
     }
   </header>
 
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
   <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
     @if (!formVisible()) {
       <aside class="list-panel">

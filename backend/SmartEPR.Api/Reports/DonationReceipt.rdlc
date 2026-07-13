@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <DataSources>
+    <DataSource Name="DonationReceiptSource">
+      <ConnectionProperties>
+        <DataProvider>System.Data.DataSet</DataProvider>
+        <ConnectString />
+      </ConnectionProperties>
+      <rd:DataSourceID>a1111111-1111-1111-1111-111111111101</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="DonationReceipt">
+      <Query>
+        <DataSourceName>DonationReceiptSource</DataSourceName>
+        <CommandText />
+      </Query>
+      <Fields>
+        <Field Name="ReceiptNo"><DataField>ReceiptNo</DataField></Field>
+        <Field Name="OrgReceiptNo"><DataField>OrgReceiptNo</DataField></Field>
+        <Field Name="Tid"><DataField>Tid</DataField></Field>
+        <Field Name="ReceiptDate"><DataField>ReceiptDate</DataField></Field>
+        <Field Name="OrganizationName"><DataField>OrganizationName</DataField></Field>
+        <Field Name="SansthaName"><DataField>SansthaName</DataField></Field>
+        <Field Name="SansthaAddress"><DataField>SansthaAddress</DataField></Field>
+        <Field Name="EstablishmentYear"><DataField>EstablishmentYear</DataField></Field>
+        <Field Name="OrgPanNo"><DataField>OrgPanNo</DataField></Field>
+        <Field Name="RegistrationNo"><DataField>RegistrationNo</DataField></Field>
+        <Field Name="OrderNo80G"><DataField>OrderNo80G</DataField></Field>
+        <Field Name="OrderDate80G"><DataField>OrderDate80G</DataField></Field>
+        <Field Name="FyName"><DataField>FyName</DataField></Field>
+        <Field Name="DRHeadName"><DataField>DRHeadName</DataField></Field>
+        <Field Name="DonorName"><DataField>DonorName</DataField></Field>
+        <Field Name="MobileNo"><DataField>MobileNo</DataField></Field>
+        <Field Name="PanNo"><DataField>PanNo</DataField></Field>
+        <Field Name="AadharNo"><DataField>AadharNo</DataField></Field>
+        <Field Name="Address"><DataField>Address</DataField></Field>
+        <Field Name="PaymentType"><DataField>PaymentType</DataField></Field>
+        <Field Name="BankName"><DataField>BankName</DataField></Field>
+        <Field Name="TransactionNo"><DataField>TransactionNo</DataField></Field>
+        <Field Name="TransactionDate"><DataField>TransactionDate</DataField></Field>
+        <Field Name="DepositDate"><DataField>DepositDate</DataField></Field>
+        <Field Name="DepositBankName"><DataField>DepositBankName</DataField></Field>
+        <Field Name="AmountText"><DataField>AmountText</DataField></Field>
+        <Field Name="AmountNumber"><DataField>AmountNumber</DataField></Field>
+        <Field Name="AmountInWords"><DataField>AmountInWords</DataField></Field>
+        <Field Name="AmountInWordsMarathi"><DataField>AmountInWordsMarathi</DataField></Field>
+        <Field Name="Remark"><DataField>Remark</DataField></Field>
+        <Field Name="ReceiverSignatureName"><DataField>ReceiverSignatureName</DataField></Field>
+        <Field Name="PrintedOn"><DataField>PrintedOn</DataField></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <Height>5.35in</Height>
+        <ReportItems>
+          <Rectangle Name="OuterBorder">
+            <Top>0.02in</Top>
+            <Left>0.09in</Left>
+            <Height>5.15in</Height>
+            <Width>5.35in</Width>
+            <Style>
+              <Border><Style>Solid</Style><Width>1.5pt</Width></Border>
+            </Style>
+            <ReportItems>
+              <Textbox Name="TopLeftYear">
+                <Top>0.06in</Top>
+                <Left>0.08in</Left>
+                <Height>0.18in</Height>
+                <Width>1.55in</Width>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="स्थापना वर्ष : " &amp; Fields!EstablishmentYear.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>7pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="TopCenterPan">
+                <Top>0.06in</Top>
+                <Left>1.55in</Left>
+                <Height>0.18in</Height>
+                <Width>2.0in</Width>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="Pan No. : " &amp; Fields!OrgPanNo.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>7pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="TopRightReg">
+                <Top>0.06in</Top>
+                <Left>3.4in</Left>
+                <Height>0.18in</Height>
+                <Width>1.85in</Width>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="रजि. नं. : " &amp; Fields!RegistrationNo.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>7pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Right</TextAlign></Style>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Rectangle Name="LogoPlaceholder">
+                <Top>0.28in</Top>
+                <Left>0.08in</Left>
+                <Height>0.65in</Height>
+                <Width>0.65in</Width>
+                <Style>
+                  <Border><Style>Solid</Style></Border>
+                  <BackgroundColor>#f8f8f8</BackgroundColor>
+                </Style>
+              </Rectangle>
+              <Textbox Name="OrgNameBlock">
+                <Top>0.28in</Top>
+                <Left>0.8in</Left>
+                <Height>0.85in</Height>
+                <Width>4.45in</Width>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>=Fields!SansthaName.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>=Fields!SansthaAddress.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>7pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>(Donation is Eligible For Deduction U/S 80G of I.T. Act. 1961)</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontStyle>Italic</FontStyle></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="Order No. : " &amp; Fields!OrderNo80G.Value &amp; "  Date : " &amp; Fields!OrderDate80G.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Rectangle Name="TitleBox">
+                <Top>1.18in</Top>
+                <Left>1.55in</Left>
+                <Height>0.3in</Height>
+                <Width>2.0in</Width>
+                <Style>
+                  <Border><Style>Solid</Style><Width>1pt</Width></Border>
+                  <BackgroundColor>White</BackgroundColor>
+                </Style>
+                <ReportItems>
+                  <Textbox Name="TitleMarathi">
+                    <Top>0.04in</Top>
+                    <Left>0.04in</Left>
+                    <Height>0.22in</Height>
+                    <Width>1.92in</Width>
+                    <Paragraphs>
+                      <Paragraph>
+                        <TextRuns>
+                          <TextRun>
+                            <Value>देणगी पावती</Value>
+                            <Style><FontFamily>Nirmala UI</FontFamily><FontSize>11pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                          </TextRun>
+                        </TextRuns>
+                        <Style><TextAlign>Center</TextAlign></Style>
+                      </Paragraph>
+                    </Paragraphs>
+                  </Textbox>
+                </ReportItems>
+              </Rectangle>
+              <Line Name="SepLine1">
+                <Top>1.54in</Top>
+                <Left>0.08in</Left>
+                <Height>0in</Height>
+                <Width>5.18in</Width>
+                <Style><Border><Style>Solid</Style><Width>1pt</Width></Border></Style>
+              </Line>
+              <Line Name="SepLine2">
+                <Top>1.6in</Top>
+                <Left>0.08in</Left>
+                <Height>0in</Height>
+                <Width>5.18in</Width>
+                <Style><Border><Style>Solid</Style><Width>1pt</Width></Border></Style>
+              </Line>
+              <Textbox Name="WatermarkText">
+                <Top>2.8in</Top>
+                <Left>0.9in</Left>
+                <Height>1.0in</Height>
+                <Width>3.5in</Width>
+                <ZIndex>1</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>=Fields!SansthaName.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>18pt</FontSize><FontWeight>Bold</FontWeight><Color>#ececec</Color></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="BodyReceiptNo">
+                <Top>1.68in</Top>
+                <Left>0.12in</Left>
+                <Height>0.22in</Height>
+                <Width>2.8in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="पावती क्र. : " &amp; Fields!Tid.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>9pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="BodyDate">
+                <Top>1.68in</Top>
+                <Left>3.1in</Left>
+                <Height>0.22in</Height>
+                <Width>2.1in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="दिनांक : " &amp; Fields!ReceiptDate.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>9pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Right</TextAlign></Style>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="BodyDonor">
+                <Top>1.94in</Top>
+                <Left>0.12in</Left>
+                <Height>0.22in</Height>
+                <Width>5.1in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="श्री. देणगीदार : " &amp; Fields!DonorName.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>9pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="BodyStaticToday">
+                <Top>2.18in</Top>
+                <Left>0.12in</Left>
+                <Height>0.2in</Height>
+                <Width>5.1in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>यांच्याकडून आज रोजी</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>9pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="BodyHead">
+                <Top>2.4in</Top>
+                <Left>0.12in</Left>
+                <Height>0.22in</Height>
+                <Width>5.1in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="बाबत : " &amp; Fields!DRHeadName.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>9pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="BodyRemark">
+                <Top>2.64in</Top>
+                <Left>0.12in</Left>
+                <Height>0.38in</Height>
+                <Width>5.1in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="तपशील : " &amp; Fields!Remark.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>9pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="BodyAmountWords">
+                <Top>3.06in</Top>
+                <Left>0.12in</Left>
+                <Height>0.5in</Height>
+                <Width>3.2in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="अक्षरी : " &amp; Fields!AmountInWordsMarathi.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>9pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="BodyPaymentType">
+                <Top>3.06in</Top>
+                <Left>3.4in</Left>
+                <Height>0.5in</Height>
+                <Width>1.82in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>="पेमेन्ट प्रकार : " &amp; Fields!PaymentType.Value</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>9pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Right</TextAlign></Style>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Rectangle Name="AmountBox">
+                <Top>3.68in</Top>
+                <Left>0.12in</Left>
+                <Height>0.36in</Height>
+                <Width>1.35in</Width>
+                <ZIndex>2</ZIndex>
+                <Style>
+                  <Border><Style>Solid</Style><Width>1pt</Width></Border>
+                </Style>
+                <ReportItems>
+                  <Textbox Name="AmountValue">
+                    <Top>0.06in</Top>
+                    <Left>0.06in</Left>
+                    <Height>0.24in</Height>
+                    <Width>1.23in</Width>
+                    <Paragraphs>
+                      <Paragraph>
+                        <TextRuns>
+                          <TextRun>
+                            <Value>="रु. " &amp; Fields!AmountNumber.Value</Value>
+                            <Style><FontFamily>Nirmala UI</FontFamily><FontSize>11pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                          </TextRun>
+                        </TextRuns>
+                        <Style><TextAlign>Center</TextAlign></Style>
+                      </Paragraph>
+                    </Paragraphs>
+                  </Textbox>
+                </ReportItems>
+              </Rectangle>
+              <Textbox Name="SigDonor">
+                <Top>4.35in</Top>
+                <Left>0.35in</Left>
+                <Height>0.5in</Height>
+                <Width>1.7in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>____________________</Value>
+                        <Style><FontSize>8pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>पैसे देणाऱ्याची सही</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+              <Textbox Name="SigReceiver">
+                <Top>4.2in</Top>
+                <Left>3.35in</Left>
+                <Height>0.65in</Height>
+                <Width>1.7in</Width>
+                <ZIndex>2</ZIndex>
+                <Paragraphs>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>=Fields!ReceiverSignatureName.Value</Value>
+                        <Style><FontFamily>Segoe Script</FontFamily><FontSize>11pt</FontSize><FontStyle>Italic</FontStyle></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>____________________</Value>
+                        <Style><FontSize>8pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                  <Paragraph>
+                    <TextRuns>
+                      <TextRun>
+                        <Value>पैसे घेणाऱ्याची सही</Value>
+                        <Style><FontFamily>Nirmala UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun>
+                    </TextRuns>
+                    <Style><TextAlign>Center</TextAlign></Style>
+                  </Paragraph>
+                </Paragraphs>
+              </Textbox>
+            </ReportItems>
+          </Rectangle>
+        </ReportItems>
+      </Body>
+      <Width>5.53in</Width>
+      <Page>
+        <PageHeight>8.27in</PageHeight>
+        <PageWidth>5.83in</PageWidth>
+        <LeftMargin>0.15in</LeftMargin>
+        <RightMargin>0.15in</RightMargin>
+        <TopMargin>0.15in</TopMargin>
+        <BottomMargin>0.15in</BottomMargin>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+</Report>

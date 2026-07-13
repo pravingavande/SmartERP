@@ -1,3 +1,85 @@
+.priority-pill {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.priority-low { background: #e8f5e9; color: #2e7d32; }
+.priority-medium { background: #fff8e1; color: #f57f17; }
+.priority-high { background: #fff3e0; color: #ef6c00; }
+.priority-critical { background: #ffebee; color: #c62828; }
+
+.school-check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.reply-section {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+
+  h3 {
+    margin: 0 0 0.75rem;
+    color: var(--epr-navy);
+  }
+}
+
+.reply-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.reply-item {
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+  }
+
+  p {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+}
+
+.reply-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .ticket-page {
   padding: 0;
 }

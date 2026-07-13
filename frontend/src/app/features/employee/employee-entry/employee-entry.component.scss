@@ -194,11 +194,121 @@
   }
 }
 
-.section-tabs {
+.section-tabs,
+.step-wizard {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.35rem;
   margin-bottom: 1rem;
+}
+
+.wizard-hint {
+  margin: -0.35rem 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: #f0f6ff;
+  border: 1px solid #c5d8f5;
+  color: #3d4f66;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.step-wizard.wizard-mode .step-tab.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.step-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid #c5d0de;
+  background: #f7fafd;
+  color: #3d4f66;
+  border-radius: 10px;
+  padding: 0.45rem 0.8rem 0.45rem 0.45rem;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  text-align: left;
+
+  &:hover:not(.active):not(.locked):not(:disabled) {
+    border-color: #9eb0c8;
+    background: #eef4fb;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, var(--epr-navy), #2a5080);
+    border-color: var(--epr-navy);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(30, 58, 110, 0.22);
+
+    .step-badge {
+      background: #fff;
+      color: var(--epr-navy);
+    }
+
+    .step-kicker {
+      color: rgba(255, 255, 255, 0.82);
+    }
+  }
+
+  &.completed:not(.active) {
+    border-color: #86c8a8;
+    background: #f3fbf6;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.step-badge {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: var(--epr-navy);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.step-kicker {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--epr-muted);
+}
+
+.step-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.step-connector {
+  width: 1.25rem;
+  height: 2px;
+  background: #d0dae8;
+  border-radius: 2px;
+  flex-shrink: 0;
+
+  &.done {
+    background: var(--epr-green);
+  }
 }
 
 .section-tab {

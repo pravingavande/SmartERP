@@ -52,6 +52,55 @@ export class MasterHubComponent {
       icon: 'attendance',
       route: '/audit/leave-type-master',
       tone: 'leave'
+    },
+    {
+      label: 'Class Master',
+      description: 'Manage classes for academic schedule',
+      icon: 'register',
+      route: '/audit/class-master',
+      tone: 'class'
+    },
+    {
+      label: 'Event Types Master',
+      description: 'Sanstha-wise event type definitions',
+      icon: 'event-calendar',
+      route: '/audit/event-types-master',
+      tone: 'schedule'
+    },
+    {
+      label: 'Subject Master',
+      description: 'Manage subjects for academic schedule',
+      icon: 'register',
+      route: '/audit/subject-master',
+      tone: 'subject'
+    },
+    {
+      label: 'Academic Schedule',
+      description: 'Plan class-wise academic topics and attachments',
+      icon: 'register',
+      route: '/audit/academic-schedule',
+      tone: 'schedule'
+    },
+    {
+      label: 'Item Group Master',
+      description: 'Organization-wise item groups for inventory',
+      icon: 'register',
+      route: '/audit/item-group-master',
+      tone: 'item-group'
+    },
+    {
+      label: 'Item Master',
+      description: 'Items with rates under item groups',
+      icon: 'register',
+      route: '/audit/item-master',
+      tone: 'item'
+    },
+    {
+      label: 'Stock Register',
+      description: 'Stock entries with auto-calculated amount',
+      icon: 'register',
+      route: '/audit/stock-register',
+      tone: 'stock'
     }
   ];
 }

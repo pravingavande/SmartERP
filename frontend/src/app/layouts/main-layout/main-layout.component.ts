@@ -5,11 +5,14 @@ import { fromEvent } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { TicketNotificationService } from '../../core/services/ticket-notification.service';
+import { TicketService } from '../../core/services/ticket.service';
 import { NavSection } from '../../core/models/nav.model';
+import { TicketPendingModalComponent } from '../../shared/components/ticket-pending-modal/ticket-pending-modal.component';
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TicketPendingModalComponent],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -19,12 +22,15 @@ export class MainLayoutComponent {
 
   private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
+  private readonly ticketService = inject(TicketService);
+  private readonly ticketNotifications = inject(TicketNotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly sidebarCollapsed = signal(false);
   readonly isMobileView = signal(false);
   readonly userProfileExpanded = signal(false);
   readonly profile = toSignal(this.dashboardService.getProfile(), { initialValue: null });
+  readonly pendingTicket = this.ticketNotifications.pendingPopup;
 
   constructor() {
     afterNextRender(() => {
@@ -32,6 +38,20 @@ export class MainLayoutComponent {
       fromEvent(window, 'resize')
         .pipe(debounceTime(150), takeUntilDestroyed(this.destroyRef))
         .subscribe(() => this.syncViewport());
+    });
+
+    this.ticketService
+      .getLookups()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((lookups) => {
+        if (!lookups?.orgs?.length) return;
+        const orgIds = lookups.orgs.map((o) => o.orgID);
+        void this.ticketNotifications.start(orgIds);
+        this.ticketNotifications.loadLoginReminders();
+      });
+
+    this.destroyRef.onDestroy(() => {
+      void this.ticketNotifications.stop();
     });
   }
 

@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of, Subject, switchMap } from 'rxjs';
 import { AuditPrintService } from '../../../core/services/audit-print.service';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
@@ -40,6 +40,8 @@ type FormMode = 'new' | 'edit' | 'view';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VoucherEntryComponent {
+  private static readonly MAX_NARRATION_CACHE = 25;
+
   readonly vType = input.required<'R' | 'P'>();
   readonly title = input.required<string>();
 
@@ -48,6 +50,7 @@ export class VoucherEntryComponent {
   private readonly printService = inject(AuditPrintService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly listReload$ = new Subject<void>();
 
   readonly loading = signal(false);
   readonly lookupsLoading = signal(true);
@@ -126,6 +129,24 @@ export class VoucherEntryComponent {
   readonly voucherDateMax = computed(() => this.activeFy()?.toDate.slice(0, 10) ?? '');
 
   constructor() {
+    this.listReload$
+      .pipe(
+        switchMap(() => {
+          const orgId = this.listOrgID();
+          if (!orgId) return of([] as VoucherListItem[]);
+          return this.audit.getVouchers(orgId, this.vType(), this.listFyID());
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((list) => {
+        this.vouchers.set(list);
+        const maxPage = Math.max(0, Math.ceil(list.length / this.listPageSize()) - 1);
+        if (this.listPageIndex() > maxPage) {
+          this.listPageIndex.set(maxPage);
+        }
+      });
+
+    this.destroyRef.onDestroy(() => this.listReload$.complete());
     this.loadLookups();
   }
 
@@ -255,18 +276,8 @@ export class VoucherEntryComponent {
   }
 
   loadVoucherList(): void {
-    const orgId = this.listOrgID();
-    if (!orgId) return;
-    this.audit
-      .getVouchers(orgId, this.vType(), this.listFyID())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((list) => {
-        this.vouchers.set(list);
-        const maxPage = Math.max(0, Math.ceil(list.length / this.listPageSize()) - 1);
-        if (this.listPageIndex() > maxPage) {
-          this.listPageIndex.set(maxPage);
-        }
-      });
+    if (!this.listOrgID()) return;
+    this.listReload$.next();
   }
 
   loadNarrations(ledgerHeadId: number | null): void {
@@ -275,7 +286,17 @@ export class VoucherEntryComponent {
     this.audit
       .getLedgerNarrations(ledgerHeadId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((list) => this.narrations.update((n) => ({ ...n, [ledgerHeadId]: list })));
+      .subscribe((list) => {
+        this.narrations.update((n) => {
+          const next = { ...n, [ledgerHeadId]: list };
+          const ids = Object.keys(next).map(Number);
+          if (ids.length <= VoucherEntryComponent.MAX_NARRATION_CACHE) return next;
+          for (const id of ids.slice(0, ids.length - VoucherEntryComponent.MAX_NARRATION_CACHE)) {
+            delete next[id];
+          }
+          return next;
+        });
+      });
   }
 
   addDetailRow(): void {
@@ -557,6 +578,7 @@ export class VoucherEntryComponent {
     this.errorMessage.set(null);
     this.fieldErrors.set({});
     this.saveError.set(null);
+    this.narrations.set({});
     this.loadVoucherList();
   }
 
@@ -634,11 +656,11 @@ export class VoucherEntryComponent {
         isActive: true
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((saved) => {
+      .subscribe(({ data: saved, message }) => {
         this.partySaving.set(false);
         if (!saved?.partyID) {
-          this.saveError.set('Unable to save party.');
-          toastOnSave(this.toast, false, { entity: 'Party', mode: 'new', errorMessage: 'Unable to save party.' });
+          this.saveError.set(message ?? 'Unable to save party.');
+          toastOnSave(this.toast, false, { entity: 'Party', mode: 'new', errorMessage: message ?? 'Unable to save party.' });
           return;
         }
         toastOnSave(this.toast, true, { entity: 'Party', mode: 'new' });

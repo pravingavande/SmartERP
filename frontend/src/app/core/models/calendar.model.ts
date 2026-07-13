@@ -48,51 +48,96 @@ export interface SaveFestivalRequest {
 }
 
 export interface EventType {
-  eventTypeId: number;
-  code: string;
-  nameEn: string;
-  nameMr: string;
-  defaultColor?: string | null;
-  sortOrder: number;
+  eventTypeID: number;
+  underOrgID: number;
+  srNo: number;
+  eventType: string;
+  isActive: boolean;
+  underOrgName?: string | null;
+}
+
+export interface SaveEventTypeRequest {
+  eventTypeID?: number | null;
+  underOrgID: number;
+  eventType: string;
+  isActive: boolean;
+}
+
+export interface LocationOption {
+  locationID: number;
+  underOrgID: number;
+  locationName: string;
+  isActive: boolean;
+}
+
+export interface EventLookups {
+  eventTypes: EventType[];
+  orgs: { orgID: number; organizationName: string; schoolCode?: number | null; underOrgID?: number | null }[];
+  sansthaOrgs: number[];
+  canManageEvents: boolean;
+  isSansthaUser: boolean;
 }
 
 export interface CalendarEvent {
-  eventId: number;
+  eventID: number;
   title: string;
   description?: string | null;
   eventDate: string;
   startTime?: string | null;
   endTime?: string | null;
   isAllDay: boolean;
-  eventTypeId?: number | null;
-  eventTypeNameMr?: string | null;
-  eventTypeNameEn?: string | null;
-  eventTypeColor?: string | null;
-  priority: string;
+  eventTypeID?: number | null;
+  eventTypeName?: string | null;
+  locationID?: number | null;
   location?: string | null;
-  organizerUserId?: number | null;
-  organizerName?: string | null;
   color?: string | null;
   status: string;
   notes?: string | null;
+  underOrgID?: number | null;
+  schoolNames?: string | null;
+  orgIDs?: string | null;
+  eventReporting?: string | null;
+  eventPhotoAttachment?: string | null;
+  eventNewsAttachment?: string | null;
+  isLocked: boolean;
+  canEdit: boolean;
+  canManage: boolean;
+  canEditReporting: boolean;
 }
 
 export interface SaveEventRequest {
-  eventId?: number | null;
+  eventID?: number | null;
   title: string;
   description?: string | null;
   eventDate: string;
   startTime?: string | null;
   endTime?: string | null;
   isAllDay: boolean;
-  eventTypeId?: number | null;
-  priority: string;
+  eventTypeID?: number | null;
+  locationID?: number | null;
   location?: string | null;
-  organizerUserId?: number | null;
-  organizerName?: string | null;
   color?: string | null;
   status: string;
   notes?: string | null;
+  underOrgID?: number | null;
+  orgIDs: number[];
+  eventReporting?: string | null;
+  eventPhotoAttachment?: string | null;
+  eventNewsAttachment?: string | null;
+}
+
+export interface PendingEventReporting {
+  eventID: number;
+  title: string;
+  eventDate: string;
+  status: string;
+  schoolNames?: string | null;
+  eventReporting?: string | null;
+}
+
+export interface PendingEventReportingSummary {
+  pendingCount: number;
+  items: PendingEventReporting[];
 }
 
 export interface CalendarDay {

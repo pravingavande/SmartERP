@@ -1,0 +1,99 @@
+import { Injectable, inject, signal } from '@angular/core';
+import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+import { Subject } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { TicketNotificationPayload, TicketPendingNotification } from '../models/ticket.model';
+import { AuthService } from './auth.service';
+import { TicketService } from './ticket.service';
+
+@Injectable({ providedIn: 'root' })
+export class TicketNotificationService {
+  private readonly auth = inject(AuthService);
+  private readonly ticketService = inject(TicketService);
+
+  private connection: HubConnection | null = null;
+  private readonly ticketCreatedSubject = new Subject<TicketNotificationPayload>();
+  readonly ticketCreated$ = this.ticketCreatedSubject.asObservable();
+
+  readonly pendingPopup = signal<TicketPendingNotification | null>(null);
+  readonly dismissedLaterIds = signal<Set<number>>(new Set());
+
+  async start(orgIds: number[]): Promise<void> {
+    await this.stop();
+    const token = this.auth.getToken();
+    if (!token || orgIds.length === 0) return;
+
+    const hubUrl = `${environment.apiBaseUrl}/hubs/ticket`;
+    this.connection = new HubConnectionBuilder()
+      .withUrl(hubUrl, { accessTokenFactory: () => token })
+      .withAutomaticReconnect()
+      .configureLogging(LogLevel.Information)
+      .build();
+
+    this.connection.on('TicketCreated', (payload: TicketNotificationPayload) => {
+      this.ticketCreatedSubject.next(payload);
+      this.showRealtimePopup(payload);
+    });
+
+    try {
+      await this.connection.start();
+      await this.connection.invoke('JoinSchoolGroups', orgIds);
+    } catch {
+      // Hub may be unavailable before API deploy; login reminders still work.
+    }
+  }
+
+  async stop(): Promise<void> {
+    if (!this.connection) return;
+    try {
+      await this.connection.stop();
+    } catch {
+      // ignore
+    }
+    this.connection = null;
+  }
+
+  loadLoginReminders(): void {
+    this.ticketService.getPendingNotifications().subscribe((items) => {
+      const dismissed = this.dismissedLaterIds();
+      const next = items.find(
+        (x) => x.replyRequired === 'Instant' || !dismissed.has(x.ticketID)
+      );
+      if (next) this.pendingPopup.set(next);
+    });
+  }
+
+  dismissLater(ticketId: number): void {
+    this.dismissedLaterIds.update((set) => {
+      const copy = new Set(set);
+      copy.add(ticketId);
+      return copy;
+    });
+    this.pendingPopup.set(null);
+    this.loadLoginReminders();
+  }
+
+  clearPopup(): void {
+    this.pendingPopup.set(null);
+    this.loadLoginReminders();
+  }
+
+  private showRealtimePopup(payload: TicketNotificationPayload): void {
+    this.pendingPopup.set({
+      ticketID: payload.ticketID,
+      ticketNo: payload.ticketNo,
+      subject: payload.subject,
+      description: null,
+      module: null,
+      priority: null,
+      replyRequired: payload.replyRequired,
+      ticketStatusID: 1,
+      createdByUserID: 0,
+      submittedDate: new Date().toISOString(),
+      sentDate: new Date().toISOString(),
+      statusName: 'Open',
+      statusNameMr: 'खुले',
+      schoolNames: payload.schoolNames
+    });
+  }
+}

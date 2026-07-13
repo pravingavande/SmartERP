@@ -8,104 +8,228 @@ public sealed class EventCalendarService : IEventCalendarService
 {
     private readonly IEventCalendarRepository _eventRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IAuditVoucherRepository _auditRepository;
 
-    public EventCalendarService(IEventCalendarRepository eventRepository, IUserRepository userRepository)
+    public EventCalendarService(
+        IEventCalendarRepository eventRepository,
+        IUserRepository userRepository,
+        IAuditVoucherRepository auditRepository)
     {
         _eventRepository = eventRepository;
         _userRepository = userRepository;
+        _auditRepository = auditRepository;
     }
 
-    public async Task<IReadOnlyList<EventTypeDto>> GetEventTypesAsync(CancellationToken cancellationToken = default)
+    public async Task<EventLookupsDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default)
     {
-        var types = await _eventRepository.GetEventTypesAsync(cancellationToken).ConfigureAwait(false);
-        return types.Select(t => new EventTypeDto
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        var orgs = await _auditRepository.GetUserOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
+        var sansthaOrgs = orgs.Where(o => o.OrgID == o.UnderOrgID || o.UnderOrgID is null).Select(o => o.OrgID).ToList();
+        if (sansthaOrgs.Count == 0 && orgs.Count > 0)
+            sansthaOrgs = [orgs[0].OrgID];
+
+        var underOrgId = sansthaOrgs.FirstOrDefault();
+        var types = await _eventRepository.GetEventTypesAsync(underOrgId > 0 ? underOrgId : null, cancellationToken).ConfigureAwait(false);
+
+        return new EventLookupsDto
         {
-            EventTypeId = t.EventTypeId,
-            Code = t.Code,
-            NameEn = t.NameEn,
-            NameMr = t.NameMr,
-            DefaultColor = t.DefaultColor,
-            SortOrder = t.SortOrder
+            EventTypes = types.Select(MapEventType).ToList(),
+            Orgs = orgs,
+            SansthaOrgs = sansthaOrgs,
+            CanManageEvents = context.CanManageEvents,
+            IsSansthaUser = orgs.Count > 1
+        };
+    }
+
+    public async Task<IReadOnlyList<EventTypeDto>> GetEventTypeMasterListAsync(long userId, long? underOrgId, CancellationToken cancellationToken = default)
+    {
+        var types = await _eventRepository.GetEventTypeListAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+        return types.Select(MapEventType).ToList();
+    }
+
+    public async Task<EventTypeDto?> SaveEventTypeAsync(long userId, SaveEventTypeRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (!context.CanManageEvents || request.UnderOrgID <= 0 || string.IsNullOrWhiteSpace(request.EventType))
+            return null;
+
+        var id = await _eventRepository.SaveEventTypeAsync(new SaveEventTypeEntity
+        {
+            EventTypeID = request.EventTypeID,
+            UnderOrgID = request.UnderOrgID,
+            EventType = request.EventType.Trim(),
+            IsActive = request.IsActive,
+            UserID = userId
+        }, cancellationToken).ConfigureAwait(false);
+
+        var list = await _eventRepository.GetEventTypeListAsync(request.UnderOrgID, cancellationToken).ConfigureAwait(false);
+        return list.Where(x => x.EventTypeID == id).Select(MapEventType).FirstOrDefault();
+    }
+
+    public async Task<bool> DeleteEventTypeAsync(long userId, int eventTypeId, CancellationToken cancellationToken = default)
+    {
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (!context.CanManageEvents) return false;
+        await _eventRepository.DeleteEventTypeAsync(eventTypeId, cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<IReadOnlyList<LocationDto>> SearchLocationsAsync(long userId, long underOrgId, string? search, CancellationToken cancellationToken = default)
+    {
+        var items = await _eventRepository.GetLocationsAsync(underOrgId, search, cancellationToken).ConfigureAwait(false);
+        return items.Select(x => new LocationDto
+        {
+            LocationID = x.LocationID,
+            UnderOrgID = x.UnderOrgID,
+            LocationName = x.LocationName,
+            IsActive = x.IsActive
         }).ToList();
+    }
+
+    public async Task<LocationDto?> SaveLocationAsync(long userId, SaveLocationRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (!context.CanManageEvents || string.IsNullOrWhiteSpace(request.LocationName))
+            return null;
+
+        var id = await _eventRepository.SaveLocationAsync(request.UnderOrgID, request.LocationName.Trim(), request.LocationID, cancellationToken).ConfigureAwait(false);
+        var items = await _eventRepository.GetLocationsAsync(request.UnderOrgID, request.LocationName, cancellationToken).ConfigureAwait(false);
+        var item = items.FirstOrDefault(x => x.LocationID == id);
+        return item is null ? null : new LocationDto
+        {
+            LocationID = item.LocationID,
+            UnderOrgID = item.UnderOrgID,
+            LocationName = item.LocationName,
+            IsActive = item.IsActive
+        };
     }
 
     public async Task<IReadOnlyList<CalendarEventDto>> GetEventsAsync(long userId, DateTime fromDate, DateTime toDate, string? search, CancellationToken cancellationToken = default)
     {
-        var profile = await _userRepository.GetProfileByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
-        var orgId = profile?.OrgID;
-
-        var events = await _eventRepository.GetEventsAsync(fromDate, toDate, orgId, search, cancellationToken).ConfigureAwait(false);
-        return events.Select(MapEvent).ToList();
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        var events = await _eventRepository.GetEventsAsync(userId, fromDate, toDate, null, search, cancellationToken).ConfigureAwait(false);
+        return events.Select(e => MapEvent(e, context.CanManageEvents)).ToList();
     }
 
-    public async Task<CalendarEventDto?> GetEventByIdAsync(int eventId, CancellationToken cancellationToken = default)
+    public async Task<CalendarEventDto?> GetEventByIdAsync(long userId, int eventId, CancellationToken cancellationToken = default)
     {
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
         var item = await _eventRepository.GetEventByIdAsync(eventId, cancellationToken).ConfigureAwait(false);
-        return item is null ? null : MapEvent(item);
+        return item is null ? null : MapEvent(item, context.CanManageEvents);
     }
 
     public async Task<CalendarEventDto?> SaveEventAsync(long userId, SaveEventRequestDto request, CancellationToken cancellationToken = default)
     {
-        var profile = await _userRepository.GetProfileByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (!context.CanManageEvents || request.OrgIDs.Count == 0)
+            return null;
 
-        var eventId = await _eventRepository.SaveEventAsync(new CalendarEventItem
+        if (string.IsNullOrWhiteSpace(request.Title))
+            return null;
+
+        if (string.IsNullOrWhiteSpace(request.Location))
+            return null;
+
+        var profile = await _userRepository.GetProfileByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        var underOrgId = request.UnderOrgID ?? profile?.OrgID;
+
+        var eventId = await _eventRepository.SaveEventAsync(new SaveEventEntity
         {
-            EventId = request.EventId ?? 0,
+            EventID = request.EventID ?? 0,
             Title = request.Title.Trim(),
             Description = request.Description,
             EventDate = request.EventDate,
             StartTime = ParseTime(request.StartTime),
             EndTime = ParseTime(request.EndTime),
             IsAllDay = request.IsAllDay,
-            EventTypeId = request.EventTypeId,
-            Priority = request.Priority,
-            Location = request.Location,
-            OrganizerUserId = request.OrganizerUserId ?? userId,
-            OrganizerName = request.OrganizerName ?? profile?.DisplayName,
+            EventTypeID = request.EventTypeID,
+            LocationID = request.LocationID,
+            Location = request.Location.Trim(),
             Color = request.Color,
             Status = request.Status,
             Notes = request.Notes,
-            OrgID = profile?.OrgID,
+            UnderOrgID = underOrgId,
+            OrgIDs = string.Join(",", request.OrgIDs),
+            EventReporting = request.EventReporting,
+            EventPhotoAttachment = request.EventPhotoAttachment,
+            EventNewsAttachment = request.EventNewsAttachment,
+            OrgID = (int?)request.OrgIDs.FirstOrDefault(),
             SchoolCode = profile?.SchoolCode,
-            CreatedByUserId = userId
+            CreatedByUserId = userId,
+            CanManageEvents = context.CanManageEvents
         }, cancellationToken).ConfigureAwait(false);
 
-        return await GetEventByIdAsync(eventId, cancellationToken).ConfigureAwait(false);
+        return await GetEventByIdAsync(userId, eventId, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<bool> DeleteEventAsync(int eventId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteEventAsync(long userId, int eventId, CancellationToken cancellationToken = default)
     {
-        await _eventRepository.DeleteEventAsync(eventId, cancellationToken).ConfigureAwait(false);
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (!context.CanManageEvents) return false;
+        await _eventRepository.DeleteEventAsync(eventId, context.CanManageEvents, cancellationToken).ConfigureAwait(false);
         return true;
     }
 
-    private static CalendarEventDto MapEvent(CalendarEventItem item) => new()
+    public async Task<PendingEventReportingSummaryDto> GetPendingReportingAsync(long userId, CancellationToken cancellationToken = default)
     {
-        EventId = item.EventId,
+        var count = await _eventRepository.GetPendingReportingCountAsync(userId, cancellationToken).ConfigureAwait(false);
+        var items = await _eventRepository.GetPendingReportingListAsync(userId, cancellationToken).ConfigureAwait(false);
+        return new PendingEventReportingSummaryDto
+        {
+            PendingCount = count,
+            Items = items.Select(x => new PendingEventReportingDto
+            {
+                EventID = x.EventID,
+                Title = x.Title,
+                EventDate = x.EventDate,
+                Status = x.Status,
+                SchoolNames = x.SchoolNames,
+                EventReporting = x.EventReporting
+            }).ToList()
+        };
+    }
+
+    private static EventTypeDto MapEventType(EventTypeItem item) => new()
+    {
+        EventTypeID = item.EventTypeID,
+        UnderOrgID = item.UnderOrgID,
+        SrNo = item.SrNo,
+        EventType = item.EventType,
+        IsActive = item.IsActive,
+        UnderOrgName = item.UnderOrgName
+    };
+
+    private static CalendarEventDto MapEvent(CalendarEventItem item, bool canManage) => new()
+    {
+        EventID = item.EventID,
         Title = item.Title,
         Description = item.Description,
         EventDate = item.EventDate,
         StartTime = FormatTime(item.StartTime),
         EndTime = FormatTime(item.EndTime),
         IsAllDay = item.IsAllDay,
-        EventTypeId = item.EventTypeId,
-        EventTypeNameMr = item.EventTypeNameMr,
-        EventTypeNameEn = item.EventTypeNameEn,
-        EventTypeColor = item.EventTypeColor,
-        Priority = item.Priority,
+        EventTypeID = item.EventTypeID,
+        EventTypeName = item.EventTypeName,
+        LocationID = item.LocationID,
         Location = item.Location,
-        OrganizerUserId = item.OrganizerUserId,
-        OrganizerName = item.OrganizerName,
         Color = item.Color,
         Status = item.Status,
-        Notes = item.Notes
+        Notes = item.Notes,
+        UnderOrgID = item.UnderOrgID,
+        SchoolNames = item.SchoolNames,
+        OrgIDs = item.OrgIDs,
+        EventReporting = item.EventReporting,
+        EventPhotoAttachment = item.EventPhotoAttachment,
+        EventNewsAttachment = item.EventNewsAttachment,
+        IsLocked = item.IsLocked,
+        CanManage = canManage,
+        CanEdit = canManage && !item.IsLocked,
+        CanEditReporting = canManage && (item.IsLocked || item.Status == "पूर्ण झाले")
     };
 
     private static TimeSpan? ParseTime(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
+        if (string.IsNullOrWhiteSpace(value)) return null;
         return TimeSpan.TryParse(value, out var time) ? time : null;
     }
 

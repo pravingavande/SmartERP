@@ -81,6 +81,41 @@ export const routes: Routes = [
           import('./features/employee/leave-type-master/leave-type-master.component').then((m) => m.LeaveTypeMasterComponent)
       },
       {
+        path: 'audit/class-master',
+        loadComponent: () =>
+          import('./features/audit/class-master/class-master.component').then((m) => m.ClassMasterComponent)
+      },
+      {
+        path: 'audit/event-types-master',
+        loadComponent: () =>
+          import('./features/audit/event-types-master/event-types-master.component').then((m) => m.EventTypesMasterComponent)
+      },
+      {
+        path: 'audit/subject-master',
+        loadComponent: () =>
+          import('./features/audit/subject-master/subject-master.component').then((m) => m.SubjectMasterComponent)
+      },
+      {
+        path: 'audit/academic-schedule',
+        loadComponent: () =>
+          import('./features/audit/academic-schedule/academic-schedule.component').then((m) => m.AcademicScheduleComponent)
+      },
+      {
+        path: 'audit/item-group-master',
+        loadComponent: () =>
+          import('./features/audit/item-group-master/item-group-master.component').then((m) => m.ItemGroupMasterComponent)
+      },
+      {
+        path: 'audit/item-master',
+        loadComponent: () =>
+          import('./features/audit/item-master/item-master.component').then((m) => m.ItemMasterComponent)
+      },
+      {
+        path: 'audit/stock-register',
+        loadComponent: () =>
+          import('./features/audit/stock-register/stock-register.component').then((m) => m.StockRegisterComponent)
+      },
+      {
         path: 'tickets',
         loadComponent: () =>
           import('./features/ticket/ticket-entry/ticket-entry.component').then((m) => m.TicketEntryComponent)

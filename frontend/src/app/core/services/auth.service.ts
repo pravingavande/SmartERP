@@ -5,6 +5,7 @@ import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, AuthUser, LoginRequest, LoginResponse, UserLoginSchoolContext } from '../models/auth.model';
 import { filterSchoolOrgs } from '../utils/org-access.util';
+import { ToastService } from './toast.service';
 
 const STORAGE_KEY = 'smartepr_auth';
 
@@ -29,7 +30,8 @@ export class AuthService {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly toast: ToastService
   ) {}
 
   login(request: LoginRequest): Observable<ApiResponse<LoginResponse>> {
@@ -48,6 +50,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.toast.dismissAll();
     this.userSignal.set(null);
     sessionStorage.removeItem(STORAGE_KEY);
     void this.router.navigate(['/login']);

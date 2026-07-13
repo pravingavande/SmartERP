@@ -128,7 +128,10 @@ export class AuditPrintService {
 </head><body>${bodyHtml}</body></html>`);
     win.document.close();
     win.focus();
-    setTimeout(() => win.print(), 300);
+    const timer = window.setTimeout(() => {
+      if (!win.closed) win.print();
+    }, 300);
+    win.addEventListener('beforeunload', () => window.clearTimeout(timer), { once: true });
   }
 
   private formatDate(value?: string | null): string {

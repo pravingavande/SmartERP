@@ -11,6 +11,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { mapBackendMessageToFieldErrors, validatePartyForm } from '../../../core/utils/master-validation.util';
 
 type FormMode = 'new' | 'edit';
 
@@ -129,13 +130,7 @@ export class PartyMasterComponent {
       mobNo: coerceEnglishIntegerString(f.mobNo, 10)
     }));
     const f = this.form();
-    const errors: FieldErrors = {};
-    if (!f.orgID) {
-      errors['orgID'] = 'Please select School.';
-    }
-    if (!f.partyName.trim()) {
-      errors['partyName'] = 'Please enter Party Name.';
-    }
+    const errors = validatePartyForm(f);
     if (hasFieldErrors(errors)) {
       this.fieldErrors.set(errors);
       this.saveError.set(null);
@@ -148,11 +143,16 @@ export class PartyMasterComponent {
     this.audit
       .saveParty(f)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((saved) => {
+      .subscribe(({ data, message }) => {
         this.loading.set(false);
-        if (!saved) {
-          this.saveError.set('Unable to save party.');
-          toastOnSave(this.toast, false, { entity: 'Party', mode: this.formMode(), errorMessage: 'Unable to save party.' });
+        if (!data) {
+          const backendErrors = mapBackendMessageToFieldErrors(message);
+          if (hasFieldErrors(backendErrors)) {
+            this.fieldErrors.set(backendErrors);
+          }
+          const errorText = message ?? 'Unable to save party.';
+          this.saveError.set(errorText);
+          toastOnSave(this.toast, false, { entity: 'Party', mode: this.formMode(), errorMessage: errorText });
           return;
         }
         toastOnSave(this.toast, true, { entity: 'Party', mode: this.formMode() });
@@ -173,6 +173,8 @@ export class PartyMasterComponent {
   closeForm(): void {
     this.formVisible.set(false);
     this.formMode.set('new');
+    this.fieldErrors.set({});
+    this.saveError.set(null);
   }
 
   updateForm<K extends keyof PartyFormState>(key: K, value: PartyFormState[K]): void {

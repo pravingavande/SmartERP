@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { Subject, switchMap } from 'rxjs';
 import { AcademicCalendarService } from '../../core/services/academic-calendar.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Festival, Holiday } from '../../core/models/calendar.model';
@@ -30,6 +31,7 @@ export class AcademicCalendarComponent {
   private readonly calendarService = inject(AcademicCalendarService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly monthReload$ = new Subject<void>();
 
   readonly holidayTypes = HOLIDAY_TYPES;
   readonly weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -52,6 +54,22 @@ export class AcademicCalendarComponent {
   readonly monthDays = () => buildMonthGrid(this.viewYear(), this.viewMonth());
 
   constructor() {
+    this.monthReload$
+      .pipe(
+        switchMap(() => {
+          const { from, to } = monthRange(this.viewYear(), this.viewMonth());
+          this.loading.set(true);
+          return this.calendarService.getCalendar(from, to);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((data) => {
+        this.holidays.set(data.holidays);
+        this.festivals.set(data.festivals);
+        this.loading.set(false);
+      });
+
+    this.destroyRef.onDestroy(() => this.monthReload$.complete());
     this.loadMonth();
   }
 
@@ -227,16 +245,7 @@ export class AcademicCalendarComponent {
   }
 
   private loadMonth(): void {
-    const { from, to } = monthRange(this.viewYear(), this.viewMonth());
-    this.loading.set(true);
-    this.calendarService
-      .getCalendar(from, to)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((data) => {
-        this.holidays.set(data.holidays);
-        this.festivals.set(data.festivals);
-        this.loading.set(false);
-      });
+    this.monthReload$.next();
   }
 
   private emptyHolidayForm() {

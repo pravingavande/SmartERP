@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AccountRegisterMasterOption, AuditLookups } from '../../../core/models/audit.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
+import { validateOrgSelection } from '../../../core/utils/master-validation.util';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -111,8 +112,9 @@ export class AccountRegisterDefineComponent {
 
   save(): void {
     const orgId = this.selectedOrgID();
-    if (!orgId) {
-      this.fieldErrors.set({ orgID: 'Select a school / org first.' });
+    const errors = validateOrgSelection(orgId);
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
       this.saveError.set(null);
       return;
     }
@@ -122,7 +124,7 @@ export class AccountRegisterDefineComponent {
     this.saveError.set(null);
     const ids = Array.from(this.selectedRegisterIds());
     this.audit
-      .saveAccountRegisterDefine(orgId, ids)
+      .saveAccountRegisterDefine(orgId!, ids)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((ok) => {
         this.loading.set(false);

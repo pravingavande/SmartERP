@@ -6,6 +6,10 @@
     </div>
   </header>
 
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
   @if (lookupsLoading()) {
     <p class="loading-hint">Loading...</p>
   }

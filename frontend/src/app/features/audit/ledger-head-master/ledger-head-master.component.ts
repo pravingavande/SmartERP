@@ -16,6 +16,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { mapBackendMessageToFieldErrors, validateLedgerHeadForm } from '../../../core/utils/master-validation.util';
 
 type FormMode = 'new' | 'edit';
 
@@ -203,6 +204,8 @@ export class LedgerHeadMasterComponent {
     this.formMode.set('new');
     this.formVisible.set(true);
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.form.set({
       ...this.emptyForm(),
       underOrgID: orgId,
@@ -215,6 +218,8 @@ export class LedgerHeadMasterComponent {
     this.formMode.set('edit');
     this.formVisible.set(true);
     this.errorMessage.set(null);
+    this.fieldErrors.set({});
+    this.saveError.set(null);
     this.form.set({
       ledgerHeadID: item.ledgerHeadID,
       underOrgID: item.underOrgID,
@@ -235,16 +240,7 @@ export class LedgerHeadMasterComponent {
 
   save(): void {
     const f = this.form();
-    const errors: FieldErrors = {};
-    if (!f.underOrgID) {
-      errors['underOrgID'] = 'Please select Org / Sanstha.';
-    }
-    if (!f.ledgerHead.trim()) {
-      errors['ledgerHead'] = 'Please enter Ledger Head.';
-    }
-    if (!f.ledgerTypeID) {
-      errors['ledgerTypeID'] = 'Please select Ledger Type.';
-    }
+    const errors = validateLedgerHeadForm(f);
     if (hasFieldErrors(errors)) {
       this.fieldErrors.set(errors);
       this.saveError.set(null);
@@ -257,11 +253,16 @@ export class LedgerHeadMasterComponent {
     this.audit
       .saveLedgerHead(f)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((saved) => {
+      .subscribe(({ data, message }) => {
         this.loading.set(false);
-        if (!saved) {
-          this.saveError.set('Unable to save ledger head.');
-          toastOnSave(this.toast, false, { entity: 'Ledger head', mode: this.formMode(), errorMessage: 'Unable to save ledger head.' });
+        if (!data) {
+          const backendErrors = mapBackendMessageToFieldErrors(message);
+          if (hasFieldErrors(backendErrors)) {
+            this.fieldErrors.set(backendErrors);
+          }
+          const errorText = message ?? 'Unable to save ledger head.';
+          this.saveError.set(errorText);
+          toastOnSave(this.toast, false, { entity: 'Ledger head', mode: this.formMode(), errorMessage: errorText });
           return;
         }
         toastOnSave(this.toast, true, { entity: 'Ledger head', mode: this.formMode() });
@@ -282,6 +283,8 @@ export class LedgerHeadMasterComponent {
   closeForm(): void {
     this.formVisible.set(false);
     this.formMode.set('new');
+    this.fieldErrors.set({});
+    this.saveError.set(null);
   }
 
   updateForm<K extends keyof LedgerHeadFormState>(key: K, value: LedgerHeadFormState[K]): void {

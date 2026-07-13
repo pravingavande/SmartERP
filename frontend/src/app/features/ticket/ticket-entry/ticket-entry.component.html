@@ -1,11 +1,11 @@
 <section class="ticket-page">
   <header class="page-header">
     <div>
-      <h1>Ticket Raise</h1>
-      <p>टिकिट नोंद — शाळा / सांस्था</p>
+      <h1>Ticket Management</h1>
+      <p>Raise, track, and close support tickets</p>
     </div>
-    @if (!formVisible()) {
-      <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
+    @if (!formVisible() && canRaiseTicket()) {
+      <button type="button" class="btn btn-primary" (click)="newEntry()">+ Raise Ticket</button>
     }
   </header>
 
@@ -13,7 +13,7 @@
     @if (lookups()?.isSansthaUser) {
       <div class="list-filters">
         <label class="field">
-          <span class="field-label">शाळा (School)</span>
+          <span class="field-label">Filter by School</span>
           <select
             class="field-control"
             [ngModel]="listOrgID()"
@@ -29,7 +29,7 @@
       </div>
     }
 
-    @if (errorMessage() && !formVisible()) {
+    @if (errorMessage()) {
       <p class="error list-error">{{ errorMessage() }}</p>
     }
   }
@@ -42,38 +42,38 @@
           <table class="records-table">
             <thead>
               <tr>
-                <th>शाळा</th>
-                <th>दिनांक</th>
-                <th>वर्णन</th>
-                <th>रक्कम</th>
-                <th>स्थिती</th>
-                <th>UserCode</th>
-                <th>Created</th>
-                <th>Modified</th>
-                <th>IP</th>
+                <th>Ticket No</th>
+                <th>School(s)</th>
+                <th>Subject</th>
+                <th>Module</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Reply Req.</th>
+                <th>Submitted</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               @for (t of tickets(); track t.ticketID) {
-                <tr [class.active]="form().ticketID === t.ticketID">
-                  <td class="school">{{ t.organizationName }}</td>
-                  <td>{{ t.ticketDate | date:'dd/MM/yy HH:mm' }}</td>
-                  <td class="desc">{{ t.description || '—' }}</td>
-                  <td class="amt">{{ t.amount | currency:'INR':'symbol':'1.0-0' }}</td>
+                <tr>
+                  <td>{{ t.ticketNo || t.ticketID }}</td>
+                  <td class="school">{{ t.schoolNames || t.organizationName }}</td>
+                  <td class="desc">{{ t.subject || '—' }}</td>
+                  <td>{{ t.module || '—' }}</td>
+                  <td><span class="priority-pill" [class]="priorityClass(t.priority)">{{ t.priority || '—' }}</span></td>
                   <td>{{ statusLabel(t) }}</td>
-                  <td>{{ t.userCode || '—' }}</td>
-                  <td>{{ t.createdDate | date:'dd/MM/yy HH:mm' }}</td>
-                  <td>{{ t.modifyDate ? (t.modifyDate | date:'dd/MM/yy HH:mm') : '—' }}</td>
-                  <td>{{ t.ip || '—' }}</td>
+                  <td>{{ t.replyRequired || '—' }}</td>
+                  <td>{{ t.submittedDate || t.createdDate | date:'dd/MM/yy HH:mm' }}</td>
                   <td class="actions">
-                    <button type="button" class="action-btn view" title="View" (click)="viewEntry(t)">View</button>
-                    <button type="button" class="action-btn edit" title="Edit" (click)="editEntry(t)">Edit</button>
+                    <button type="button" class="action-btn view" (click)="viewEntry(t)">View</button>
+                    @if (canRaiseTicket()) {
+                      <button type="button" class="action-btn edit" (click)="editEntry(t)">Edit</button>
+                    }
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="10" class="empty">No tickets found</td>
+                  <td colspan="9" class="empty">No tickets found</td>
                 </tr>
               }
             </tbody>
@@ -87,43 +87,59 @@
         @if (lookupsLoading()) {
           <p class="loading-hint">Loading ticket masters...</p>
         }
-        @if (isViewMode()) {
-          <p class="view-banner">View mode — record is read-only</p>
+        @if (isViewMode() || isReadOnlyUser()) {
+          <p class="view-banner">View mode — {{ isReadOnlyUser() ? 'read-only access' : 'record is read-only' }}</p>
+        }
+
+        @if (detail()?.ticket; as ticket) {
+          <div class="meta-grid">
+            <div><strong>Ticket No:</strong> {{ ticket.ticketNo || ticket.ticketID }}</div>
+            <div><strong>Status:</strong> {{ statusLabel(ticket) }}</div>
+            <div><strong>Created By:</strong> {{ ticket.userCode || '—' }}</div>
+            <div><strong>Submitted:</strong> {{ ticket.submittedDate || ticket.createdDate | date:'dd/MM/yy HH:mm' }}</div>
+            <div><strong>Sent:</strong> {{ ticket.sentDate ? (ticket.sentDate | date:'dd/MM/yy HH:mm') : '—' }}</div>
+            <div><strong>Read:</strong> {{ ticket.readDate ? (ticket.readDate | date:'dd/MM/yy HH:mm') : '—' }}</div>
+            <div><strong>Last Reply:</strong> {{ ticket.lastReplyDate ? (ticket.lastReplyDate | date:'dd/MM/yy HH:mm') : '—' }}</div>
+            <div><strong>Closed:</strong> {{ ticket.closedDate ? (ticket.closedDate | date:'dd/MM/yy HH:mm') : '—' }}</div>
+          </div>
         }
 
         <form class="ticket-form" (ngSubmit)="save()">
           @if (saveError()) {
             <p class="form-save-error">{{ saveError() }}</p>
           }
-          <fieldset [disabled]="isViewMode()">
+          <fieldset [disabled]="!canEditCurrent()">
             <div class="form-section">
-              <h3>Ticket Raise</h3>
+              <h3>Ticket Entry</h3>
               <div class="form-grid">
-                <label class="field" [class.field-invalid]="fieldError('orgID')">
-                  <span class="field-label">शाळा (School) *</span>
-                  <select
-                    class="field-control"
-                    required
-                    [disabled]="schoolDisabled() || isViewMode()"
-                    [ngModel]="form().orgID"
-                    (ngModelChange)="onOrgChange($event ? +$event : null)"
-                    name="orgID"
-                  >
-                    <option [ngValue]="null">-- शाळा निवडा --</option>
-                    @for (o of lookups()?.orgs ?? []; track o.orgID) {
-                      <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+                @if (canRaiseTicket()) {
+                  <div class="field full" [class.field-invalid]="fieldError('orgIDs')">
+                    <span class="field-label">School(s) *</span>
+                    <div class="school-check-grid">
+                      @for (o of lookups()?.orgs ?? []; track o.orgID) {
+                        <label class="check-item">
+                          <input
+                            type="checkbox"
+                            [checked]="isSchoolSelected(o.orgID)"
+                            (change)="toggleSchool(o.orgID, $any($event.target).checked)"
+                          >
+                          {{ o.organizationName }}
+                        </label>
+                      }
+                    </div>
+                    @if (fieldError('orgIDs')) {
+                      <span class="field-error">{{ fieldError('orgIDs') }}</span>
                     }
-                  </select>
-                  @if (fieldError('orgID')) {
-                    <span class="field-error">{{ fieldError('orgID') }}</span>
-                  }
-                  @if (schoolDisabled()) {
-                    <small class="field-hint">School login — your school is auto-selected.</small>
-                  }
-                </label>
+                  </div>
+                } @else {
+                  <label class="field full">
+                    <span class="field-label">School(s)</span>
+                    <input class="field-control" [value]="detail()?.ticket?.schoolNames || '—'" readonly>
+                  </label>
+                }
 
                 <label class="field">
-                  <span class="field-label">दिनांक (Date) *</span>
+                  <span class="field-label">Date & Time *</span>
                   <input
                     class="field-control"
                     type="datetime-local"
@@ -134,8 +150,69 @@
                   >
                 </label>
 
+                <label class="field" [class.field-invalid]="fieldError('subject')">
+                  <span class="field-label">Subject *</span>
+                  <input
+                    class="field-control"
+                    required
+                    [ngModel]="form().subject"
+                    (ngModelChange)="updateForm('subject', $event)"
+                    name="subject"
+                  >
+                  @if (fieldError('subject')) {
+                    <span class="field-error">{{ fieldError('subject') }}</span>
+                  }
+                </label>
+
+                <label class="field">
+                  <span class="field-label">Module</span>
+                  <select
+                    class="field-control"
+                    [ngModel]="form().module"
+                    (ngModelChange)="updateForm('module', $event)"
+                    name="module"
+                  >
+                    <option value="">-- Select Module --</option>
+                    @for (m of lookups()?.modules ?? []; track m.ticketModuleID) {
+                      <option [value]="m.moduleName">{{ m.moduleName }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span class="field-label">Priority</span>
+                  <select
+                    class="field-control"
+                    [ngModel]="form().priority"
+                    (ngModelChange)="updateForm('priority', $event)"
+                    name="priority"
+                  >
+                    @for (p of lookups()?.priorities ?? []; track p) {
+                      <option [value]="p">{{ p }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="field" [class.field-invalid]="fieldError('replyRequired')">
+                  <span class="field-label">Reply Required *</span>
+                  <select
+                    class="field-control"
+                    required
+                    [ngModel]="form().replyRequired"
+                    (ngModelChange)="updateForm('replyRequired', $event)"
+                    name="replyRequired"
+                  >
+                    @for (r of lookups()?.replyRequiredOptions ?? []; track r) {
+                      <option [value]="r">{{ r }}</option>
+                    }
+                  </select>
+                  @if (fieldError('replyRequired')) {
+                    <span class="field-error">{{ fieldError('replyRequired') }}</span>
+                  }
+                </label>
+
                 <label class="field full">
-                  <span class="field-label">वर्णन (Description)</span>
+                  <span class="field-label">Description</span>
                   <textarea
                     class="field-control"
                     rows="4"
@@ -145,46 +222,10 @@
                   ></textarea>
                 </label>
 
-                <label class="field">
-                  <span class="field-label">रक्कम (Amount)</span>
-                  <input
-                    class="field-control"
-                    appMarathiNumber
-                    mode="decimal"
-                    [ngModel]="form().amount"
-                    (ngModelChange)="updateForm('amount', $event)"
-                    name="amount"
-                  >
-                </label>
-
-                <label class="field" [class.field-invalid]="fieldError('ticketStatusID')">
-                  <span class="field-label">स्थिती (Status) *</span>
-                  <select
-                    class="field-control"
-                    required
-                    [ngModel]="form().ticketStatusID"
-                    (ngModelChange)="updateForm('ticketStatusID', $event ? +$event : null)"
-                    name="ticketStatusID"
-                  >
-                    <option [ngValue]="null">-- स्थिती निवडा --</option>
-                    @for (s of lookups()?.statuses ?? []; track s.ticketStatusID) {
-                      <option [ngValue]="s.ticketStatusID">{{ statusLabel(s) }}</option>
-                    }
-                  </select>
-                  @if (fieldError('ticketStatusID')) {
-                    <span class="field-error">{{ fieldError('ticketStatusID') }}</span>
-                  }
-                </label>
-
                 <label class="field full">
-                  <span class="field-label">Attachment (Browse)</span>
+                  <span class="field-label">Attachment</span>
                   <div class="file-row">
-                    <input
-                      class="field-control file-input"
-                      type="file"
-                      (change)="onFileSelected($event)"
-                      name="attachmentFile"
-                    >
+                    <input class="field-control file-input" type="file" (change)="onFileSelected($event)" name="attachmentFile">
                     @if (selectedFileName() || form().attachment) {
                       <span class="file-name">{{ selectedFileName() || form().attachment }}</span>
                     }
@@ -195,14 +236,63 @@
           </fieldset>
 
           <footer class="form-footer">
-            @if (isViewMode()) {
-              <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
-            } @else {
+            @if (canEditCurrent()) {
               <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
-              <button type="submit" class="btn btn-primary" [disabled]="loading()">Submit</button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading()">Submit Ticket</button>
+            } @else {
+              <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
+              @if (canCloseCurrent()) {
+                <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="closeTicket()">Close Ticket</button>
+              }
             }
           </footer>
         </form>
+
+        @if (detail()) {
+          <section class="reply-section">
+            <h3>Replies</h3>
+            <div class="reply-thread">
+              @for (r of detail()!.replies; track r.replyID) {
+                <article class="reply-item">
+                  <header>
+                    <strong>{{ r.userCode || 'User' }}</strong>
+                    <span>{{ r.replyDate | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </header>
+                  <p>{{ r.replyText }}</p>
+                  @if (r.replyStatus) {
+                    <small>Status: {{ r.replyStatus }}</small>
+                  }
+                </article>
+              } @empty {
+                <p class="empty">No replies yet.</p>
+              }
+            </div>
+
+            @if (canReplyCurrent()) {
+              <div class="reply-form">
+                <label class="field">
+                  <span class="field-label">Reply</span>
+                  <textarea
+                    class="field-control"
+                    rows="3"
+                    [ngModel]="replyForm().replyText"
+                    (ngModelChange)="updateReply('replyText', $event)"
+                  ></textarea>
+                </label>
+                <label class="field">
+                  <span class="field-label">Reply Status</span>
+                  <input
+                    class="field-control"
+                    [ngModel]="replyForm().replyStatus"
+                    (ngModelChange)="updateReply('replyStatus', $event)"
+                    placeholder="e.g. In Progress, Resolved"
+                  >
+                </label>
+                <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="submitReply()">Send Reply</button>
+              </div>
+            }
+          </section>
+        }
       </div>
     }
   </div>

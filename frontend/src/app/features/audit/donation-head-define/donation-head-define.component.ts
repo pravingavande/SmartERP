@@ -10,6 +10,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
+import { validateOrgSelection } from '../../../core/utils/master-validation.util';
 
 @Component({
   selector: 'app-donation-head-define',
@@ -114,8 +115,9 @@ export class DonationHeadDefineComponent {
 
   save(): void {
     const orgId = this.selectedOrgID();
-    if (!orgId) {
-      this.fieldErrors.set({ orgID: 'Select a school / org first.' });
+    const errors = validateOrgSelection(orgId);
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
       this.saveError.set(null);
       return;
     }
@@ -123,19 +125,18 @@ export class DonationHeadDefineComponent {
     this.loading.set(true);
     this.fieldErrors.set({});
     this.saveError.set(null);
-    this.successMessage.set(null);
     const ids = Array.from(this.selectedHeadIds());
     this.donation
-      .saveDRHeadDefine(orgId, ids)
+      .saveDRHeadDefine(orgId!, ids)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((ok) => {
         this.loading.set(false);
         if (!ok) {
           this.saveError.set('Unable to save donation head mapping.');
-          this.toast.showError('Unable to save donation head mapping.');
+          this.toast.showError('Unable to save donation head mapping.', 'Save failed');
           return;
         }
-        this.toast.showSuccess('Donation heads saved successfully.');
+        this.toast.showSuccess('Donation heads saved successfully.', 'Saved');
       });
   }
 }

@@ -110,14 +110,36 @@
           <p class="form-save-error">{{ saveError() }}</p>
         }
 
-        <nav class="section-tabs" aria-label="Employee sections">
-          <button type="button" class="section-tab" [class.active]="activeSection() === 'basic'" (click)="setSection('basic')">Basic Details</button>
-          <button type="button" class="section-tab" [class.active]="activeSection() === 'education'" (click)="setSection('education')">Education</button>
-          <button type="button" class="section-tab" [class.active]="activeSection() === 'documents'" (click)="setSection('documents')">Documents</button>
-          <button type="button" class="section-tab" [class.active]="activeSection() === 'schools'" (click)="setSection('schools')">School History</button>
+        <nav class="step-wizard" [class.wizard-mode]="isWizardFlow()" aria-label="Employee entry steps">
+          @for (step of formSteps; track step.id; let last = $last) {
+            <button
+              type="button"
+              class="step-tab"
+              [class.active]="activeSection() === step.id"
+              [class.completed]="isSectionCompleted(step.id) || (isWizardFlow() && sectionStep(step.id) < highestUnlockedStep() && activeSection() !== step.id)"
+              [class.locked]="!isSectionEnabled(step.id)"
+              [disabled]="!isSectionEnabled(step.id)"
+              (click)="setSection(step.id)"
+            >
+              <span class="step-badge">{{ step.step }}</span>
+              <span class="step-text">
+                <span class="step-kicker">Step {{ step.step }}</span>
+                <span class="step-label">{{ step.label }}</span>
+              </span>
+            </button>
+            @if (!last) {
+              <span class="step-connector" [class.done]="sectionStep(step.id) < highestUnlockedStep()"></span>
+            }
+          }
         </nav>
 
-        <form class="employee-form" (ngSubmit)="save()">
+        @if (isWizardFlow()) {
+          <p class="wizard-hint">
+            Complete each step and use <strong>Save &amp; Next</strong> to continue. Later steps unlock after the current step is saved.
+          </p>
+        }
+
+        <form class="employee-form" (ngSubmit)="onFormSubmit()">
           <fieldset [disabled]="isViewMode()">
             @if (activeSection() === 'basic') {
               <div class="form-section">
@@ -148,14 +170,15 @@
                     <span class="field-label">Email</span>
                     <input class="field-control" type="email" [ngModel]="form().emailID" (ngModelChange)="updateForm('emailID', $event)" name="emailID">
                   </label>
-                  <label class="field">
-                    <span class="field-label">Org / School</span>
+                  <label class="field" [class.field-invalid]="fieldError('orgID')">
+                    <span class="field-label">Org / School @if (isWizardFlow()) { * }</span>
                     <select class="field-control" [ngModel]="form().orgID" (ngModelChange)="onMainOrgChange($event ? +$event : null)" name="orgID">
                       <option [ngValue]="null">-- Select --</option>
                       @for (o of schoolOrgs(); track o.orgID) {
                         <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
                       }
                     </select>
+                    @if (fieldError('orgID')) { <span class="field-error">{{ fieldError('orgID') }}</span> }
                   </label>
                   <label class="field">
                     <span class="field-label">User Type</span>
@@ -410,6 +433,13 @@
           <footer class="form-footer">
             @if (isViewMode()) {
               <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
+            } @else if (isWizardFlow()) {
+              <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+              @if (isLastWizardStep()) {
+                <button type="submit" class="btn btn-primary" [disabled]="loading()">Save &amp; Finish</button>
+              } @else {
+                <button type="submit" class="btn btn-primary" [disabled]="loading()">Save &amp; Next</button>
+              }
             } @else {
               <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
               <button type="submit" class="btn btn-primary" [disabled]="loading()">Save Employee</button>

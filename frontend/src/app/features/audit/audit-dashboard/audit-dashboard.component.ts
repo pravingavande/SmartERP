@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin, map, of, switchMap } from 'rxjs';
+import { forkJoin, map, of, switchMap, take } from 'rxjs';
 import { AuditService } from '../../../core/services/audit.service';
 import { DonationService } from '../../../core/services/donation.service';
 import {
@@ -50,6 +50,8 @@ interface BarMetric {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AuditDashboardComponent {
+  private static readonly MAX_CLIENT_SUMMARY_ORGS = 8;
+
   private readonly audit = inject(AuditService);
   private readonly donation = inject(DonationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -108,7 +110,7 @@ export class AuditDashboardComponent {
           }
           return this.buildClientSummary(fyId, this.fyList(), this.orgs());
         }),
-        takeUntilDestroyed(this.destroyRef)
+        take(1)
       )
       .subscribe((summary) => {
         this.summary.set(summary);
@@ -134,6 +136,10 @@ export class AuditDashboardComponent {
 
   private buildClientSummary(fyId: number | null, fyList: FyOption[], orgs: OrgOption[]) {
     if (!fyId || !orgs.length) {
+      return of(this.emptySummary(fyId, fyList));
+    }
+
+    if (orgs.length > AuditDashboardComponent.MAX_CLIENT_SUMMARY_ORGS) {
       return of(this.emptySummary(fyId, fyList));
     }
 

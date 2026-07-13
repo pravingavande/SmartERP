@@ -1,6 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 import { ToastItem, ToastType } from '../models/toast.model';
 
+const MAX_VISIBLE_TOASTS = 5;
+
 @Injectable({ providedIn: 'root' })
 export class ToastService {
   private readonly _toasts = signal<ToastItem[]>([]);
@@ -37,6 +39,13 @@ export class ToastService {
     });
   }
 
+  dismissAll(): void {
+    for (const id of [...this.timers.keys()]) {
+      this.dismiss(id);
+    }
+    queueMicrotask(() => this._toasts.set([]));
+  }
+
   private show(type: ToastType, message: string, title: string | undefined, durationMs: number): void {
     const id = ++this.seq;
     const item: ToastItem = {
@@ -49,11 +58,25 @@ export class ToastService {
     };
 
     queueMicrotask(() => {
-      this._toasts.update((list) => [...list, item]);
+      this._toasts.update((list) => {
+        const next = [...list, item];
+        if (next.length <= MAX_VISIBLE_TOASTS) return next;
+        const overflow = next.slice(0, next.length - MAX_VISIBLE_TOASTS);
+        overflow.forEach((t) => this.clearTimer(t.id));
+        return next.slice(-MAX_VISIBLE_TOASTS);
+      });
     });
 
     const handle = window.setTimeout(() => this.dismiss(id), durationMs);
     this.timers.set(id, handle);
+  }
+
+  private clearTimer(id: number): void {
+    const handle = this.timers.get(id);
+    if (handle !== undefined) {
+      window.clearTimeout(handle);
+      this.timers.delete(id);
+    }
   }
 
   private defaultTitle(type: ToastType): string {

@@ -112,6 +112,25 @@
   </div>
 
   <aside class="dashboard-sidebar">
+    @if (pendingReporting().pendingCount > 0) {
+      <section class="pending-events-widget">
+        <h3>Pending Event Reporting</h3>
+        <a class="pending-count-link" [routerLink]="['/event-calendar']" [queryParams]="{ pendingEventId: pendingReporting().items[0]?.eventID }">
+          <span class="pending-count">{{ pendingReporting().pendingCount }}</span>
+          <span>events need reporting</span>
+        </a>
+        <ul class="pending-list">
+          @for (item of pendingReporting().items; track item.eventID) {
+            <li>
+              <a [routerLink]="['/event-calendar']" [queryParams]="{ pendingEventId: item.eventID }">
+                {{ item.title }} — {{ item.eventDate | date:'dd MMM yyyy' }}
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
     <section class="notice-widget" aria-label="Notices">
       <div class="notice-tricolor" aria-hidden="true">
         <span class="stripe saffron"></span>

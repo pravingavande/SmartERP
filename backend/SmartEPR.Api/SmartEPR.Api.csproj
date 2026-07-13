@@ -16,4 +16,10 @@
     <ProjectReference Include="..\SmartEPR.Infrastructure\SmartEPR.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Reports\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

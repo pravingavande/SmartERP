@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin, map } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { EventCalendarService } from '../../core/services/event-calendar.service';
 import { DashboardSummary } from '../../core/models/dashboard.model';
+import { PendingEventReportingSummary } from '../../core/models/calendar.model';
 
 interface StatTile {
   label: string;
@@ -27,7 +29,7 @@ interface BreakdownCard {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [DecimalPipe, RouterLink],
+  imports: [DecimalPipe, RouterLink, DatePipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -35,6 +37,7 @@ interface BreakdownCard {
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
+  private readonly eventCalendarService = inject(EventCalendarService);
 
   private readonly noticeListRef = viewChild<ElementRef<HTMLElement>>('noticeList');
 
@@ -44,14 +47,16 @@ export class DashboardComponent {
     forkJoin({
       profile: this.dashboardService.getProfile(),
       summary: this.dashboardService.getSummary(),
-      notices: this.dashboardService.getNotices(10)
+      notices: this.dashboardService.getNotices(10),
+      pendingReporting: this.eventCalendarService.getPendingReporting()
     }).pipe(map((data) => data)),
-    { initialValue: { profile: null, summary: null, notices: [] } }
+    { initialValue: { profile: null, summary: null, notices: [], pendingReporting: { pendingCount: 0, items: [] } as PendingEventReportingSummary } }
   );
 
   readonly profile = () => this.dashboardData().profile;
   readonly summary = () => this.dashboardData().summary;
   readonly notices = () => this.dashboardData().notices;
+  readonly pendingReporting = () => this.dashboardData().pendingReporting;
 
   statTiles(summary: DashboardSummary): StatTile[] {
     return [

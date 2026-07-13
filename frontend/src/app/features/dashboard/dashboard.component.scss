@@ -125,6 +125,69 @@
   top: 0;
 }
 
+.pending-events-widget {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fdba74;
+  border-radius: var(--epr-radius);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--epr-shadow);
+
+  h3 {
+    margin: 0 0 0.65rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #9a3412;
+  }
+}
+
+.pending-count-link {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #c2410c;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+
+  &:hover {
+    color: #9a3412;
+  }
+}
+
+.pending-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: #ea580c;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.pending-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li + li {
+    margin-top: 0.35rem;
+  }
+
+  a {
+    font-size: 0.82rem;
+    color: #7c2d12;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
 // ── Panel ─────────────────────────────────────────────────────────────────
 .panel {
   background: var(--epr-white);

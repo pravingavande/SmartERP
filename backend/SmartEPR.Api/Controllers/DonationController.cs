@@ -15,11 +15,16 @@ namespace SmartEPR.Api.Controllers;
 public sealed class DonationController : ControllerBase
 {
     private readonly IDonationService _donationService;
+    private readonly IDonationReportService _donationReportService;
     private readonly ITicketService _ticketService;
 
-    public DonationController(IDonationService donationService, ITicketService ticketService)
+    public DonationController(
+        IDonationService donationService,
+        IDonationReportService donationReportService,
+        ITicketService ticketService)
     {
         _donationService = donationService;
+        _donationReportService = donationReportService;
         _ticketService = ticketService;
     }
     [HttpGet("ticket-lookups")]
@@ -45,30 +50,38 @@ public sealed class DonationController : ControllerBase
     [HttpGet("tickets/{ticketId:long}")]
     public async Task<IActionResult> GetTicketById(long ticketId, CancellationToken cancellationToken)
     {
-        var item = await _ticketService.GetByIdAsync(ticketId, cancellationToken).ConfigureAwait(false);
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(ApiResponse<TicketDetailDto>.Fail("Invalid token."));
+
+        var item = await _ticketService.GetDetailAsync(ticketId, userId, cancellationToken).ConfigureAwait(false);
         return item is null
-            ? Ok(ApiResponse<TicketListItemDto>.Fail("Ticket not found."))
-            : Ok(ApiResponse<TicketListItemDto>.Ok(item));
+            ? Ok(ApiResponse<TicketDetailDto>.Fail("Ticket not found."))
+            : Ok(ApiResponse<TicketDetailDto>.Ok(item));
     }
 
     [HttpPost("tickets")]
     public async Task<IActionResult> SaveTicket([FromBody] SaveTicketRequestDto request, CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
-            return Unauthorized(ApiResponse<TicketListItemDto>.Fail("Invalid token."));
+            return Unauthorized(ApiResponse<TicketDetailDto>.Fail("Invalid token."));
 
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var saved = await _ticketService.SaveAsync(userId, ip, request, cancellationToken).ConfigureAwait(false);
         return saved is null
-            ? Ok(ApiResponse<TicketListItemDto>.Fail("Unable to save ticket. School and status are required."))
-            : Ok(ApiResponse<TicketListItemDto>.Ok(saved, "Ticket saved."));
+            ? Ok(ApiResponse<TicketDetailDto>.Fail("Unable to save ticket."))
+            : Ok(ApiResponse<TicketDetailDto>.Ok(saved, "Ticket saved."));
     }
 
     [HttpDelete("tickets/{ticketId:long}")]
     public async Task<IActionResult> DeleteTicket(long ticketId, CancellationToken cancellationToken)
     {
-        await _ticketService.DeleteAsync(ticketId, cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<bool>.Ok(true, "Ticket deleted."));
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(ApiResponse<bool>.Fail("Invalid token."));
+
+        var deleted = await _ticketService.DeleteAsync(ticketId, userId, cancellationToken).ConfigureAwait(false);
+        return deleted
+            ? Ok(ApiResponse<bool>.Ok(true, "Ticket deleted."))
+            : Ok(ApiResponse<bool>.Fail("Unable to delete ticket."));
     }
 
     [HttpGet("lookups")]
@@ -100,6 +113,17 @@ public sealed class DonationController : ControllerBase
     {
         var items = await _donationService.GetListAsync(orgId, fyId, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<IReadOnlyList<DonationListItemDto>>.Ok(items));
+    }
+
+    [HttpGet("{drId:long}/report/pdf")]
+    public async Task<IActionResult> GetReceiptPdf(long drId, CancellationToken cancellationToken)
+    {
+        var pdf = await _donationReportService.RenderDonationReceiptPdfAsync(drId, cancellationToken).ConfigureAwait(false);
+        if (pdf is null || pdf.Length == 0)
+            return NotFound(ApiResponse<bool>.Fail("Donation receipt report not found."));
+
+        var fileName = $"DonationReceipt-{drId}.pdf";
+        return File(pdf, "application/pdf", fileName);
     }
 
     [HttpGet("{drId:long}")]

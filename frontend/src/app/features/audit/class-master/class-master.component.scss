@@ -1,0 +1,23 @@
+@import '../party-master/party-master.component.scss';
+
+.sort-btn {
+  background: none;
+  border: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+}
+
+.list-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.action-btn.delete {
+  color: #b42318;
+}
