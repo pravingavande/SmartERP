@@ -17,7 +17,7 @@ public sealed class UserProfileDto
     public string? SchoolName { get; init; }
     public string? DesignationName { get; init; }
     public long? DesignationCode { get; init; }
-    public int? UserTypeId { get; init; }
+    public int? UserRoleId { get; init; }
     public long? GenderCode { get; init; }
     public DateTime? DateOfBirth { get; init; }
     public string? PanNo { get; init; }

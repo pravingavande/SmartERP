@@ -1,5 +1,5 @@
--- Login: expose UserTypeID / UserTypeName from vw_UserloginWithOrgIDAndORGGROUP.
--- School list: UserTypeID 1,2 = schools under login Sanstha (OrgGroupID); UserTypeID 3 = mapped schools only.
+-- Login: expose UserRoleID / UserRoleName from vw_UserloginWithOrgIDAndORGGROUP.
+-- School list: UserRoleID 1,2 = schools under login Sanstha (OrgGroupID); UserRoleID 3 = mapped schools only.
 -- Rules: no SELECT *, no MERGE, no BETWEEN
 
 USE SmartERP;
@@ -17,8 +17,8 @@ BEGIN
         v.AppUserName,
         v.OrganizationName,
         v.OrganizationGroupName,
-        v.UserTypeID,
-        v.UserTypeName
+        v.UserRoleID,
+        v.UserRoleName
     FROM dbo.vw_UserloginWithOrgIDAndORGGROUP v
     WHERE v.AppUserName = @AppUserName;
 END
@@ -31,7 +31,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @AppUserName VARCHAR(50);
-    DECLARE @UserTypeID INT;
+    DECLARE @UserRoleID INT;
     DECLARE @UserOrgID BIGINT;
     DECLARE @UserSchoolCode BIGINT;
 
@@ -39,7 +39,7 @@ BEGIN
         @AppUserName = um.AppUserName,
         @UserOrgID = um.OrgID,
         @UserSchoolCode = um.SchoolCode,
-        @UserTypeID = um.UserTypeID
+        @UserRoleID = um.UserRoleID
     FROM dbo.UserMaster um
     WHERE um.UserID = @UserID
       AND um.IsActive = 1;
@@ -48,12 +48,12 @@ BEGIN
         RETURN;
 
     SELECT TOP 1
-        @UserTypeID = v.UserTypeID
+        @UserRoleID = v.UserRoleID
     FROM dbo.vw_UserloginWithOrgIDAndORGGROUP v
     WHERE v.AppUserName = @AppUserName
     ORDER BY v.OrgID;
 
-    IF @UserTypeID IN (1, 2)
+    IF @UserRoleID IN (1, 2)
     BEGIN
         SELECT DISTINCT
             om.OrgID,

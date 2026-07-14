@@ -14,12 +14,13 @@ import { coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateStockForm } from '../../../core/utils/master-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-stock-register',
-  imports: [FormsModule, CurrencyPipe, MarathiNumberInputDirective],
+  imports: [FormsModule, CurrencyPipe, MarathiNumberInputDirective, MasterListPaginationComponent],
   templateUrl: './stock-register.component.html',
   styleUrl: './stock-register.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -165,6 +166,11 @@ export class StockRegisterComponent {
   goToListPage(index: number): void {
     const max = this.listPageCount() - 1;
     this.listPageIndex.set(Math.max(0, Math.min(index, max)));
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPageIndex.set(0);
   }
 
   newEntry(): void {

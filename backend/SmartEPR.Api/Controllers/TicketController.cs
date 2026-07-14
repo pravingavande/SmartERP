@@ -99,6 +99,19 @@ public sealed class TicketController : ControllerBase
             : Ok(ApiResponse<TicketDetailDto>.Ok(saved, "Reply saved."));
     }
 
+    [HttpPost("{ticketId:long}/acknowledge")]
+    public async Task<IActionResult> Acknowledge(long ticketId, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(ApiResponse<bool>.Fail("Invalid token."));
+
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var acknowledged = await _ticketService.AcknowledgeAsync(ticketId, userId, ip, cancellationToken).ConfigureAwait(false);
+        return acknowledged
+            ? Ok(ApiResponse<bool>.Ok(true, "Ticket acknowledged."))
+            : Ok(ApiResponse<bool>.Fail("Unable to acknowledge ticket."));
+    }
+
     [HttpPost("{ticketId:long}/close")]
     public async Task<IActionResult> Close(long ticketId, CancellationToken cancellationToken)
     {

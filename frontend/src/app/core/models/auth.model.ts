@@ -29,8 +29,8 @@ export interface LoginResponse {
   sansthaId?: number;
   schoolName?: string;
   sansthaName?: string;
-  userTypeId?: number;
-  userTypeName?: string;
+  userRoleId?: number;
+  userRoleName?: string;
   schoolContexts?: UserLoginSchoolContext[];
 }
 
@@ -45,7 +45,7 @@ export interface AuthUser {
   sansthaId?: number;
   schoolName?: string;
   sansthaName?: string;
-  userTypeId?: number;
-  userTypeName?: string;
+  userRoleId?: number;
+  userRoleName?: string;
   schoolContexts?: UserLoginSchoolContext[];
 }

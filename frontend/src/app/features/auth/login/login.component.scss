@@ -217,6 +217,50 @@
   padding: 2rem 2rem 1.75rem;
 }
 
+.back-portal {
+  display: inline-block;
+  margin-bottom: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--epr-muted);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--epr-navy);
+    text-decoration: underline;
+  }
+}
+
+.portal-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem;
+  background: #eef2f7;
+  border-radius: 10px;
+  border: 1px solid #dde4ec;
+}
+
+.portal-tab {
+  border: 0;
+  background: transparent;
+  color: var(--epr-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &.active {
+    background: #fff;
+    color: var(--epr-navy);
+    box-shadow: 0 1px 4px rgba(30, 58, 110, 0.12);
+  }
+}
+
 .login-icon {
   width: 52px;
   height: 52px;

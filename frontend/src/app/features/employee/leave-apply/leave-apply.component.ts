@@ -54,7 +54,7 @@ export class LeaveApplyComponent {
     if (!sansthaId) return orgs;
     return orgs.filter((o) => o.orgID !== sansthaId);
   });
-  readonly isSansthaUser = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userTypeId));
+  readonly isSansthaUser = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly paginatedItems = computed(() => {
     const list = this.items();

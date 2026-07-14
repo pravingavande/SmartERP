@@ -117,6 +117,13 @@ export class TicketService {
     );
   }
 
+  acknowledge(ticketId: number): Observable<boolean> {
+    return this.http.post<ApiResponse<boolean>>(`${this.ticketBase}/${ticketId}/acknowledge`, {}).pipe(
+      map((r) => r.success),
+      catchError(() => of(false))
+    );
+  }
+
   close(ticketId: number): Observable<boolean> {
     return this.http.post<ApiResponse<boolean>>(`${this.ticketBase}/${ticketId}/close`, {}).pipe(
       map((r) => r.success),

@@ -45,7 +45,7 @@ public sealed class EventCalendarRepository : IEventCalendarRepository
         p.Add("@IsActive", request.IsActive);
         p.Add("@UserID", request.UserID);
         await _executor.ExecuteAsync("dbo.sp_EventType_Save", p, cancellationToken).ConfigureAwait(false);
-        return p.Get<int>("@EventTypeID");
+        return p.Get<int?>("@EventTypeID") ?? 0;
     }
 
     public Task DeleteEventTypeAsync(int eventTypeId, CancellationToken cancellationToken = default)
@@ -117,7 +117,7 @@ public sealed class EventCalendarRepository : IEventCalendarRepository
         p.Add("@CreatedByUserId", item.CreatedByUserId);
         p.Add("@CanManageEvents", item.CanManageEvents);
         await _executor.ExecuteAsync("dbo.sp_Event_Save", p, cancellationToken).ConfigureAwait(false);
-        return p.Get<int>("@EventID");
+        return p.Get<int?>("@EventID") ?? 0;
     }
 
     public Task DeleteEventAsync(int eventId, bool canManageEvents, CancellationToken cancellationToken = default)

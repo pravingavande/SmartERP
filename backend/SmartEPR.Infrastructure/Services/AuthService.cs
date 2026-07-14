@@ -56,8 +56,8 @@ public sealed class AuthService : IAuthService
             SansthaId = primarySchool?.SansthaId,
             SchoolName = primarySchool?.SchoolName,
             SansthaName = primarySchool?.SansthaName,
-            UserTypeId = primaryOrgGroup?.UserTypeID,
-            UserTypeName = primaryOrgGroup?.UserTypeName,
+            UserRoleId = primaryOrgGroup?.UserRoleID,
+            UserRoleName = primaryOrgGroup?.UserRoleName,
             SchoolContexts = schoolContexts
         };
     }
@@ -95,7 +95,7 @@ public sealed class AuthService : IAuthService
             SansthaName = primary.OrganizationGroupName,
             DesignationName = dto.DesignationName,
             DesignationCode = dto.DesignationCode,
-            UserTypeId = dto.UserTypeId,
+            UserRoleId = dto.UserRoleId,
             GenderCode = dto.GenderCode,
             DateOfBirth = dto.DateOfBirth,
             PanNo = dto.PanNo,
@@ -123,7 +123,7 @@ public sealed class AuthService : IAuthService
             SchoolName = profile.SchoolName,
             DesignationName = profile.DesignationName,
             DesignationCode = profile.DesignationCode,
-            UserTypeId = profile.UserTypeID,
+            UserRoleId = profile.UserRoleID,
             GenderCode = profile.GenderCode,
             DateOfBirth = profile.Dob,
             PanNo = profile.PanNo,

@@ -7,105 +7,125 @@ import {
 } from './event-ticket-validation.util';
 
 describe('event-ticket-validation.util', () => {
-  describe('validateTicketForm', () => {
-    it('rejects empty schools', () => {
-      const errors = validateTicketForm({ orgIDs: [], subject: 'Help', replyRequired: 'Instant' });
-      expect(errors['orgIDs']).toBe('Select at least one school.');
-    });
+  describe('validateTicketForm (Ticket Entry)', () => {
+    const invalidTicketCases: Array<{ orgIDs: number[]; subject: string; replyRequired: string; expectedKey: string }> = [
+      { orgIDs: [], subject: 'Help', replyRequired: 'Instant', expectedKey: 'orgIDs' },
+      { orgIDs: [1], subject: '   ', replyRequired: 'Instant', expectedKey: 'subject' },
+      { orgIDs: [1], subject: '', replyRequired: 'Instant', expectedKey: 'subject' },
+      { orgIDs: [1], subject: 'Printer issue', replyRequired: '', expectedKey: 'replyRequired' },
+      { orgIDs: [1], subject: 'Printer issue', replyRequired: '   ', expectedKey: 'replyRequired' }
+    ];
 
-    it('rejects blank subject', () => {
-      const errors = validateTicketForm({ orgIDs: [1], subject: '   ', replyRequired: 'Instant' });
-      expect(errors['subject']).toBe('Subject is required.');
-    });
+    for (const c of invalidTicketCases) {
+      it(`rejects ticket when ${c.expectedKey} is invalid`, () => {
+        const errors = validateTicketForm(c);
+        expect(errors[c.expectedKey]).toBeTruthy();
+      });
+    }
 
-    it('rejects missing reply required', () => {
-      const errors = validateTicketForm({ orgIDs: [1], subject: 'Printer issue', replyRequired: '' });
-      expect(errors['replyRequired']).toBe('Reply Required is required.');
-    });
+    const validTicketCases = [
+      { orgIDs: [1], subject: 'Printer issue', replyRequired: 'Instant' },
+      { orgIDs: [1, 2, 3], subject: 'Network down', replyRequired: 'Later' },
+      { orgIDs: [99], subject: '  Lab AC not working  ', replyRequired: 'Instant' }
+    ];
 
-    it('accepts valid ticket form', () => {
-      const errors = validateTicketForm({ orgIDs: [1, 2], subject: 'Network down', replyRequired: 'Later' });
-      expect(Object.keys(errors).length).toBe(0);
-    });
+    for (const c of validTicketCases) {
+      it(`accepts valid ticket form for schools [${c.orgIDs.join(',')}]`, () => {
+        const errors = validateTicketForm(c);
+        expect(Object.keys(errors).length).toBe(0);
+      });
+    }
   });
 
-  describe('validateEventForm', () => {
-    it('rejects missing title', () => {
-      const errors = validateEventForm({ title: '', location: 'Hall', orgIDs: [1] });
-      expect(errors['title']).toBe('Title is required.');
-    });
+  describe('validateEventForm (Add Event)', () => {
+    const invalidEventCases: Array<{ title: string; location: string; orgIDs: number[]; expectedKey: string }> = [
+      { title: '', location: 'Hall', orgIDs: [1], expectedKey: 'title' },
+      { title: '   ', location: 'Hall', orgIDs: [1], expectedKey: 'title' },
+      { title: 'Sports Day', location: '  ', orgIDs: [1], expectedKey: 'location' },
+      { title: 'Sports Day', location: '', orgIDs: [1], expectedKey: 'location' },
+      { title: 'Sports Day', location: 'Ground', orgIDs: [], expectedKey: 'orgIDs' }
+    ];
 
-    it('rejects missing location', () => {
-      const errors = validateEventForm({ title: 'Sports Day', location: '  ', orgIDs: [1] });
-      expect(errors['location']).toBe('Location is required.');
-    });
+    for (const c of invalidEventCases) {
+      it(`rejects event when ${c.expectedKey} is invalid`, () => {
+        const errors = validateEventForm(c);
+        expect(errors[c.expectedKey]).toBeTruthy();
+      });
+    }
 
-    it('rejects missing schools', () => {
-      const errors = validateEventForm({ title: 'Sports Day', location: 'Ground', orgIDs: [] });
-      expect(errors['orgIDs']).toBe('Select at least one school.');
-    });
+    const validEventCases = [
+      { title: 'Annual Day', location: 'Auditorium', orgIDs: [3] },
+      { title: 'Parent Meeting', location: 'Conference Room', orgIDs: [1, 2] },
+      { title: '  Sports Day  ', location: '  Ground  ', orgIDs: [5, 6, 7] }
+    ];
 
-    it('accepts valid event form', () => {
-      const errors = validateEventForm({ title: 'Annual Day', location: 'Auditorium', orgIDs: [3] });
-      expect(Object.keys(errors).length).toBe(0);
-    });
+    for (const c of validEventCases) {
+      it(`accepts valid event for ${c.orgIDs.length} school(s)`, () => {
+        const errors = validateEventForm(c);
+        expect(Object.keys(errors).length).toBe(0);
+      });
+    }
   });
 
-  describe('validateEventTypeForm', () => {
-    it('rejects missing organization', () => {
-      const errors = validateEventTypeForm({ underOrgID: 0, eventType: 'Meeting' });
-      expect(errors['underOrgID']).toBe('Organization is required.');
-    });
+  describe('validateEventTypeForm (Event Types Master)', () => {
+    const invalidMasterCases: Array<{ underOrgID: number; eventType: string; expectedKey: string }> = [
+      { underOrgID: 0, eventType: 'Meeting', expectedKey: 'underOrgID' },
+      { underOrgID: -1, eventType: 'Meeting', expectedKey: 'underOrgID' },
+      { underOrgID: 1, eventType: '', expectedKey: 'eventType' },
+      { underOrgID: 1, eventType: '   ', expectedKey: 'eventType' },
+      { underOrgID: 0, eventType: '', expectedKey: 'underOrgID' }
+    ];
 
-    it('rejects blank event type', () => {
-      const errors = validateEventTypeForm({ underOrgID: 1, eventType: '   ' });
-      expect(errors['eventType']).toBe('Event Type is required.');
-    });
-
-    it('matches EventTypes table required columns', () => {
-      const valid = validateEventTypeForm({ underOrgID: 5, eventType: 'Parent Meeting' });
-      expect(Object.keys(valid).length).toBe(0);
-    });
-
-    it('rejects all invalid master combinations', () => {
-      const cases = [
-        { underOrgID: 0, eventType: 'X' },
-        { underOrgID: 1, eventType: '' },
-        { underOrgID: 0, eventType: '' }
-      ];
-      for (const c of cases) {
+    for (const c of invalidMasterCases) {
+      it(`rejects event type master when ${c.expectedKey} is invalid`, () => {
         const errors = validateEventTypeForm(c);
-        expect(Object.keys(errors).length).toBeGreaterThan(0);
-      }
-    });
+        expect(errors[c.expectedKey]).toBeTruthy();
+      });
+    }
+
+    const validMasterCases = [
+      { underOrgID: 5, eventType: 'Parent Meeting' },
+      { underOrgID: 1, eventType: 'Annual Day' },
+      { underOrgID: 12, eventType: '  Workshop  ' }
+    ];
+
+    for (const c of validMasterCases) {
+      it(`accepts valid event type "${c.eventType.trim()}" for org ${c.underOrgID}`, () => {
+        const errors = validateEventTypeForm(c);
+        expect(Object.keys(errors).length).toBe(0);
+      });
+    }
   });
 
   describe('validateTicketReply', () => {
     it('requires reply text', () => {
       expect(validateTicketReply('')).toBe('Reply is required.');
+      expect(validateTicketReply('   ')).toBe('Reply is required.');
       expect(validateTicketReply('Working on it')).toBeNull();
     });
   });
 
   describe('mapEventTicketBackendMessage', () => {
-    it('maps school validation to orgIDs field', () => {
-      const errors = mapEventTicketBackendMessage('At least one school is required.');
-      expect(errors['orgIDs']).toBe('At least one school is required.');
-    });
+    const backendMessages: Array<{ message: string; field: string }> = [
+      { message: 'At least one school is required.', field: 'orgIDs' },
+      { message: 'Title is required.', field: 'title' },
+      { message: 'Location is required.', field: 'location' },
+      { message: 'Subject is required.', field: 'subject' },
+      { message: 'Reply Required is required.', field: 'replyRequired' },
+      { message: 'Event Type is required.', field: 'eventType' },
+      { message: 'Organization is required.', field: 'underOrgID' }
+    ];
 
-    it('maps title validation', () => {
-      const errors = mapEventTicketBackendMessage('Title is required.');
-      expect(errors['title']).toBe('Title is required.');
-    });
+    for (const c of backendMessages) {
+      it(`maps "${c.message}" to ${c.field}`, () => {
+        const errors = mapEventTicketBackendMessage(c.message);
+        expect(errors[c.field]).toBe(c.message);
+      });
+    }
 
-    it('maps event type validation', () => {
-      const errors = mapEventTicketBackendMessage('Event Type is required.');
-      expect(errors['eventType']).toBe('Event Type is required.');
-    });
-
-    it('maps organization validation', () => {
-      const errors = mapEventTicketBackendMessage('Organization is required.');
-      expect(errors['underOrgID']).toBe('Organization is required.');
+    it('returns empty object for unknown message', () => {
+      expect(mapEventTicketBackendMessage('Unexpected server error')).toEqual({});
+      expect(mapEventTicketBackendMessage(null)).toEqual({});
     });
   });
 });

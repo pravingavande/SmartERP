@@ -189,6 +189,141 @@ public sealed class TicketServiceValidationTests
         Assert.True(detail.CanClose);
     }
 
+    [Fact]
+    public async Task SaveAsync_AcceptsMultipleSchools()
+    {
+        SetupCanRaiseTicket(10, true);
+        SaveTicketRequestDto? captured = null;
+        _ticketRepository
+            .Setup(r => r.SaveAsync(10, null, It.IsAny<SaveTicketRequestDto>(), It.IsAny<CancellationToken>()))
+            .Callback<long, string?, SaveTicketRequestDto, CancellationToken>((_, _, req, _) => captured = req)
+            .ReturnsAsync(15);
+        _ticketRepository
+            .Setup(r => r.GetByIdAsync(15, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TicketListItemDto
+            {
+                TicketID = 15,
+                UserID = 10,
+                OrgID = 1,
+                OrgIDs = "1,2",
+                TicketDate = DateTime.UtcNow,
+                Subject = "Network issue",
+                ReplyRequired = "Instant",
+                TicketStatusID = 1,
+                StatusName = "Open",
+                CreatedDate = DateTime.UtcNow
+            });
+        _ticketRepository
+            .Setup(r => r.GetRepliesAsync(15, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var service = CreateService();
+        var request = new SaveTicketRequestDto
+        {
+            OrgIDs = [1, 2],
+            TicketDate = DateTime.UtcNow,
+            Subject = "Network issue",
+            Description = "Lab printer offline",
+            Module = "IT",
+            Priority = "Medium",
+            ReplyRequired = "Instant"
+        };
+
+        var result = await service.SaveAsync(10, null, request, CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, captured?.OrgIDs.Count);
+        Assert.Contains(1L, captured!.OrgIDs);
+        Assert.Contains(2L, captured.OrgIDs);
+    }
+
+    [Theory]
+    [MemberData(nameof(SaveTicketValidationCases))]
+    public async Task SaveAsync_HardcodedValidationMatrix(long[] orgIds, string subject, string replyRequired, bool shouldSave)
+    {
+        SetupCanRaiseTicket(10, true);
+        _ticketRepository
+            .Setup(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<SaveTicketRequestDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(3);
+        _ticketRepository
+            .Setup(r => r.GetByIdAsync(3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TicketListItemDto
+            {
+                TicketID = 3,
+                UserID = 10,
+                OrgID = 1,
+                TicketDate = DateTime.UtcNow,
+                Subject = subject.Trim(),
+                ReplyRequired = replyRequired,
+                TicketStatusID = 1,
+                StatusName = "Open",
+                CreatedDate = DateTime.UtcNow
+            });
+        _ticketRepository
+            .Setup(r => r.GetRepliesAsync(3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var service = CreateService();
+        var request = new SaveTicketRequestDto
+        {
+            OrgIDs = orgIds.ToList(),
+            TicketDate = DateTime.UtcNow,
+            Subject = subject,
+            ReplyRequired = replyRequired
+        };
+
+        var result = await service.SaveAsync(10, null, request, CancellationToken.None);
+
+        if (shouldSave)
+        {
+            Assert.NotNull(result);
+            _ticketRepository.Verify(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<SaveTicketRequestDto>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+        else
+        {
+            Assert.Null(result);
+            _ticketRepository.Verify(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<SaveTicketRequestDto>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+    }
+
+    [Fact]
+    public async Task AcknowledgeAsync_RejectsSansthaUser()
+    {
+        SetupCanRaiseTicket(20, true);
+        var service = CreateService();
+
+        var result = await service.AcknowledgeAsync(5, 20, null, CancellationToken.None);
+
+        Assert.False(result);
+        _ticketRepository.Verify(
+            r => r.AcknowledgeAsync(It.IsAny<long>(), It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AcknowledgeAsync_CallsRepositoryForSchoolUser()
+    {
+        SetupCanRaiseTicket(30, false);
+        _ticketRepository
+            .Setup(r => r.AcknowledgeAsync(5, 30, "127.0.0.1", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var service = CreateService();
+
+        var result = await service.AcknowledgeAsync(5, 30, "127.0.0.1", CancellationToken.None);
+
+        Assert.True(result);
+        _ticketRepository.Verify(r => r.AcknowledgeAsync(5, 30, "127.0.0.1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    public static TheoryData<long[], string, string, bool> SaveTicketValidationCases => new()
+    {
+        { [], "Printer", "Instant", false },
+        { [1], "", "Instant", false },
+        { [1], "Printer", "", false },
+        { [1], "   ", "Instant", false },
+        { [1, 2], "Lab printer down", "Later", true }
+    };
+
     private static SaveTicketRequestDto ValidTicketRequest() => new()
     {
         OrgIDs = [1],

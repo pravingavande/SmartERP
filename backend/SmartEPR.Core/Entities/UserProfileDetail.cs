@@ -13,7 +13,7 @@ public sealed class UserProfileDetail
     public long? SchoolCode { get; init; }
     public int? OrgID { get; init; }
     public long? DesignationCode { get; init; }
-    public int? UserTypeID { get; init; }
+    public int? UserRoleID { get; init; }
     public long? GenderCode { get; init; }
     public DateTime? Dob { get; init; }
     public string? PanNo { get; init; }

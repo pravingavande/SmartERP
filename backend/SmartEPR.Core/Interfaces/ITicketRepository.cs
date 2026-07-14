@@ -14,6 +14,7 @@ public interface ITicketRepository
     Task<long> SaveAsync(long userId, string? ipAddress, SaveTicketRequestDto request, CancellationToken cancellationToken = default);
     Task<long> AddReplyAsync(long userId, string? ipAddress, SaveTicketReplyRequestDto request, CancellationToken cancellationToken = default);
     Task MarkReadAsync(long ticketId, long userId, CancellationToken cancellationToken = default);
+    Task AcknowledgeAsync(long ticketId, long userId, string? ipAddress, CancellationToken cancellationToken = default);
     Task CloseAsync(long ticketId, long userId, CancellationToken cancellationToken = default);
     Task DeleteAsync(long ticketId, CancellationToken cancellationToken = default);
 }
@@ -27,6 +28,7 @@ public interface ITicketService
     Task<TicketDetailDto?> SaveAsync(long userId, string? ipAddress, SaveTicketRequestDto request, CancellationToken cancellationToken = default);
     Task<TicketDetailDto?> AddReplyAsync(long userId, string? ipAddress, SaveTicketReplyRequestDto request, CancellationToken cancellationToken = default);
     Task<bool> CloseAsync(long ticketId, long userId, CancellationToken cancellationToken = default);
+    Task<bool> AcknowledgeAsync(long ticketId, long userId, string? ipAddress, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(long ticketId, long userId, CancellationToken cancellationToken = default);
 }
 

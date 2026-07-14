@@ -17,12 +17,13 @@ import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapBackendMessageToFieldErrors, validateLedgerHeadForm } from '../../../core/utils/master-validation.util';
+import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-ledger-head-master',
-  imports: [FormsModule],
+  imports: [FormsModule, MasterListPaginationComponent],
   templateUrl: './ledger-head-master.component.html',
   styleUrl: './ledger-head-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

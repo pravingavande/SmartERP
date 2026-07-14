@@ -57,10 +57,17 @@ public sealed class EventCalendarController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.EventType))
             return Ok(ApiResponse<EventTypeDto>.Fail("Event Type is required."));
 
-        var saved = await _service.SaveEventTypeAsync(userId, request, cancellationToken).ConfigureAwait(false);
-        return saved is null
-            ? Ok(ApiResponse<EventTypeDto>.Fail("Unable to save event type. Check permissions and required fields."))
-            : Ok(ApiResponse<EventTypeDto>.Ok(saved, "Event type saved."));
+        try
+        {
+            var saved = await _service.SaveEventTypeAsync(userId, request, cancellationToken).ConfigureAwait(false);
+            return saved is null
+                ? Ok(ApiResponse<EventTypeDto>.Fail("Unable to save event type. Check permissions and required fields."))
+                : Ok(ApiResponse<EventTypeDto>.Ok(saved, "Event type saved."));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Ok(ApiResponse<EventTypeDto>.Fail(ex.Message));
+        }
     }
 
     [HttpDelete("event-types/{eventTypeId:int}")]
@@ -146,10 +153,17 @@ public sealed class EventCalendarController : ControllerBase
         if (request.OrgIDs is null || request.OrgIDs.Count == 0)
             return Ok(ApiResponse<CalendarEventDto>.Fail("At least one school is required."));
 
-        var saved = await _service.SaveEventAsync(userId, request, cancellationToken).ConfigureAwait(false);
-        return saved is null
-            ? Ok(ApiResponse<CalendarEventDto>.Fail("Unable to save event."))
-            : Ok(ApiResponse<CalendarEventDto>.Ok(saved, "Event saved."));
+        try
+        {
+            var saved = await _service.SaveEventAsync(userId, request, cancellationToken).ConfigureAwait(false);
+            return saved is null
+                ? Ok(ApiResponse<CalendarEventDto>.Fail("Unable to save event."))
+                : Ok(ApiResponse<CalendarEventDto>.Ok(saved, "Event saved."));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Ok(ApiResponse<CalendarEventDto>.Fail(ex.Message));
+        }
     }
 
     [HttpPost("upload")]

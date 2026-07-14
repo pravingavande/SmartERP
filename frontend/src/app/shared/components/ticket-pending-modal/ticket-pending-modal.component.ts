@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { TicketPendingNotification, ReplyFormState } from '../../../core/models/ticket.model';
+import { TicketPendingNotification } from '../../../core/models/ticket.model';
 import { TicketNotificationService } from '../../../core/services/ticket-notification.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -21,46 +21,37 @@ export class TicketPendingModalComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly ticket = input.required<TicketPendingNotification>();
-  readonly replied = output<void>();
+  readonly acknowledged = output<void>();
 
   readonly loading = signal(false);
-  readonly replyError = signal<string | null>(null);
-  readonly replyForm = signal<ReplyFormState>({ replyText: '', replyStatus: 'Acknowledged', attachment: '' });
+  readonly error = signal<string | null>(null);
+  readonly agreed = signal(false);
 
-  readonly isInstant = () => this.ticket().replyRequired === 'Instant';
-
-  submitReply(): void {
-    const text = this.replyForm().replyText.trim();
-    if (!text) {
-      this.replyError.set('Reply is required before continuing.');
+  acknowledge(): void {
+    if (!this.agreed()) {
+      this.error.set('कृपया खालील चेकबॉक्स निवडा.');
       return;
     }
 
     this.loading.set(true);
-    this.replyError.set(null);
+    this.error.set(null);
     this.ticketService
-      .addReply(this.ticket().ticketID, this.replyForm())
+      .acknowledge(this.ticket().ticketID)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((detail) => {
+      .subscribe((ok) => {
         this.loading.set(false);
-        if (!detail) {
-          this.replyError.set('Unable to save reply.');
+        if (!ok) {
+          this.error.set('माहिती नोंदवता आली नाही. पुन्हा प्रयत्न करा.');
           return;
         }
-        this.toast.showSuccess('Reply submitted.');
+        this.toast.showSuccess('तिकीट माहिती वाचल्याची नोंद झाली.');
         this.notificationService.clearPopup();
-        this.replied.emit();
+        this.acknowledged.emit();
       });
   }
 
-  dismissLater(): void {
-    if (this.isInstant()) return;
-    this.notificationService.dismissLater(this.ticket().ticketID);
-    this.replied.emit();
-  }
-
-  updateReplyText(value: string): void {
-    this.replyError.set(null);
-    this.replyForm.update((f) => ({ ...f, replyText: value }));
+  onAgreedChange(checked: boolean): void {
+    this.error.set(null);
+    this.agreed.set(checked);
   }
 }

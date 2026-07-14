@@ -180,16 +180,16 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @UserTypeID INT;
+    DECLARE @UserRoleID INT;
 
-    SELECT @UserTypeID = um.UserTypeID
+    SELECT @UserRoleID = um.UserRoleID
     FROM dbo.UserMaster um
     WHERE um.UserID = @UserID
       AND um.IsActive = 1;
 
     SELECT
-        CASE WHEN @UserTypeID IN (1, 2, 3) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS CanManageEvents,
-        @UserTypeID AS UserTypeID;
+        CASE WHEN @UserRoleID IN (1, 2, 3) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS CanManageEvents,
+        @UserRoleID AS UserRoleID;
 END
 GO
 

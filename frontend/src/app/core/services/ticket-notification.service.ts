@@ -16,7 +16,6 @@ export class TicketNotificationService {
   readonly ticketCreated$ = this.ticketCreatedSubject.asObservable();
 
   readonly pendingPopup = signal<TicketPendingNotification | null>(null);
-  readonly dismissedLaterIds = signal<Set<number>>(new Set());
 
   async start(orgIds: number[]): Promise<void> {
     await this.stop();
@@ -32,7 +31,7 @@ export class TicketNotificationService {
 
     this.connection.on('TicketCreated', (payload: TicketNotificationPayload) => {
       this.ticketCreatedSubject.next(payload);
-      this.showRealtimePopup(payload);
+      this.loadLoginReminders();
     });
 
     try {
@@ -55,45 +54,13 @@ export class TicketNotificationService {
 
   loadLoginReminders(): void {
     this.ticketService.getPendingNotifications().subscribe((items) => {
-      const dismissed = this.dismissedLaterIds();
-      const next = items.find(
-        (x) => x.replyRequired === 'Instant' || !dismissed.has(x.ticketID)
-      );
+      const next = items[0] ?? null;
       if (next) this.pendingPopup.set(next);
     });
-  }
-
-  dismissLater(ticketId: number): void {
-    this.dismissedLaterIds.update((set) => {
-      const copy = new Set(set);
-      copy.add(ticketId);
-      return copy;
-    });
-    this.pendingPopup.set(null);
-    this.loadLoginReminders();
   }
 
   clearPopup(): void {
     this.pendingPopup.set(null);
     this.loadLoginReminders();
-  }
-
-  private showRealtimePopup(payload: TicketNotificationPayload): void {
-    this.pendingPopup.set({
-      ticketID: payload.ticketID,
-      ticketNo: payload.ticketNo,
-      subject: payload.subject,
-      description: null,
-      module: null,
-      priority: null,
-      replyRequired: payload.replyRequired,
-      ticketStatusID: 1,
-      createdByUserID: 0,
-      submittedDate: new Date().toISOString(),
-      sentDate: new Date().toISOString(),
-      statusName: 'Open',
-      statusNameMr: 'खुले',
-      schoolNames: payload.schoolNames
-    });
   }
 }

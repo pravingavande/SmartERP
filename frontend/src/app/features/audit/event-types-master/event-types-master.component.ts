@@ -7,12 +7,14 @@ import { EventLookups, EventType, SaveEventTypeRequest } from '../../../core/mod
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapEventTicketBackendMessage, validateEventTypeForm } from '../../../core/utils/event-ticket-validation.util';
+import { pageCount, paginateRows } from '../../../core/utils/master-list.util';
+import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-event-types-master',
-  imports: [FormsModule],
+  imports: [FormsModule, MasterListPaginationComponent],
   templateUrl: './event-types-master.component.html',
   styleUrl: './event-types-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -34,6 +36,11 @@ export class EventTypesMasterComponent {
   readonly form = signal<SaveEventTypeRequest>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
+  readonly listPageSize = signal(10);
+  readonly listPageIndex = signal(0);
+
+  readonly listPageCount = computed(() => pageCount(this.items().length, this.listPageSize()));
+  readonly paginatedItems = computed(() => paginateRows(this.items(), this.listPageIndex(), this.listPageSize()));
 
   readonly canManage = computed(() => this.lookups()?.canManageEvents ?? false);
 
@@ -42,7 +49,7 @@ export class EventTypesMasterComponent {
       this.lookupsLoading.set(false);
       this.lookups.set(data);
       if (!data) {
-        this.errorMessage.set('Unable to load event type masters. Please refresh or contact admin.');
+        this.errorMessage.set('Unable to load organizations. Please sign in again or contact admin.');
         this.listLoading.set(false);
         return;
       }
@@ -70,13 +77,25 @@ export class EventTypesMasterComponent {
     this.calendarService.getEventTypes(orgId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((list) => {
       this.listLoading.set(false);
       this.items.set(list);
+      this.listPageIndex.set(0);
     });
   }
 
   onOrgFilterChange(orgId: number | null): void {
     this.filterOrgId.set(orgId);
+    this.listPageIndex.set(0);
     this.closeForm();
     this.loadList();
+  }
+
+  goToListPage(index: number): void {
+    const max = this.listPageCount() - 1;
+    this.listPageIndex.set(Math.max(0, Math.min(index, max)));
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPageIndex.set(0);
   }
 
   newItem(): void {

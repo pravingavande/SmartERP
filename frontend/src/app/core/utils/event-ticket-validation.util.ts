@@ -30,7 +30,7 @@ export function validateEventForm(form: EventFormValidationInput): FieldErrors {
 
 export function validateEventTypeForm(form: Pick<SaveEventTypeRequest, 'underOrgID' | 'eventType'>): FieldErrors {
   const errors: FieldErrors = {};
-  if (!form.underOrgID) errors['underOrgID'] = 'Organization is required.';
+  if (!form.underOrgID || form.underOrgID <= 0) errors['underOrgID'] = 'Organization is required.';
   if (!trimText(form.eventType)) errors['eventType'] = 'Event Type is required.';
   return errors;
 }

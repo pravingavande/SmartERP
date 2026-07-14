@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -50,12 +50,36 @@ export class EventCalendarComponent {
   readonly locationSuggestions = signal<LocationOption[]>([]);
   readonly selectedOrgIds = signal<number[]>([]);
   readonly currentEvent = signal<CalendarEvent | null>(null);
+  readonly schoolPickerOpen = signal(false);
 
   readonly form = signal(this.emptyForm());
 
   readonly monthLabel = () => formatMonthLabel(this.viewYear(), this.viewMonth());
   readonly monthDays = () => buildMonthGrid(this.viewYear(), this.viewMonth());
   readonly canManage = computed(() => this.lookups()?.canManageEvents ?? false);
+  readonly isSingleSchoolUser = computed(() => {
+    const lookups = this.lookups();
+    return !!lookups && !lookups.isSansthaUser && lookups.orgs.length === 1;
+  });
+  readonly schoolSelectionSummary = computed(() => {
+    const ids = this.selectedOrgIds();
+    const orgs = this.lookups()?.orgs ?? [];
+    if (!ids.length) return 'Select school(s)...';
+    const names = orgs.filter((o) => ids.includes(o.orgID)).map((o) => o.organizationName);
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return names.join(', ');
+    return `${names.length} schools selected`;
+  });
+  readonly selectedSchoolNames = computed(() => {
+    const ids = new Set(this.selectedOrgIds());
+    return (this.lookups()?.orgs ?? []).filter((o) => ids.has(o.orgID)).map((o) => o.organizationName);
+  });
+  readonly singleSchoolDisplayName = computed(() => {
+    const names = this.selectedSchoolNames();
+    if (names.length) return names[0];
+    const orgs = this.lookups()?.orgs ?? [];
+    return orgs[0]?.organizationName ?? '—';
+  });
   readonly isCompleted = computed(() => this.form().status === 'पूर्ण झाले');
   readonly isLocked = computed(() => this.currentEvent()?.isLocked ?? false);
   readonly showReportingSection = computed(() => this.isCompleted() || this.isLocked());
@@ -220,6 +244,31 @@ export class EventCalendarComponent {
     this.fieldErrors.update((e) => removeFieldError(e, 'orgIDs'));
   }
 
+  toggleSchoolPicker(event: Event): void {
+    event.stopPropagation();
+    if (!this.canEditFields() || this.isSingleSchoolUser()) return;
+    this.schoolPickerOpen.update((open) => !open);
+  }
+
+  selectAllSchools(): void {
+    if (!this.canEditFields()) return;
+    const orgIds = (this.lookups()?.orgs ?? []).map((o) => o.orgID);
+    this.selectedOrgIds.set(orgIds);
+    this.form.update((f) => ({ ...f, orgIDs: orgIds }));
+    this.fieldErrors.update((e) => removeFieldError(e, 'orgIDs'));
+  }
+
+  clearSchools(): void {
+    if (!this.canEditFields()) return;
+    this.selectedOrgIds.set([]);
+    this.form.update((f) => ({ ...f, orgIDs: [] }));
+  }
+
+  @HostListener('document:click')
+  closeSchoolPicker(): void {
+    this.schoolPickerOpen.set(false);
+  }
+
   isSchoolSelected(orgId: number): boolean {
     return this.selectedOrgIds().includes(orgId);
   }
@@ -303,6 +352,7 @@ export class EventCalendarComponent {
     this.saveError.set(null);
     this.currentEvent.set(null);
     this.locationSuggestions.set([]);
+    this.schoolPickerOpen.set(false);
   }
 
   private parseOrgIds(orgIds?: string | null): number[] {

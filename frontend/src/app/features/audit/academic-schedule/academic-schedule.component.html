@@ -11,79 +11,85 @@
     }
   </header>
 
+  @if (!formVisible()) {
+    <section class="schedule-filters" aria-label="Filter academic schedules">
+      <div class="schedule-filters-grid">
+        <label class="field">
+          <span class="field-label">Sanstha</span>
+          <select class="field-control" [ngModel]="listUnderOrgId()" (ngModelChange)="listUnderOrgId.set($event ? +$event : null); onFilterChange()" name="listUnderOrgId">
+            <option [ngValue]="null">-- All --</option>
+            @for (o of lookups()?.sansthaOrgs ?? []; track o.orgID) {
+              <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Academic Year</span>
+          <select class="field-control" [ngModel]="listAyId()" (ngModelChange)="listAyId.set($event ? +$event : null); onFilterChange()" name="listAyId">
+            <option [ngValue]="null">-- All --</option>
+            @for (ay of lookups()?.ayList ?? []; track ay.ayID) {
+              <option [ngValue]="ay.ayID">{{ ay.ayName }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Class</span>
+          <select class="field-control" [ngModel]="listClassId()" (ngModelChange)="listClassId.set($event ? +$event : null); onFilterChange()" name="listClassId">
+            <option [ngValue]="null">-- All --</option>
+            @for (c of lookups()?.classes ?? []; track c.id) {
+              <option [ngValue]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Subject</span>
+          <select class="field-control" [ngModel]="listSubjectId()" (ngModelChange)="listSubjectId.set($event ? +$event : null); onFilterChange()" name="listSubjectId">
+            <option [ngValue]="null">-- All --</option>
+            @for (s of lookups()?.subjects ?? []; track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Month</span>
+          <select class="field-control" [ngModel]="listTMonth()" (ngModelChange)="listTMonth.set($event ? +$event : null); onFilterChange()" name="listTMonth">
+            <option [ngValue]="null">-- All --</option>
+            @for (m of monthOptions; track m.value) {
+              <option [ngValue]="m.value">{{ m.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Week</span>
+          <select class="field-control" [ngModel]="listWeekId()" (ngModelChange)="listWeekId.set($event ? +$event : null); onFilterChange()" name="listWeekId">
+            <option [ngValue]="null">-- All --</option>
+            @for (w of lookups()?.weeks ?? []; track w.weekID) {
+              <option [ngValue]="w.weekID">{{ w.weekName }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Date From</span>
+          <input class="field-control" type="date" [ngModel]="listFromDate()" (ngModelChange)="listFromDate.set($event); onFilterChange()" name="listFromDate">
+        </label>
+        <label class="field">
+          <span class="field-label">Date To</span>
+          <input class="field-control" type="date" [ngModel]="listToDate()" (ngModelChange)="listToDate.set($event); onFilterChange()" name="listToDate">
+        </label>
+      </div>
+      <label class="field schedule-search">
+        <span class="field-label">Search</span>
+        <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search title or description">
+      </label>
+    </section>
+  }
+
   <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
     @if (!formVisible()) {
       <aside class="list-panel">
-        <div class="list-filters filter-grid">
-          <label class="field">
-            <span class="field-label">Sanstha</span>
-            <select class="field-control" [ngModel]="listUnderOrgId()" (ngModelChange)="listUnderOrgId.set($event ? +$event : null); onFilterChange()" name="listUnderOrgId">
-              <option [ngValue]="null">-- All --</option>
-              @for (o of lookups()?.sansthaOrgs ?? []; track o.orgID) {
-                <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-              }
-            </select>
-          </label>
-          <label class="field">
-            <span class="field-label">Class</span>
-            <select class="field-control" [ngModel]="listClassId()" (ngModelChange)="listClassId.set($event ? +$event : null); onFilterChange()" name="listClassId">
-              <option [ngValue]="null">-- All --</option>
-              @for (c of lookups()?.classes ?? []; track c.id) {
-                <option [ngValue]="c.id">{{ c.name }}</option>
-              }
-            </select>
-          </label>
-          <label class="field">
-            <span class="field-label">Subject</span>
-            <select class="field-control" [ngModel]="listSubjectId()" (ngModelChange)="listSubjectId.set($event ? +$event : null); onFilterChange()" name="listSubjectId">
-              <option [ngValue]="null">-- All --</option>
-              @for (s of lookups()?.subjects ?? []; track s.id) {
-                <option [ngValue]="s.id">{{ s.name }}</option>
-              }
-            </select>
-          </label>
-          <label class="field">
-            <span class="field-label">Month</span>
-            <select class="field-control" [ngModel]="listTMonth()" (ngModelChange)="listTMonth.set($event ? +$event : null); onFilterChange()" name="listTMonth">
-              <option [ngValue]="null">-- All --</option>
-              @for (m of monthOptions; track m.value) {
-                <option [ngValue]="m.value">{{ m.label }}</option>
-              }
-            </select>
-          </label>
-          <label class="field">
-            <span class="field-label">Week</span>
-            <select class="field-control" [ngModel]="listWeekId()" (ngModelChange)="listWeekId.set($event ? +$event : null); onFilterChange()" name="listWeekId">
-              <option [ngValue]="null">-- All --</option>
-              @for (w of lookups()?.weeks ?? []; track w.weekID) {
-                <option [ngValue]="w.weekID">{{ w.weekName }}</option>
-              }
-            </select>
-          </label>
-          <label class="field">
-            <span class="field-label">Date From</span>
-            <input class="field-control" type="date" [ngModel]="listFromDate()" (ngModelChange)="listFromDate.set($event); onFilterChange()" name="listFromDate">
-          </label>
-          <label class="field">
-            <span class="field-label">Date To</span>
-            <input class="field-control" type="date" [ngModel]="listToDate()" (ngModelChange)="listToDate.set($event); onFilterChange()" name="listToDate">
-          </label>
-          <label class="field">
-            <span class="field-label">Academic Year</span>
-            <select class="field-control" [ngModel]="listAyId()" (ngModelChange)="listAyId.set($event ? +$event : null); onFilterChange()" name="listAyId">
-              <option [ngValue]="null">-- All --</option>
-              @for (ay of lookups()?.ayList ?? []; track ay.ayID) {
-                <option [ngValue]="ay.ayID">{{ ay.ayName }}</option>
-              }
-            </select>
-          </label>
-          <label class="field full">
-            <span class="field-label">Search</span>
-            <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search title or description">
-          </label>
-        </div>
+        <h3>Academic Schedules</h3>
 
-        @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading schedules...</p> }
+        @if (lookupsLoading() || listLoading()) { <p class="loading-hint list-loading">Loading schedules...</p> }
 
         <div class="records-table-wrap">
           <table class="records-table">
@@ -128,11 +134,13 @@
           </table>
         </div>
 
-        <div class="list-pagination">
-          <span>{{ listPageStart() }}–{{ listPageEnd() }} of {{ sortedItems().length }}</span>
-          <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() === 0" (click)="goToListPage(listPageIndex() - 1)">Prev</button>
-          <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() >= listPageCount() - 1" (click)="goToListPage(listPageIndex() + 1)">Next</button>
-        </div>
+        <app-master-list-pagination
+          [total]="sortedItems().length"
+          [pageIndex]="listPageIndex()"
+          [pageSize]="listPageSize()"
+          (pageIndexChange)="goToListPage($event)"
+          (pageSizeChange)="onListPageSizeChange($event)"
+        />
       </aside>
     }
 

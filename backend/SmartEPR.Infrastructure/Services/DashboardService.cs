@@ -26,8 +26,7 @@ public sealed class DashboardService : IDashboardService
             .GetLoginOrgGroupsByAppUserNameAsync(profile.AppUserName, cancellationToken)
             .ConfigureAwait(false);
         var primary = orgGroups.FirstOrDefault();
-        var summaryOrgId = primary?.OrgGroupID
-            ?? (profile.SchoolCode is > 0 ? (int)profile.SchoolCode.Value : profile.OrgID);
+        var summaryOrgId = primary?.OrgGroupID ?? profile.OrgID;
 
         if (summaryOrgId is null or <= 0)
             return null;

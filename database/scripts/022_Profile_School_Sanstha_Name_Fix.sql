@@ -22,7 +22,7 @@ BEGIN
         um.SchoolCode,
         um.OrgID,
         um.DesignationCode,
-        um.UserTypeID,
+        um.UserRoleID,
         um.GenderCode,
         um.Dob,
         um.PanNo,

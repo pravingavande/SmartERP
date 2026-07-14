@@ -85,16 +85,60 @@
 
       <form class="modal-form" (ngSubmit)="saveEvent()">
         <fieldset [disabled]="isViewMode()">
-          <div class="form-row school-row" [class.field-invalid]="fieldError('orgIDs')">
+          <div class="school-multiselect" [class.field-invalid]="fieldError('orgIDs')" [class.open]="schoolPickerOpen()" (click)="$event.stopPropagation()">
             <span class="field-label">School(s) *</span>
-            <div class="school-check-grid">
-              @for (o of lookups()?.orgs ?? []; track o.orgID) {
-                <label class="check-item">
-                  <input type="checkbox" [checked]="isSchoolSelected(o.orgID)" [disabled]="!canEditFields()" (change)="toggleSchool(o.orgID, $any($event.target).checked)">
-                  {{ o.organizationName }}
-                </label>
+
+            @if (isSingleSchoolUser() || isViewMode()) {
+              <input
+                class="field-control school-readonly"
+                type="text"
+                readonly
+                [value]="singleSchoolDisplayName()"
+              >
+            } @else {
+              <button
+                type="button"
+                class="multiselect-trigger"
+                [disabled]="!canEditFields()"
+                (click)="toggleSchoolPicker($event)"
+                [attr.aria-expanded]="schoolPickerOpen()"
+              >
+                <span class="multiselect-value" [class.placeholder]="!selectedOrgIds().length">{{ schoolSelectionSummary() }}</span>
+                <span class="multiselect-chevron" aria-hidden="true">▾</span>
+              </button>
+
+              @if (schoolPickerOpen()) {
+                <div class="multiselect-panel">
+                  <div class="multiselect-toolbar">
+                    <button type="button" class="link-btn" (click)="selectAllSchools()">Select all</button>
+                    <button type="button" class="link-btn" (click)="clearSchools()">Clear</button>
+                  </div>
+                  <ul class="multiselect-options">
+                    @for (o of lookups()?.orgs ?? []; track o.orgID) {
+                      <li>
+                        <label class="multiselect-option">
+                          <input
+                            type="checkbox"
+                            [checked]="isSchoolSelected(o.orgID)"
+                            (change)="toggleSchool(o.orgID, $any($event.target).checked)"
+                          >
+                          <span>{{ o.organizationName }}</span>
+                        </label>
+                      </li>
+                    }
+                  </ul>
+                </div>
               }
-            </div>
+
+              @if (selectedSchoolNames().length) {
+                <div class="selected-school-chips">
+                  @for (name of selectedSchoolNames(); track name) {
+                    <span class="school-chip">{{ name }}</span>
+                  }
+                </div>
+              }
+            }
+
             @if (fieldError('orgIDs')) { <span class="field-error">{{ fieldError('orgIDs') }}</span> }
           </div>
 

@@ -37,7 +37,7 @@ public sealed class EmployeeRepository : IEmployeeRepository
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
 
-        var userTypes = (await multi.ReadAsync<UserTypeRow>().ConfigureAwait(false)).AsList();
+        var userRoles = (await multi.ReadAsync<UserRoleRow>().ConfigureAwait(false)).AsList();
         var designations = (await multi.ReadAsync<CodeNameRow>().ConfigureAwait(false)).AsList();
         var genders = (await multi.ReadAsync<CodeNameRow>().ConfigureAwait(false)).AsList();
         var educations = (await multi.ReadAsync<CodeNameRow>().ConfigureAwait(false)).AsList();
@@ -47,7 +47,7 @@ public sealed class EmployeeRepository : IEmployeeRepository
 
         return new EmployeeLookupsDto
         {
-            UserTypes = userTypes.Select(x => new UserTypeOptionDto { UserTypeID = x.UserTypeID, UserTypeName = x.UserTypeName ?? string.Empty }).ToList(),
+            UserRoles = userRoles.Select(x => new UserRoleOptionDto { UserRoleID = x.UserRoleID, UserRoleName = x.UserRoleName ?? string.Empty }).ToList(),
             Designations = MapCodeName(designations, x => x.DesignationCode, x => x.DesignationName),
             Genders = MapCodeName(genders, x => x.GenderCode, x => x.GenderName),
             Educations = MapCodeName(educations, x => x.EducationCode, x => x.EducationName),
@@ -83,7 +83,7 @@ public sealed class EmployeeRepository : IEmployeeRepository
             UserID = header.UserID,
             SchoolCode = header.SchoolCode,
             OrgID = header.OrgID,
-            UserTypeID = header.UserTypeID,
+            UserRoleID = header.UserRoleID,
             DesignationCode = header.DesignationCode,
             Firstname = header.Firstname,
             MiddleName = header.MiddleName,
@@ -113,7 +113,7 @@ public sealed class EmployeeRepository : IEmployeeRepository
         p.Add("@UserID", request.UserID > 0 ? request.UserID : null, dbType: DbType.Int64, direction: ParameterDirection.InputOutput);
         p.Add("@SchoolCode", request.SchoolCode);
         p.Add("@OrgID", request.OrgID);
-        p.Add("@UserTypeID", request.UserTypeID);
+        p.Add("@UserRoleID", request.UserRoleID);
         p.Add("@DesignationCode", request.DesignationCode);
         p.Add("@Firstname", request.Firstname);
         p.Add("@MiddleName", request.MiddleName);
@@ -152,10 +152,10 @@ public sealed class EmployeeRepository : IEmployeeRepository
             })
             .ToList();
 
-    private sealed class UserTypeRow
+    private sealed class UserRoleRow
     {
-        public int UserTypeID { get; init; }
-        public string? UserTypeName { get; init; }
+        public int UserRoleID { get; init; }
+        public string? UserRoleName { get; init; }
     }
 
     private sealed class CodeNameRow

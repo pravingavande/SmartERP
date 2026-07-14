@@ -1,1 +1,6 @@
+@import '../../../shared/styles/master-shared.scss';
 @import '../party-master/party-master.component.scss';
+
+.master-modal-wide {
+  width: min(100%, 620px);
+}

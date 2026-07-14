@@ -11,13 +11,13 @@ export interface CodeNameOption {
   name: string;
 }
 
-export interface UserTypeOption {
-  userTypeID: number;
-  userTypeName: string;
+export interface UserRoleOption {
+  userRoleID: number;
+  userRoleName: string;
 }
 
 export interface EmployeeLookups {
-  userTypes: UserTypeOption[];
+  userRoles: UserRoleOption[];
   designations: CodeNameOption[];
   genders: CodeNameOption[];
   educations: CodeNameOption[];
@@ -41,8 +41,8 @@ export interface EmployeeListItem {
   organizationName: string;
   designationCode: number | null;
   designationName: string;
-  userTypeID: number | null;
-  userTypeName: string;
+  userRoleID: number | null;
+  userRoleName: string;
   isActive: boolean;
   displayName?: string;
 }
@@ -83,7 +83,7 @@ export interface EmployeeFormState {
   userID: number | null;
   schoolCode: number | null;
   orgID: number | null;
-  userTypeID: number | null;
+  userRoleID: number | null;
   designationCode: number | null;
   firstname: string;
   middleName: string;

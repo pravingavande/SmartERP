@@ -166,7 +166,7 @@ BEGIN
 
     DECLARE @UserOrgID BIGINT;
     DECLARE @UserSchoolCode BIGINT;
-    DECLARE @UserTypeID INT;
+    DECLARE @UserRoleID INT;
     DECLARE @SansthaOrgID BIGINT;
     DECLARE @IsSansthaUser BIT = 0;
     DECLARE @CanRaiseTicket BIT = 0;
@@ -174,7 +174,7 @@ BEGIN
     SELECT
         @UserOrgID = um.OrgID,
         @UserSchoolCode = um.SchoolCode,
-        @UserTypeID = um.UserTypeID
+        @UserRoleID = um.UserRoleID
     FROM dbo.UserMaster um
     WHERE um.UserID = @UserID
       AND um.IsActive = 1;
@@ -220,7 +220,7 @@ BEGIN
     )
         SET @IsSansthaUser = 1;
 
-    IF @UserTypeID IN (1, 2)
+    IF @UserRoleID IN (1, 2)
         SET @CanRaiseTicket = 1;
 
     SELECT
@@ -473,17 +473,17 @@ BEGIN
     DECLARE @UserOrgID BIGINT;
     DECLARE @UserSchoolCode BIGINT;
     DECLARE @CanRaiseTicket BIT = 0;
-    DECLARE @UserTypeID INT;
+    DECLARE @UserRoleID INT;
 
     SELECT
         @UserOrgID = um.OrgID,
         @UserSchoolCode = um.SchoolCode,
-        @UserTypeID = um.UserTypeID
+        @UserRoleID = um.UserRoleID
     FROM dbo.UserMaster um
     WHERE um.UserID = @UserID
       AND um.IsActive = 1;
 
-    IF @UserTypeID IN (1, 2)
+    IF @UserRoleID IN (1, 2)
         SET @CanRaiseTicket = 1;
 
     SELECT

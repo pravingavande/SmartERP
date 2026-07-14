@@ -1,5 +1,5 @@
--- UserTypeID 1,2: schools under login user's Sanstha (OrgGroupID) only — not all schools / other sansthas.
--- UserTypeID 3: login user's mapped schools only (unchanged).
+-- UserRoleID 1,2: schools under login user's Sanstha (OrgGroupID) only — not all schools / other sansthas.
+-- UserRoleID 3: login user's mapped schools only (unchanged).
 -- Rules: no SELECT *, no MERGE, no BETWEEN
 
 USE SmartERP;
@@ -12,7 +12,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @AppUserName VARCHAR(50);
-    DECLARE @UserTypeID INT;
+    DECLARE @UserRoleID INT;
     DECLARE @UserOrgID BIGINT;
     DECLARE @UserSchoolCode BIGINT;
 
@@ -20,7 +20,7 @@ BEGIN
         @AppUserName = um.AppUserName,
         @UserOrgID = um.OrgID,
         @UserSchoolCode = um.SchoolCode,
-        @UserTypeID = um.UserTypeID
+        @UserRoleID = um.UserRoleID
     FROM dbo.UserMaster um
     WHERE um.UserID = @UserID
       AND um.IsActive = 1;
@@ -29,12 +29,12 @@ BEGIN
         RETURN;
 
     SELECT TOP 1
-        @UserTypeID = v.UserTypeID
+        @UserRoleID = v.UserRoleID
     FROM dbo.vw_UserloginWithOrgIDAndORGGROUP v
     WHERE v.AppUserName = @AppUserName
     ORDER BY v.OrgID;
 
-    IF @UserTypeID IN (1, 2)
+    IF @UserRoleID IN (1, 2)
     BEGIN
         SELECT DISTINCT
             sch.OrgID,

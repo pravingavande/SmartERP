@@ -1,78 +1,78 @@
-<section class="audit-page">
+<section class="audit-page master-page">
   <header class="page-header">
     <div>
       <h1>Class Master</h1>
       <p>Manage classes for academic schedule</p>
     </div>
-    @if (!formVisible()) {
-      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Class</button>
-    } @else {
-      <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
-    }
+    <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Class</button>
   </header>
 
-  <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
-    @if (!formVisible()) {
-      <aside class="list-panel">
-        <div class="list-filters">
-          <label class="field">
-            <span class="field-label">Search</span>
-            <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search class name">
-          </label>
-        </div>
-        @if (listLoading()) { <p class="loading-hint">Loading classes...</p> }
-        <div class="records-table-wrap">
-          <table class="records-table">
-            <thead>
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      <div class="list-filters">
+        <label class="field">
+          <span class="field-label">Search</span>
+          <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search class name">
+        </label>
+      </div>
+      @if (listLoading()) { <p class="loading-hint">Loading classes...</p> }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('classID')">ID</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('className')">Class Name</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of paginatedItems(); track item.classID) {
               <tr>
-                <th><button type="button" class="sort-btn" (click)="toggleSort('classID')">ID</button></th>
-                <th><button type="button" class="sort-btn" (click)="toggleSort('className')">Class Name</button></th>
-                <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
-                <th>Actions</th>
+                <td class="code">{{ item.classID }}</td>
+                <td>{{ item.className }}</td>
+                <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+                <td class="actions">
+                  <button type="button" class="action-btn edit" (click)="editItem(item)">Edit</button>
+                  <button type="button" class="action-btn delete" (click)="deleteItem(item)">Delete</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              @for (item of paginatedItems(); track item.classID) {
-                <tr>
-                  <td class="code">{{ item.classID }}</td>
-                  <td>{{ item.className }}</td>
-                  <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
-                  <td class="actions">
-                    <button type="button" class="action-btn edit" (click)="editItem(item)">Edit</button>
-                    <button type="button" class="action-btn delete" (click)="deleteItem(item)">Delete</button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr><td colspan="4" class="empty">No classes found</td></tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="list-pagination">
-          <span>{{ listPageStart() }}–{{ listPageEnd() }} of {{ filteredItems().length }}</span>
-          <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() === 0" (click)="goToListPage(listPageIndex() - 1)">Prev</button>
-          <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() >= listPageCount() - 1" (click)="goToListPage(listPageIndex() + 1)">Next</button>
-        </div>
-      </aside>
-    }
+            } @empty {
+              <tr><td colspan="4" class="empty">No classes found</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-master-list-pagination
+        [total]="filteredItems().length"
+        [pageIndex]="listPageIndex()"
+        [pageSize]="listPageSize()"
+        (pageIndexChange)="goToListPage($event)"
+        (pageSizeChange)="onListPageSizeChange($event)"
+      />
+    </aside>
+  </div>
 
-    @if (formVisible()) {
-      <div class="form-panel">
-        <form class="voucher-form" (ngSubmit)="save()">
+  @if (formVisible()) {
+    <div class="master-modal-overlay" (click)="cancel()">
+      <div class="master-modal-box" (click)="$event.stopPropagation()">
+        <header class="master-modal-header">
+          <h2>{{ formMode() === 'edit' ? 'Edit Class' : 'New Class' }}</h2>
+        </header>
+        <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
-          <div class="form-section">
-            <h3>{{ formMode() === 'edit' ? 'Edit Class' : 'New Class' }}</h3>
-            <div class="form-grid">
-              <label class="field full" [class.field-invalid]="fieldError('className')">
-                <span class="field-label">Class Name *</span>
-                <input class="field-control" required [ngModel]="form().className" (ngModelChange)="updateForm('className', $event)" name="className">
-                @if (fieldError('className')) { <span class="field-error">{{ fieldError('className') }}</span> }
-              </label>
-              <label class="field field-check">
+          <div class="form-grid">
+            <label class="field full" [class.field-invalid]="fieldError('className')">
+              <span class="field-label">Class Name *</span>
+              <input class="field-control" required [ngModel]="form().className" (ngModelChange)="updateForm('className', $event)" name="className">
+              @if (fieldError('className')) { <span class="field-error">{{ fieldError('className') }}</span> }
+            </label>
+            @if (formMode() === 'edit') {
+              <label class="field field-check master-active-field">
                 <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
                 <span>Active</span>
               </label>
-            </div>
+            }
           </div>
           <footer class="form-footer">
             <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
@@ -80,6 +80,6 @@
           </footer>
         </form>
       </div>
-    }
-  </div>
+    </div>
+  }
 </section>

@@ -8,12 +8,13 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateSubjectForm } from '../../../core/utils/master-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-subject-master',
-  imports: [FormsModule],
+  imports: [FormsModule, MasterListPaginationComponent],
   templateUrl: './subject-master.component.html',
   styleUrl: './subject-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -77,6 +78,11 @@ export class SubjectMasterComponent {
   goToListPage(index: number): void {
     const max = this.listPageCount() - 1;
     this.listPageIndex.set(Math.max(0, Math.min(index, max)));
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPageIndex.set(0);
   }
 
   newItem(): void {

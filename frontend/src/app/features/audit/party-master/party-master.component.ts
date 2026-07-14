@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -12,12 +12,14 @@ import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapBackendMessageToFieldErrors, validatePartyForm } from '../../../core/utils/master-validation.util';
+import { pageCount, paginateRows } from '../../../core/utils/master-list.util';
+import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-party-master',
-  imports: [FormsModule, MarathiNumberInputDirective],
+  imports: [FormsModule, MarathiNumberInputDirective, MasterListPaginationComponent],
   templateUrl: './party-master.component.html',
   styleUrl: './party-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -39,6 +41,11 @@ export class PartyMasterComponent {
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
   readonly listOrgID = signal<number | null>(null);
+  readonly listPageSize = signal(10);
+  readonly listPageIndex = signal(0);
+
+  readonly listPageCount = computed(() => pageCount(this.parties().length, this.listPageSize()));
+  readonly paginatedParties = computed(() => paginateRows(this.parties(), this.listPageIndex(), this.listPageSize()));
 
   constructor() {
     this.loadLookups();
@@ -78,6 +85,7 @@ export class PartyMasterComponent {
 
   onListOrgChange(orgId: number | null): void {
     this.listOrgID.set(orgId);
+    this.listPageIndex.set(0);
     this.closeForm();
     if (orgId) this.loadList();
     else this.parties.set([]);
@@ -89,7 +97,20 @@ export class PartyMasterComponent {
     this.audit
       .getPartyList(orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((list) => this.parties.set(list));
+      .subscribe((list) => {
+        this.parties.set(list);
+        this.listPageIndex.set(0);
+      });
+  }
+
+  goToListPage(index: number): void {
+    const max = this.listPageCount() - 1;
+    this.listPageIndex.set(Math.max(0, Math.min(index, max)));
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPageIndex.set(0);
   }
 
   newParty(): void {

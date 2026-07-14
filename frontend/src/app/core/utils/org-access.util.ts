@@ -4,25 +4,25 @@ export interface SchoolOrgOption {
   orgID: number;
 }
 
-/** UserTypeID 1 or 2 = sanstha-scoped admin (all schools in OrgGroupID from API). */
-export function isSansthaAdminUser(userTypeId?: number | null): boolean {
-  return userTypeId === 1 || userTypeId === 2;
+/** UserRoleID 1 or 2 = sanstha-scoped admin (all schools in OrgGroupID from API). */
+export function isSansthaAdminUser(userRoleId?: number | null): boolean {
+  return userRoleId === 1 || userRoleId === 2;
 }
 
 /** @deprecated Use isSansthaAdminUser — kept for callers that mean sanstha admin, not global all-schools. */
-export function canSeeAllSchools(userTypeId?: number | null): boolean {
-  return isSansthaAdminUser(userTypeId);
+export function canSeeAllSchools(userRoleId?: number | null): boolean {
+  return isSansthaAdminUser(userRoleId);
 }
 
 /**
  * School org dropdown filter.
- * UserType 1/2: API returns schools for user's Sanstha (OrgGroupID) — pass through.
- * UserType 3: only schools mapped in login schoolContexts.
+ * UserRole 1/2: API returns schools for user's Sanstha (OrgGroupID) — pass through.
+ * UserRole 3: only schools mapped in login schoolContexts.
  */
 export function filterSchoolOrgs<T extends SchoolOrgOption>(orgs: T[], user: AuthUser | null): T[] {
   if (!orgs.length || !user) return orgs;
 
-  if (user.userTypeId === 3) {
+  if (user.userRoleId === 3) {
     const allowed = new Set<number>();
     for (const ctx of user.schoolContexts ?? []) {
       if (ctx.schoolId) allowed.add(ctx.schoolId);

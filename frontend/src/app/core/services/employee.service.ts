@@ -11,7 +11,7 @@ import {
   EmployeeListItem,
   EmployeeLookups,
   EmployeeLookupsBundle,
-  UserTypeOption
+  UserRoleOption
 } from '../models/employee.model';
 
 @Injectable({ providedIn: 'root' })
@@ -52,7 +52,7 @@ export class EmployeeService {
       userID: form.userID ?? 0,
       schoolCode: form.schoolCode,
       orgID: form.orgID,
-      userTypeID: form.userTypeID,
+      userRoleID: form.userRoleID,
       designationCode: form.designationCode,
       firstname: form.firstname,
       middleName: form.middleName,
@@ -116,7 +116,7 @@ export class EmployeeService {
     return {
       orgs: this.auth.filterSchoolOrgs(orgs.map((o) => this.normalizeOrg(o))),
       lookups: {
-        userTypes: this.pickUserTypes(lk),
+        userRoles: this.pickUserRoles(lk),
         designations: this.normalizeCodeNames(this.pickArray<CodeNameOption>(lk, 'designations', 'Designations')),
         genders: this.normalizeCodeNames(this.pickArray<CodeNameOption>(lk, 'genders', 'Genders')),
         educations: this.normalizeCodeNames(this.pickArray<CodeNameOption>(lk, 'educations', 'Educations')),
@@ -136,9 +136,9 @@ export class EmployeeService {
     return undefined;
   }
 
-  private pickUserTypes(lk: (EmployeeLookups & Record<string, unknown>) | undefined): UserTypeOption[] {
-    const raw = this.pickArray<UserTypeOption>(lk, 'userTypes', 'UserTypes');
-    return (raw ?? []).map((x) => this.normalizeUserType(x));
+  private pickUserRoles(lk: (EmployeeLookups & Record<string, unknown>) | undefined): UserRoleOption[] {
+    const raw = this.pickArray<UserRoleOption>(lk, 'userRoles', 'UserRoles', 'userTypes', 'UserTypes');
+    return (raw ?? []).map((x) => this.normalizeUserRole(x));
   }
 
   private normalizeOrg(raw: OrgOption & { OrgID?: number; OrganizationName?: string; SchoolCode?: number | null }): OrgOption {
@@ -150,10 +150,10 @@ export class EmployeeService {
     };
   }
 
-  private normalizeUserType(raw: UserTypeOption & { UserTypeID?: number; UserTypeName?: string }): UserTypeOption {
+  private normalizeUserRole(raw: UserRoleOption & { UserRoleID?: number; UserRoleName?: string; UserTypeID?: number; UserTypeName?: string }): UserRoleOption {
     return {
-      userTypeID: raw.userTypeID ?? raw.UserTypeID ?? 0,
-      userTypeName: raw.userTypeName ?? raw.UserTypeName ?? ''
+      userRoleID: raw.userRoleID ?? raw.UserRoleID ?? raw.UserTypeID ?? 0,
+      userRoleName: raw.userRoleName ?? raw.UserRoleName ?? raw.UserTypeName ?? ''
     };
   }
 
@@ -174,6 +174,8 @@ export class EmployeeService {
     OrganizationName?: string;
     DesignationCode?: number | null;
     DesignationName?: string;
+    UserRoleID?: number | null;
+    UserRoleName?: string;
     UserTypeID?: number | null;
     UserTypeName?: string;
     IsActive?: boolean;
@@ -192,8 +194,8 @@ export class EmployeeService {
       organizationName: raw.organizationName ?? raw.OrganizationName ?? '',
       designationCode: raw.designationCode ?? raw.DesignationCode ?? null,
       designationName: raw.designationName ?? raw.DesignationName ?? '',
-      userTypeID: raw.userTypeID ?? raw.UserTypeID ?? null,
-      userTypeName: raw.userTypeName ?? raw.UserTypeName ?? '',
+      userRoleID: raw.userRoleID ?? raw.UserRoleID ?? raw.UserTypeID ?? null,
+      userRoleName: raw.userRoleName ?? raw.UserRoleName ?? raw.UserTypeName ?? '',
       isActive: raw.isActive ?? raw.IsActive ?? true,
       displayName: raw.displayName ?? raw.DisplayName ?? [firstname, middleName, lastName].filter(Boolean).join(' ')
     };
@@ -203,6 +205,7 @@ export class EmployeeService {
     UserID?: number;
     SchoolCode?: number | null;
     OrgID?: number | null;
+    UserRoleID?: number | null;
     UserTypeID?: number | null;
     DesignationCode?: number | null;
     Firstname?: string;
@@ -210,6 +213,8 @@ export class EmployeeService {
     LastName?: string;
     PermanentAddress?: string;
     LocalAddress?: string;
+    address?: string;
+    Address?: string;
     GenderCode?: number | null;
     Dob?: string | null;
     AdharCardNo?: string;
@@ -293,12 +298,12 @@ export class EmployeeService {
       userID: raw.userID ?? raw.UserID ?? null,
       schoolCode: raw.schoolCode ?? raw.SchoolCode ?? null,
       orgID: raw.orgID ?? raw.OrgID ?? null,
-      userTypeID: raw.userTypeID ?? raw.UserTypeID ?? null,
+      userRoleID: raw.userRoleID ?? raw.UserRoleID ?? raw.UserTypeID ?? null,
       designationCode: raw.designationCode ?? raw.DesignationCode ?? null,
       firstname: raw.firstname ?? raw.Firstname ?? '',
       middleName: raw.middleName ?? raw.MiddleName ?? '',
       lastName: raw.lastName ?? raw.LastName ?? '',
-      permanentAddress: raw.permanentAddress ?? raw.PermanentAddress ?? '',
+      permanentAddress: raw.permanentAddress ?? raw.PermanentAddress ?? raw.address ?? raw.Address ?? '',
       localAddress: raw.localAddress ?? raw.LocalAddress ?? '',
       genderCode: raw.genderCode ?? raw.GenderCode ?? null,
       dob: this.toDateInput(raw.dob ?? raw.Dob),

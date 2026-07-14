@@ -8,15 +8,15 @@ public sealed class CodeNameOptionDto
     public string Name { get; init; } = string.Empty;
 }
 
-public sealed class UserTypeOptionDto
+public sealed class UserRoleOptionDto
 {
-    public int UserTypeID { get; init; }
-    public string UserTypeName { get; init; } = string.Empty;
+    public int UserRoleID { get; init; }
+    public string UserRoleName { get; init; } = string.Empty;
 }
 
 public sealed class EmployeeLookupsDto
 {
-    public IReadOnlyList<UserTypeOptionDto> UserTypes { get; init; } = [];
+    public IReadOnlyList<UserRoleOptionDto> UserRoles { get; init; } = [];
     public IReadOnlyList<CodeNameOptionDto> Designations { get; init; } = [];
     public IReadOnlyList<CodeNameOptionDto> Genders { get; init; } = [];
     public IReadOnlyList<CodeNameOptionDto> Educations { get; init; } = [];
@@ -36,8 +36,8 @@ public sealed class EmployeeListItemDto
     public string? OrganizationName { get; init; }
     public long? DesignationCode { get; init; }
     public string? DesignationName { get; init; }
-    public int? UserTypeID { get; init; }
-    public string? UserTypeName { get; init; }
+    public int? UserRoleID { get; init; }
+    public string? UserRoleName { get; init; }
     public bool? IsActive { get; init; }
 
     public string DisplayName
@@ -55,7 +55,7 @@ public sealed class EmployeeDto
     public long UserID { get; init; }
     public long? SchoolCode { get; init; }
     public long? OrgID { get; init; }
-    public int? UserTypeID { get; init; }
+    public int? UserRoleID { get; init; }
     public long? DesignationCode { get; init; }
     public string? Firstname { get; init; }
     public string? MiddleName { get; init; }
@@ -117,7 +117,7 @@ public sealed class SaveEmployeeRequestDto
     public long UserID { get; init; }
     public long? SchoolCode { get; init; }
     public long? OrgID { get; init; }
-    public int? UserTypeID { get; init; }
+    public int? UserRoleID { get; init; }
     public long? DesignationCode { get; init; }
     public string? Firstname { get; init; }
     public string? MiddleName { get; init; }

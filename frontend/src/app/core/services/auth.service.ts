@@ -21,8 +21,8 @@ export class AuthService {
   });
 
   readonly isSansthaAdmin = computed(() => {
-    const userTypeId = this.userSignal()?.userTypeId;
-    return userTypeId === 1 || userTypeId === 2;
+    const userRoleId = this.userSignal()?.userRoleId;
+    return userRoleId === 1 || userRoleId === 2;
   });
 
   /** @deprecated Use isSansthaAdmin — sanstha-scoped admin, not global all-schools. */
@@ -76,8 +76,8 @@ export class AuthService {
       sansthaId: data.sansthaId,
       schoolName: data.schoolName,
       sansthaName: data.sansthaName,
-      userTypeId: data.userTypeId,
-      userTypeName: data.userTypeName,
+      userRoleId: data.userRoleId,
+      userRoleName: data.userRoleName,
       schoolContexts: data.schoolContexts
     };
     this.userSignal.set(user);
@@ -94,6 +94,9 @@ export class AuthService {
         organizationName?: string;
         organizationGroupName?: string;
         orgContexts?: UserLoginSchoolContext[];
+        userRoleID?: number;
+        userRoleName?: string;
+        userTypeId?: number;
         userTypeID?: number;
         userTypeName?: string;
       };
@@ -108,8 +111,8 @@ export class AuthService {
         sansthaId: parsed.sansthaId ?? parsed.orgGroupId,
         schoolName: parsed.schoolName ?? parsed.organizationName,
         sansthaName: parsed.sansthaName ?? parsed.organizationGroupName,
-        userTypeId: parsed.userTypeId ?? parsed.userTypeID,
-        userTypeName: parsed.userTypeName,
+        userRoleId: parsed.userRoleId ?? parsed.userRoleID ?? parsed.userTypeId ?? parsed.userTypeID,
+        userRoleName: parsed.userRoleName ?? parsed.userTypeName,
         schoolContexts: parsed.schoolContexts ?? parsed.orgContexts
       };
       if (new Date(user.expiresAt) <= new Date()) {

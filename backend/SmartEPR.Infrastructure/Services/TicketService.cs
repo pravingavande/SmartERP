@@ -112,6 +112,23 @@ public sealed class TicketService : ITicketService
         return await GetDetailAsync(request.TicketID, userId, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<bool> AcknowledgeAsync(long ticketId, long userId, string? ipAddress, CancellationToken cancellationToken = default)
+    {
+        var context = await _ticketRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (context.CanRaiseTicket)
+            return false;
+
+        try
+        {
+            await _ticketRepository.AcknowledgeAsync(ticketId, userId, ipAddress, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<bool> CloseAsync(long ticketId, long userId, CancellationToken cancellationToken = default)
     {
         try

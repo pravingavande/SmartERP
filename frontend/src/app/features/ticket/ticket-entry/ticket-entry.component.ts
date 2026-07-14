@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -48,10 +48,36 @@ export class TicketEntryComponent {
   readonly selectedFileName = signal<string | null>(null);
   readonly listOrgID = signal<number | null>(null);
   readonly selectedOrgIds = signal<number[]>([]);
+  readonly schoolPickerOpen = signal(false);
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly canRaiseTicket = computed(() => this.lookups()?.canRaiseTicket ?? false);
   readonly isReadOnlyUser = computed(() => !this.canRaiseTicket());
+  readonly isSingleSchoolUser = computed(() => {
+    const lookups = this.lookups();
+    return !!lookups && !lookups.isSansthaUser && lookups.orgs.length === 1;
+  });
+  readonly schoolSelectionSummary = computed(() => {
+    const ids = this.selectedOrgIds();
+    const orgs = this.lookups()?.orgs ?? [];
+    if (!ids.length) return 'Select school(s)...';
+    const names = orgs.filter((o) => ids.includes(o.orgID)).map((o) => o.organizationName);
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return names.join(', ');
+    return `${names.length} schools selected`;
+  });
+  readonly selectedSchoolNames = computed(() => {
+    const ids = new Set(this.selectedOrgIds());
+    return (this.lookups()?.orgs ?? []).filter((o) => ids.has(o.orgID)).map((o) => o.organizationName);
+  });
+  readonly schoolDisplayValue = computed(() => {
+    const fromDetail = this.detail()?.ticket?.schoolNames?.trim();
+    if (fromDetail) return fromDetail;
+    const names = this.selectedSchoolNames();
+    if (names.length) return names.join(', ');
+    const orgs = this.lookups()?.orgs ?? [];
+    return orgs[0]?.organizationName ?? '—';
+  });
   readonly canEditCurrent = computed(() => this.detail()?.canEdit ?? (this.canRaiseTicket() && !this.isViewMode()));
   readonly canReplyCurrent = computed(() => this.detail()?.canReply ?? false);
   readonly canCloseCurrent = computed(() => this.detail()?.canClose ?? false);
@@ -108,12 +134,38 @@ export class TicketEntryComponent {
   }
 
   toggleSchool(orgId: number, checked: boolean): void {
+    if (!this.canEditCurrent()) return;
     this.selectedOrgIds.update((ids) => {
       if (checked) return ids.includes(orgId) ? ids : [...ids, orgId];
       return ids.filter((id) => id !== orgId);
     });
     this.form.update((f) => ({ ...f, orgIDs: this.selectedOrgIds() }));
     this.fieldErrors.update((e) => removeFieldError(e, 'orgIDs'));
+  }
+
+  toggleSchoolPicker(event: Event): void {
+    event.stopPropagation();
+    if (!this.canEditCurrent() || this.isSingleSchoolUser()) return;
+    this.schoolPickerOpen.update((open) => !open);
+  }
+
+  selectAllSchools(): void {
+    if (!this.canEditCurrent()) return;
+    const orgIds = (this.lookups()?.orgs ?? []).map((o) => o.orgID);
+    this.selectedOrgIds.set(orgIds);
+    this.form.update((f) => ({ ...f, orgIDs: orgIds }));
+    this.fieldErrors.update((e) => removeFieldError(e, 'orgIDs'));
+  }
+
+  clearSchools(): void {
+    if (!this.canEditCurrent()) return;
+    this.selectedOrgIds.set([]);
+    this.form.update((f) => ({ ...f, orgIDs: [] }));
+  }
+
+  @HostListener('document:click')
+  closeSchoolPicker(): void {
+    this.schoolPickerOpen.set(false);
   }
 
   isSchoolSelected(orgId: number): boolean {
@@ -145,6 +197,7 @@ export class TicketEntryComponent {
     this.formVisible.set(true);
     this.detail.set(null);
     this.errorMessage.set(null);
+    this.schoolPickerOpen.set(false);
     this.selectedOrgIds.set(defaultOrgIds);
     this.form.set({
       ...this.emptyForm(),
@@ -324,6 +377,7 @@ export class TicketEntryComponent {
     this.formMode.set('new');
     this.detail.set(null);
     this.selectedFileName.set(null);
+    this.schoolPickerOpen.set(false);
     this.loadList();
   }
 

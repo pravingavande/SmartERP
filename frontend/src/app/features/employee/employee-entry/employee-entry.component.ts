@@ -93,7 +93,7 @@ export class EmployeeEntryComponent {
     if (!total) return 0;
     return Math.min(total, (this.listPageIndex() + 1) * this.listPageSize());
   });
-  readonly isSansthaUser = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userTypeId));
+  readonly isSansthaUser = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
   readonly schoolOrgs = computed(() => {
     const orgs = this.lookups()?.orgs ?? [];
     const sansthaId = this.auth.currentUser()?.sansthaId;
@@ -551,7 +551,7 @@ export class EmployeeEntryComponent {
       userID: null,
       schoolCode: null,
       orgID: null,
-      userTypeID: null,
+      userRoleID: null,
       designationCode: null,
       firstname: '',
       middleName: '',

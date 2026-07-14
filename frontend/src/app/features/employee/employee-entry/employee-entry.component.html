@@ -61,7 +61,7 @@
                     <td class="name">{{ employeeName(e) }}</td>
                     <td>{{ e.mobileNo1 || '—' }}</td>
                     <td>{{ e.designationName || '—' }}</td>
-                    <td>{{ e.userTypeName || '—' }}</td>
+                    <td>{{ e.userRoleName || '—' }}</td>
                     <td>{{ e.organizationName || '—' }}</td>
                     <td class="actions">
                       <button type="button" class="action-btn view" (click)="viewEmployee(e)">View</button>
@@ -181,11 +181,11 @@
                     @if (fieldError('orgID')) { <span class="field-error">{{ fieldError('orgID') }}</span> }
                   </label>
                   <label class="field">
-                    <span class="field-label">User Type</span>
-                    <select class="field-control" [ngModel]="form().userTypeID" (ngModelChange)="updateForm('userTypeID', $event ? +$event : null)" name="userTypeID">
+                    <span class="field-label">User Role</span>
+                    <select class="field-control" [ngModel]="form().userRoleID" (ngModelChange)="updateForm('userRoleID', $event ? +$event : null)" name="userRoleID">
                       <option [ngValue]="null">-- Select --</option>
-                      @for (ut of masterLookups()?.userTypes ?? []; track ut.userTypeID) {
-                        <option [ngValue]="ut.userTypeID">{{ ut.userTypeName }}</option>
+                      @for (ur of masterLookups()?.userRoles ?? []; track ur.userRoleID) {
+                        <option [ngValue]="ur.userRoleID">{{ ur.userRoleName }}</option>
                       }
                     </select>
                   </label>

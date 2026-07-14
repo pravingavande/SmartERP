@@ -6,8 +6,6 @@
     </div>
     @if (!formVisible()) {
       <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
-    } @else {
-      <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
     }
   </header>
 
@@ -37,7 +35,7 @@
   }
   }
 
-  <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
+  <div class="audit-layout list-only">
     @if (!formVisible()) {
     <aside class="list-panel">
       <h3>All Ledger Heads @if (listOrgID()) { — {{ selectedOrgName() }} }</h3>
@@ -73,38 +71,33 @@
           </tbody>
         </table>
         @if (filteredLedgerHeads().length > 0) {
-          <div class="list-pagination">
-            <label class="page-size-field">
-              <span>Rows</span>
-              <select [ngModel]="listPageSize()" (ngModelChange)="onListPageSizeChange(+$event)" name="ledgerListPageSize">
-                <option [ngValue]="10">10</option>
-                <option [ngValue]="25">25</option>
-                <option [ngValue]="50">50</option>
-              </select>
-            </label>
-            <span class="page-info">{{ listPageStart() }}–{{ listPageEnd() }} of {{ filteredLedgerHeads().length }}</span>
-            <div class="page-nav">
-              <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() === 0" (click)="goToListPage(listPageIndex() - 1)">Prev</button>
-              <span class="page-num">Page {{ listPageIndex() + 1 }} / {{ listPageCount() }}</span>
-              <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() >= listPageCount() - 1" (click)="goToListPage(listPageIndex() + 1)">Next</button>
-            </div>
-          </div>
+          <app-master-list-pagination
+            [total]="filteredLedgerHeads().length"
+            [pageIndex]="listPageIndex()"
+            [pageSize]="listPageSize()"
+            (pageIndexChange)="goToListPage($event)"
+            (pageSizeChange)="onListPageSizeChange($event)"
+          />
         }
       </div>
     </aside>
     }
+  </div>
 
-    @if (formVisible()) {
-      <div class="form-panel">
+  @if (formVisible()) {
+    <div class="master-modal-overlay" (click)="cancel()">
+      <div class="master-modal-box master-modal-wide" (click)="$event.stopPropagation()">
+        <header class="master-modal-header">
+          <h2>{{ formMode() === 'edit' ? 'Edit Ledger Head' : 'New Ledger Head' }}</h2>
+        </header>
         @if (lookupsLoading()) {
           <p class="loading-hint">Loading masters...</p>
         }
-        <form class="voucher-form" (ngSubmit)="save()">
+        <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) {
             <p class="form-save-error">{{ saveError() }}</p>
           }
           <div class="form-section">
-            <h3>{{ formMode() === 'edit' ? 'Edit Ledger Head' : 'New Ledger Head' }}</h3>
             <div class="form-grid">
               <label class="field full">
                 <span class="field-label">Org / Sanstha</span>
@@ -137,10 +130,12 @@
                 <span class="field-label">Ledger Head Short</span>
                 <input class="field-control" type="text" [ngModel]="form().ledgerHeadShort" (ngModelChange)="updateForm('ledgerHeadShort', $event)" name="ledgerHeadShort">
               </label>
-              <label class="field checkbox-field">
+              @if (formMode() === 'edit') {
+              <label class="field checkbox-field master-active-field">
                 <span class="field-label">Active</span>
                 <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
               </label>
+              }
             </div>
           </div>
 
@@ -150,6 +145,6 @@
           </footer>
         </form>
       </div>
-    }
-  </div>
+    </div>
+  }
 </section>

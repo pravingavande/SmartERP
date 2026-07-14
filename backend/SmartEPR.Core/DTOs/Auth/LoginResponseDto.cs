@@ -12,7 +12,7 @@ public sealed class LoginResponseDto
     public int? SansthaId { get; init; }
     public string? SchoolName { get; init; }
     public string? SansthaName { get; init; }
-    public int? UserTypeId { get; init; }
-    public string? UserTypeName { get; init; }
+    public int? UserRoleId { get; init; }
+    public string? UserRoleName { get; init; }
     public IReadOnlyList<UserLoginSchoolContextDto> SchoolContexts { get; init; } = Array.Empty<UserLoginSchoolContextDto>();
 }

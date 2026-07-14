@@ -10,11 +10,11 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        ut.UserTypeID,
-        ut.UserTypeName
-    FROM dbo.UserTypeMaster ut
-    WHERE ut.UserTypeID IS NOT NULL
-    ORDER BY ut.UserTypeName;
+        ut.UserRoleID,
+        ut.UserRoleName
+    FROM dbo.UserRoleMaster ut
+    WHERE ut.UserRoleID IS NOT NULL
+    ORDER BY ut.UserRoleName;
 
     SELECT
         dm.DesignationID AS DesignationCode,
@@ -80,8 +80,8 @@ BEGIN
         om.OrganizationName,
         um.DesignationCode,
         dm.DesignationName,
-        um.UserTypeID,
-        ut.UserTypeName,
+        um.UserRoleID,
+        ut.UserRoleName,
         um.IsActive
     FROM dbo.UserMaster um
     LEFT JOIN dbo.OrgMaster om
@@ -89,8 +89,8 @@ BEGIN
        AND om.Status = 1
     LEFT JOIN dbo.DesignationMaster dm
         ON dm.DesignationID = um.DesignationCode
-    LEFT JOIN dbo.UserTypeMaster ut
-        ON ut.UserTypeID = um.UserTypeID
+    LEFT JOIN dbo.UserRoleMaster ut
+        ON ut.UserRoleID = um.UserRoleID
     WHERE um.IsActive = 1
       AND (@OrgID IS NULL OR um.OrgID = @OrgID)
       AND (
@@ -115,7 +115,7 @@ BEGIN
         um.UserID,
         um.SchoolCode,
         um.OrgID,
-        um.UserTypeID,
+        um.UserRoleID,
         um.DesignationCode,
         um.Firstname,
         um.MiddleName,
@@ -203,7 +203,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_Employee_Save
     @UserID BIGINT = NULL OUTPUT,
     @SchoolCode BIGINT = NULL,
     @OrgID BIGINT = NULL,
-    @UserTypeID INT = NULL,
+    @UserRoleID INT = NULL,
     @DesignationCode BIGINT = NULL,
     @Firstname NVARCHAR(120) = NULL,
     @MiddleName NVARCHAR(120) = NULL,
@@ -236,7 +236,7 @@ BEGIN
         INSERT INTO dbo.UserMaster (
             SchoolCode,
             OrgID,
-            UserTypeID,
+            UserRoleID,
             DesignationCode,
             Firstname,
             MiddleName,
@@ -259,7 +259,7 @@ BEGIN
         VALUES (
             @SchoolCode,
             @OrgID,
-            @UserTypeID,
+            @UserRoleID,
             @DesignationCode,
             @Firstname,
             @MiddleName,
@@ -288,7 +288,7 @@ BEGIN
         SET
             SchoolCode = @SchoolCode,
             OrgID = @OrgID,
-            UserTypeID = @UserTypeID,
+            UserRoleID = @UserRoleID,
             DesignationCode = @DesignationCode,
             Firstname = @Firstname,
             MiddleName = @MiddleName,

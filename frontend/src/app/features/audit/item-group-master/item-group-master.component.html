@@ -1,97 +1,97 @@
-<section class="audit-page">
+<section class="audit-page master-page">
   <header class="page-header">
     <div>
       <h1>Item Group Master</h1>
       <p>Manage item groups for inventory</p>
     </div>
-    @if (!formVisible()) {
-      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Item Group</button>
-    } @else {
-      <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
-    }
+    <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Item Group</button>
   </header>
 
-  @if (!formVisible()) {
-    <div class="list-filters">
-      <label class="field">
-        <span class="field-label">Org / School</span>
-        <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
-          <option [ngValue]="null">-- Select School --</option>
-          @for (o of lookups()?.orgs ?? []; track o.orgID) {
-            <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-          }
-        </select>
-      </label>
-      <label class="field">
-        <span class="field-label">Search</span>
-        <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search item group name">
-      </label>
-    </div>
-    @if (errorMessage()) {
-      <p class="error list-error">{{ errorMessage() }}</p>
-    }
+  <div class="list-filters">
+    <label class="field">
+      <span class="field-label">Org / School</span>
+      <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
+        <option [ngValue]="null">-- Select School --</option>
+        @for (o of lookups()?.orgs ?? []; track o.orgID) {
+          <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">Search</span>
+      <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search item group name">
+    </label>
+  </div>
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
   }
 
-  <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
-    @if (!formVisible()) {
-      <aside class="list-panel">
-        @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading item groups...</p> }
-        <div class="records-table-wrap">
-          <table class="records-table">
-            <thead>
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading item groups...</p> }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('itemGroupName')">Item Group</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of paginatedItems(); track item.itemGroupID) {
               <tr>
-                <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
-                <th><button type="button" class="sort-btn" (click)="toggleSort('itemGroupName')">Item Group</button></th>
-                <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
-                <th>Actions</th>
+                <td class="code">{{ item.srNo }}</td>
+                <td>{{ item.itemGroupName }}</td>
+                <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+                <td class="actions">
+                  <button type="button" class="action-btn edit" (click)="editItem(item)">Edit</button>
+                  <button type="button" class="action-btn delete" (click)="deleteItem(item)">Delete</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              @for (item of paginatedItems(); track item.itemGroupID) {
-                <tr>
-                  <td class="code">{{ item.srNo }}</td>
-                  <td>{{ item.itemGroupName }}</td>
-                  <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
-                  <td class="actions">
-                    <button type="button" class="action-btn edit" (click)="editItem(item)">Edit</button>
-                    <button type="button" class="action-btn delete" (click)="deleteItem(item)">Delete</button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr><td colspan="4" class="empty">No item groups for selected school</td></tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="list-pagination">
-          <span>{{ listPageStart() }}–{{ listPageEnd() }} of {{ filteredItems().length }}</span>
-          <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() === 0" (click)="goToListPage(listPageIndex() - 1)">Prev</button>
-          <button type="button" class="btn btn-outline btn-sm" [disabled]="listPageIndex() >= listPageCount() - 1" (click)="goToListPage(listPageIndex() + 1)">Next</button>
-        </div>
-      </aside>
-    }
+            } @empty {
+              <tr><td colspan="4" class="empty">No item groups for selected school</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-master-list-pagination
+        [total]="filteredItems().length"
+        [pageIndex]="listPageIndex()"
+        [pageSize]="listPageSize()"
+        (pageIndexChange)="goToListPage($event)"
+        (pageSizeChange)="onListPageSizeChange($event)"
+      />
+    </aside>
+  </div>
 
-    @if (formVisible()) {
-      <div class="form-panel">
-        <form class="voucher-form" (ngSubmit)="save()">
+  @if (formVisible()) {
+    <div class="master-modal-overlay" (click)="cancel()">
+      <div class="master-modal-box" (click)="$event.stopPropagation()">
+        <header class="master-modal-header">
+          <h2>{{ formMode() === 'edit' ? 'Edit Item Group' : 'New Item Group' }}</h2>
+        </header>
+        <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
-          <div class="form-section">
-            <h3>{{ formMode() === 'edit' ? 'Edit Item Group' : 'New Item Group' }}</h3>
-            <div class="form-grid">
+          <div class="form-grid">
+            @if (formMode() === 'edit') {
               <label class="field">
                 <span class="field-label">Sr No</span>
                 <input class="field-control" type="text" readonly [value]="formSrNo() ?? '—'" name="srNo">
               </label>
-              <label class="field full" [class.field-invalid]="fieldError('itemGroupName')">
-                <span class="field-label">Item Group Name *</span>
-                <input class="field-control" required [ngModel]="form().itemGroupName" (ngModelChange)="updateForm('itemGroupName', $event)" name="itemGroupName">
-                @if (fieldError('itemGroupName')) { <span class="field-error">{{ fieldError('itemGroupName') }}</span> }
-              </label>
-              <label class="field field-check">
+            }
+            <label class="field full" [class.field-invalid]="fieldError('itemGroupName')">
+              <span class="field-label">Item Group Name *</span>
+              <input class="field-control" required [ngModel]="form().itemGroupName" (ngModelChange)="updateForm('itemGroupName', $event)" name="itemGroupName">
+              @if (fieldError('itemGroupName')) { <span class="field-error">{{ fieldError('itemGroupName') }}</span> }
+            </label>
+            @if (formMode() === 'edit') {
+              <label class="field field-check master-active-field">
                 <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
                 <span>Active</span>
               </label>
-            </div>
+            }
           </div>
           <footer class="form-footer">
             <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
@@ -99,6 +99,6 @@
           </footer>
         </form>
       </div>
-    }
-  </div>
+    </div>
+  }
 </section>

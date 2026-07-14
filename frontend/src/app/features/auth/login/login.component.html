@@ -101,6 +101,15 @@
         <div class="card-top-accent"></div>
 
         <div class="card-body">
+          @if (schoolWebsiteUrl) {
+            <a class="back-portal" [href]="schoolWebsiteUrl">← शाळा वेबसाइटवर परत जा</a>
+          }
+
+          <div class="portal-switch" role="tablist" aria-label="Login portal type">
+            <button type="button" class="portal-tab" [class.active]="portal() === 'school'" (click)="setPortal('school')">School</button>
+            <button type="button" class="portal-tab" [class.active]="portal() === 'sanstha'" (click)="setPortal('sanstha')">Sanstha</button>
+          </div>
+
           <div class="login-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -108,8 +117,8 @@
             </svg>
           </div>
 
-          <h2 id="login-title">User Login</h2>
-          <p class="subtitle">Sign in with your registered app credentials</p>
+          <h2 id="login-title">{{ portalTitle() }}</h2>
+          <p class="subtitle">{{ portalSubtitle() }}</p>
 
           @if (showDevDefaults) {
             <div class="dev-hint" role="status">

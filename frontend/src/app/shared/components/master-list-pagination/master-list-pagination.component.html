@@ -1,0 +1,18 @@
+@if (total() > 0) {
+  <div class="list-pagination">
+    <label class="page-size-field">
+      <span>Rows</span>
+      <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange(+$event)" name="masterListPageSize">
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="25">25</option>
+        <option [ngValue]="50">50</option>
+      </select>
+    </label>
+    <span class="page-info">{{ pageStart() }}–{{ pageEnd() }} of {{ total() }}</span>
+    <div class="page-nav">
+      <button type="button" class="btn btn-outline btn-sm" [disabled]="pageIndex() === 0" (click)="prev()">Prev</button>
+      <span class="page-num">Page {{ pageIndex() + 1 }} / {{ pageCount() }}</span>
+      <button type="button" class="btn btn-outline btn-sm" [disabled]="pageIndex() >= pageCount() - 1" (click)="next()">Next</button>
+    </div>
+  </div>
+}

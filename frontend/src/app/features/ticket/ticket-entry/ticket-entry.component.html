@@ -112,30 +112,65 @@
             <div class="form-section">
               <h3>Ticket Entry</h3>
               <div class="form-grid">
-                @if (canRaiseTicket()) {
-                  <div class="field full" [class.field-invalid]="fieldError('orgIDs')">
-                    <span class="field-label">School(s) *</span>
-                    <div class="school-check-grid">
-                      @for (o of lookups()?.orgs ?? []; track o.orgID) {
-                        <label class="check-item">
-                          <input
-                            type="checkbox"
-                            [checked]="isSchoolSelected(o.orgID)"
-                            (change)="toggleSchool(o.orgID, $any($event.target).checked)"
-                          >
-                          {{ o.organizationName }}
-                        </label>
-                      }
-                    </div>
-                    @if (fieldError('orgIDs')) {
-                      <span class="field-error">{{ fieldError('orgIDs') }}</span>
-                    }
-                  </div>
-                } @else {
+                @if (!canRaiseTicket()) {
                   <label class="field full">
                     <span class="field-label">School(s)</span>
                     <input class="field-control" [value]="detail()?.ticket?.schoolNames || '—'" readonly>
                   </label>
+                } @else if (isSingleSchoolUser() || isViewMode()) {
+                  <div class="field full school-multiselect">
+                    <span class="field-label">School(s) *</span>
+                    <input class="field-control school-readonly" type="text" readonly [value]="schoolDisplayValue()">
+                  </div>
+                } @else {
+                  <div class="field full school-multiselect" [class.field-invalid]="fieldError('orgIDs')" [class.open]="schoolPickerOpen()" (click)="$event.stopPropagation()">
+                    <span class="field-label">School(s) *</span>
+                    <button
+                      type="button"
+                      class="multiselect-trigger"
+                      [disabled]="!canEditCurrent()"
+                      (click)="toggleSchoolPicker($event)"
+                      [attr.aria-expanded]="schoolPickerOpen()"
+                    >
+                      <span class="multiselect-value" [class.placeholder]="!selectedOrgIds().length">{{ schoolSelectionSummary() }}</span>
+                      <span class="multiselect-chevron" aria-hidden="true">▾</span>
+                    </button>
+
+                    @if (schoolPickerOpen()) {
+                      <div class="multiselect-panel">
+                        <div class="multiselect-toolbar">
+                          <button type="button" class="link-btn" (click)="selectAllSchools()">Select all</button>
+                          <button type="button" class="link-btn" (click)="clearSchools()">Clear</button>
+                        </div>
+                        <ul class="multiselect-options">
+                          @for (o of lookups()?.orgs ?? []; track o.orgID) {
+                            <li>
+                              <label class="multiselect-option">
+                                <input
+                                  type="checkbox"
+                                  [checked]="isSchoolSelected(o.orgID)"
+                                  (change)="toggleSchool(o.orgID, $any($event.target).checked)"
+                                >
+                                <span>{{ o.organizationName }}</span>
+                              </label>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+
+                    @if (selectedSchoolNames().length) {
+                      <div class="selected-school-chips">
+                        @for (name of selectedSchoolNames(); track name) {
+                          <span class="school-chip">{{ name }}</span>
+                        }
+                      </div>
+                    }
+
+                    @if (fieldError('orgIDs')) {
+                      <span class="field-error">{{ fieldError('orgIDs') }}</span>
+                    }
+                  </div>
                 }
 
                 <label class="field">

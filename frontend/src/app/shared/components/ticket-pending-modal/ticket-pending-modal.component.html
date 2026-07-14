@@ -1,39 +1,92 @@
 <div class="modal-backdrop">
-  <div class="modal-card" role="dialog" aria-modal="true">
-    <header class="modal-header">
-      <h2>New Ticket Notification</h2>
-      <p>{{ ticket().ticketNo || ('#' + ticket().ticketID) }} — {{ ticket().subject || 'Support ticket' }}</p>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="ticket-notice-title">
+    <header class="notice-header">
+      <div class="notice-header-text">
+        <h2 id="ticket-notice-title">नवीन तिकीट तयार झाले आहे</h2>
+        <span class="new-badge">NEW</span>
+      </div>
+      <p class="notice-subtitle">
+        {{ ticket().ticketNo || ('#' + ticket().ticketID) }}
+        @if (ticket().subject) {
+          — {{ ticket().subject }}
+        }
+      </p>
     </header>
 
-    <section class="modal-body">
-      <p><strong>School(s):</strong> {{ ticket().schoolNames || '—' }}</p>
-      <p><strong>Reply Required:</strong> {{ ticket().replyRequired || '—' }}</p>
-      @if (ticket().submittedDate) {
-        <p><strong>Submitted:</strong> {{ ticket().submittedDate | date:'dd/MM/yyyy HH:mm' }}</p>
+    <div class="notice-alert">
+      कृपया खालील सर्व तिकीट माहिती काळजीपूर्वक वाचा. माहिती समजल्याची खात्री करूनच पुढे जावे.
+    </div>
+
+    <section class="notice-body">
+      <ol class="ticket-info-list">
+        <li>
+          <span class="label">शाळा:</span>
+          <span class="value">{{ ticket().schoolNames || '—' }}</span>
+        </li>
+        <li>
+          <span class="label">विषय:</span>
+          <span class="value">{{ ticket().subject || '—' }}</span>
+        </li>
+        @if (ticket().description) {
+          <li>
+            <span class="label">वर्णन:</span>
+            <span class="value description">{{ ticket().description }}</span>
+          </li>
+        }
+        @if (ticket().module) {
+          <li>
+            <span class="label">मॉड्यूल:</span>
+            <span class="value">{{ ticket().module }}</span>
+          </li>
+        }
+        @if (ticket().priority) {
+          <li>
+            <span class="label">प्राधान्य:</span>
+            <span class="value priority">{{ ticket().priority }}</span>
+          </li>
+        }
+        @if (ticket().replyRequired) {
+          <li>
+            <span class="label">प्रत्युत्तर:</span>
+            <span class="value">{{ ticket().replyRequired }}</span>
+          </li>
+        }
+        @if (ticket().statusNameMr || ticket().statusName) {
+          <li>
+            <span class="label">स्थिती:</span>
+            <span class="value">{{ ticket().statusNameMr || ticket().statusName }}</span>
+          </li>
+        }
+        @if (ticket().submittedDate) {
+          <li>
+            <span class="label">सबमिट केले:</span>
+            <span class="value">{{ ticket().submittedDate | date:'dd/MM/yyyy HH:mm' }}</span>
+          </li>
+        }
+      </ol>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
       }
 
-      <label class="field">
-        <span class="field-label">Reply *</span>
-        <textarea
-          class="field-control"
-          rows="4"
-          [ngModel]="replyForm().replyText"
-          (ngModelChange)="updateReplyText($event)"
-          placeholder="Enter your reply..."
-        ></textarea>
+      <label class="acknowledge-row">
+        <input
+          type="checkbox"
+          [checked]="agreed()"
+          (change)="onAgreedChange($any($event.target).checked)"
+        />
+        <span>मी वरील सर्व माहिती वाचली असून मला ती पूर्णपणे समजली आहे.</span>
       </label>
-
-      @if (replyError()) {
-        <p class="error">{{ replyError() }}</p>
-      }
     </section>
 
-    <footer class="modal-footer">
-      @if (!isInstant()) {
-        <button type="button" class="btn btn-outline" (click)="dismissLater()">Remind Later</button>
-      }
-      <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="submitReply()">
-        Submit Reply
+    <footer class="notice-footer">
+      <button
+        type="button"
+        class="btn-acknowledge"
+        [disabled]="loading() || !agreed()"
+        (click)="acknowledge()"
+      >
+        मी माहिती वाचली आहे
       </button>
     </footer>
   </div>

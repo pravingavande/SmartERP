@@ -8,12 +8,13 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateClassForm } from '../../../core/utils/master-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-class-master',
-  imports: [FormsModule],
+  imports: [FormsModule, MasterListPaginationComponent],
   templateUrl: './class-master.component.html',
   styleUrl: './class-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -32,7 +33,7 @@ export class ClassMasterComponent {
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
   readonly searchText = signal('');
-  readonly sortKey = signal<keyof ClassMasterItem>('className');
+  readonly sortKey = signal<keyof ClassMasterItem>('classID');
   readonly sortDir = signal<SortDirection>('asc');
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
@@ -77,6 +78,11 @@ export class ClassMasterComponent {
   goToListPage(index: number): void {
     const max = this.listPageCount() - 1;
     this.listPageIndex.set(Math.max(0, Math.min(index, max)));
+  }
+
+  onListPageSizeChange(size: number): void {
+    this.listPageSize.set(size);
+    this.listPageIndex.set(0);
   }
 
   newItem(): void {

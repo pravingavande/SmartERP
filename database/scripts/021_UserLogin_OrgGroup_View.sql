@@ -16,8 +16,8 @@ BEGIN
         v.AppUserName,
         v.OrganizationName,
         v.OrganizationGroupName,
-        v.UserTypeID,
-        v.UserTypeName
+        v.UserRoleID,
+        v.UserRoleName
     FROM dbo.vw_UserloginWithOrgIDAndORGGROUP v
     WHERE v.AppUserName = @AppUserName;
 END

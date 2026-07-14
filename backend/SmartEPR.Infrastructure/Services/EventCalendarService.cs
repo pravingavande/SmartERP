@@ -1,6 +1,8 @@
+using Microsoft.Data.SqlClient;
 using SmartEPR.Core.DTOs.Calendar;
 using SmartEPR.Core.Entities;
 using SmartEPR.Core.Interfaces;
+using SmartEPR.Infrastructure.Data;
 
 namespace SmartEPR.Infrastructure.Services;
 
@@ -28,8 +30,16 @@ public sealed class EventCalendarService : IEventCalendarService
         if (sansthaOrgs.Count == 0 && orgs.Count > 0)
             sansthaOrgs = [orgs[0].OrgID];
 
-        var underOrgId = sansthaOrgs.FirstOrDefault();
-        var types = await _eventRepository.GetEventTypesAsync(underOrgId > 0 ? underOrgId : null, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<EventTypeItem> types = [];
+        try
+        {
+            var underOrgId = sansthaOrgs.FirstOrDefault();
+            types = await _eventRepository.GetEventTypesAsync(underOrgId > 0 ? underOrgId : null, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            // EventTypes V2 schema/SP may not be deployed yet — still return org lookups.
+        }
 
         return new EventLookupsDto
         {
@@ -53,17 +63,27 @@ public sealed class EventCalendarService : IEventCalendarService
         if (!context.CanManageEvents || request.UnderOrgID <= 0 || string.IsNullOrWhiteSpace(request.EventType))
             return null;
 
-        var id = await _eventRepository.SaveEventTypeAsync(new SaveEventTypeEntity
+        try
         {
-            EventTypeID = request.EventTypeID,
-            UnderOrgID = request.UnderOrgID,
-            EventType = request.EventType.Trim(),
-            IsActive = request.IsActive,
-            UserID = userId
-        }, cancellationToken).ConfigureAwait(false);
+            var id = await _eventRepository.SaveEventTypeAsync(new SaveEventTypeEntity
+            {
+                EventTypeID = request.EventTypeID,
+                UnderOrgID = request.UnderOrgID,
+                EventType = request.EventType.Trim(),
+                IsActive = request.IsActive,
+                UserID = userId
+            }, cancellationToken).ConfigureAwait(false);
 
-        var list = await _eventRepository.GetEventTypeListAsync(request.UnderOrgID, cancellationToken).ConfigureAwait(false);
-        return list.Where(x => x.EventTypeID == id).Select(MapEventType).FirstOrDefault();
+            if (id <= 0)
+                throw new InvalidOperationException("Unable to save event type.");
+
+            var list = await _eventRepository.GetEventTypeListAsync(request.UnderOrgID, cancellationToken).ConfigureAwait(false);
+            return list.Where(x => x.EventTypeID == id).Select(MapEventType).FirstOrDefault();
+        }
+        catch (SqlException ex)
+        {
+            throw new InvalidOperationException(SqlErrorMapper.ToUserMessage(ex, "Event Types"), ex);
+        }
     }
 
     public async Task<bool> DeleteEventTypeAsync(long userId, int eventTypeId, CancellationToken cancellationToken = default)
@@ -133,33 +153,43 @@ public sealed class EventCalendarService : IEventCalendarService
         var profile = await _userRepository.GetProfileByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
         var underOrgId = request.UnderOrgID ?? profile?.OrgID;
 
-        var eventId = await _eventRepository.SaveEventAsync(new SaveEventEntity
+        try
         {
-            EventID = request.EventID ?? 0,
-            Title = request.Title.Trim(),
-            Description = request.Description,
-            EventDate = request.EventDate,
-            StartTime = ParseTime(request.StartTime),
-            EndTime = ParseTime(request.EndTime),
-            IsAllDay = request.IsAllDay,
-            EventTypeID = request.EventTypeID,
-            LocationID = request.LocationID,
-            Location = request.Location.Trim(),
-            Color = request.Color,
-            Status = request.Status,
-            Notes = request.Notes,
-            UnderOrgID = underOrgId,
-            OrgIDs = string.Join(",", request.OrgIDs),
-            EventReporting = request.EventReporting,
-            EventPhotoAttachment = request.EventPhotoAttachment,
-            EventNewsAttachment = request.EventNewsAttachment,
-            OrgID = (int?)request.OrgIDs.FirstOrDefault(),
-            SchoolCode = profile?.SchoolCode,
-            CreatedByUserId = userId,
-            CanManageEvents = context.CanManageEvents
-        }, cancellationToken).ConfigureAwait(false);
+            var eventId = await _eventRepository.SaveEventAsync(new SaveEventEntity
+            {
+                EventID = request.EventID ?? 0,
+                Title = request.Title.Trim(),
+                Description = request.Description,
+                EventDate = request.EventDate,
+                StartTime = ParseTime(request.StartTime),
+                EndTime = ParseTime(request.EndTime),
+                IsAllDay = request.IsAllDay,
+                EventTypeID = request.EventTypeID,
+                LocationID = request.LocationID,
+                Location = request.Location.Trim(),
+                Color = request.Color,
+                Status = request.Status,
+                Notes = request.Notes,
+                UnderOrgID = underOrgId,
+                OrgIDs = string.Join(",", request.OrgIDs),
+                EventReporting = request.EventReporting,
+                EventPhotoAttachment = request.EventPhotoAttachment,
+                EventNewsAttachment = request.EventNewsAttachment,
+                OrgID = (int?)request.OrgIDs.FirstOrDefault(),
+                SchoolCode = profile?.OrgID,
+                CreatedByUserId = userId,
+                CanManageEvents = context.CanManageEvents
+            }, cancellationToken).ConfigureAwait(false);
 
-        return await GetEventByIdAsync(userId, eventId, cancellationToken).ConfigureAwait(false);
+            if (eventId <= 0)
+                throw new InvalidOperationException("Unable to save event.");
+
+            return await GetEventByIdAsync(userId, eventId, cancellationToken).ConfigureAwait(false);
+        }
+        catch (SqlException ex)
+        {
+            throw new InvalidOperationException(SqlErrorMapper.ToUserMessage(ex, "Event Calendar"), ex);
+        }
     }
 
     public async Task<bool> DeleteEventAsync(long userId, int eventId, CancellationToken cancellationToken = default)

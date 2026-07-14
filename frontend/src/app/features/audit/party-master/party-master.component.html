@@ -41,7 +41,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (p of parties(); track p.partyID) {
+            @for (p of paginatedParties(); track p.partyID) {
               <tr [class.active]="form().partyID === p.partyID">
                 <td class="code">{{ p.recordNo ?? p.partyCode ?? '—' }}</td>
                 <td>{{ p.partyName }}</td>
@@ -59,6 +59,13 @@
           </tbody>
         </table>
       </div>
+      <app-master-list-pagination
+        [total]="parties().length"
+        [pageIndex]="listPageIndex()"
+        [pageSize]="listPageSize()"
+        (pageIndexChange)="goToListPage($event)"
+        (pageSizeChange)="onListPageSizeChange($event)"
+      />
     </aside>
     }
 
@@ -94,10 +101,12 @@
                 <span class="field-label">GST No</span>
                 <input class="field-control" type="text" [ngModel]="form().gstNo" (ngModelChange)="updateForm('gstNo', $event)" name="gstNo">
               </label>
-              <label class="field checkbox-field">
+              @if (formMode() === 'edit') {
+              <label class="field checkbox-field master-active-field">
                 <span class="field-label">Active</span>
                 <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
               </label>
+              }
             </div>
           </div>
 

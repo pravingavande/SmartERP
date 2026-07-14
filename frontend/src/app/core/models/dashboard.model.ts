@@ -14,7 +14,7 @@ export interface UserProfile {
   schoolName?: string;
   designationName?: string;
   designationCode?: number;
-  userTypeId?: number;
+  userRoleId?: number;
   genderCode?: number;
   dateOfBirth?: string;
   panNo?: string;

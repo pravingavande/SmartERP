@@ -51,7 +51,7 @@ public sealed class LocationItem
 public sealed class EventUserContextItem
 {
     public bool CanManageEvents { get; init; }
-    public int UserTypeID { get; init; }
+    public int UserRoleID { get; init; }
 }
 
 public sealed class PendingEventReportingItem

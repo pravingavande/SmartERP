@@ -104,6 +104,15 @@ public sealed class TicketRepository : ITicketRepository
         return _executor.ExecuteAsync("dbo.sp_Ticket_MarkRead", p, cancellationToken);
     }
 
+    public Task AcknowledgeAsync(long ticketId, long userId, string? ipAddress, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@TicketID", ticketId);
+        p.Add("@UserID", userId);
+        p.Add("@IP", ipAddress);
+        return _executor.ExecuteAsync("dbo.sp_Ticket_Acknowledge", p, cancellationToken);
+    }
+
     public Task CloseAsync(long ticketId, long userId, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();

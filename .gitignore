@@ -47,6 +47,7 @@ typings/
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
+hosting-dist/
 
 # Secrets & local config (use *.example files)
 backend/cloudrun.env.yaml

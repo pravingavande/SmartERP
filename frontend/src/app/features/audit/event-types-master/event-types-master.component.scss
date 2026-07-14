@@ -1,1 +1,11 @@
-@import '../class-master/class-master.component.scss';
+@import '../../../shared/styles/master-shared.scss';
+@import '../party-master/party-master.component.scss';
+
+.master-modal-wide {
+  width: min(100%, 560px);
+}
+
+.muted {
+  color: var(--epr-muted, #5a6b7d);
+  font-size: 0.85rem;
+}
