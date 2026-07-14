@@ -1,14 +1,11 @@
-<section class="audit-page">
+<section class="audit-page master-page">
   <header class="page-header">
     <div>
       <h1>Party Master</h1>
     </div>
-    @if (!formVisible()) {
-      <button type="button" class="btn btn-primary" (click)="newParty()">+ Add New</button>
-    }
+    <button type="button" class="btn btn-primary" (click)="newParty()">+ Add New</button>
   </header>
 
-  @if (!formVisible()) {
   <div class="list-filters">
     <label class="field">
       <span class="field-label">Org / School</span>
@@ -20,13 +17,11 @@
       </select>
     </label>
   </div>
-  @if (errorMessage() && !formVisible()) {
+  @if (errorMessage()) {
     <p class="error list-error">{{ errorMessage() }}</p>
   }
-  }
 
-  <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
-    @if (!formVisible()) {
+  <div class="audit-layout list-only">
     <aside class="list-panel">
       <h3>All Parties</h3>
       <div class="records-table-wrap">
@@ -67,55 +62,55 @@
         (pageSizeChange)="onListPageSizeChange($event)"
       />
     </aside>
-    }
+  </div>
 
-    @if (formVisible()) {
-      <div class="form-panel">
-        <form class="voucher-form" (ngSubmit)="save()">
+  @if (formVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>{{ formMode() === 'edit' ? 'Edit Party' : 'New Party' }}</h2>
+        </header>
+        <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) {
             <p class="form-save-error">{{ saveError() }}</p>
           }
-          <div class="form-section">
-            <h3>{{ formMode() === 'edit' ? 'Edit Party' : 'New Party' }}</h3>
-            <div class="form-grid">
-              <label class="field full" [class.field-invalid]="fieldError('partyName')">
-                <span class="field-label">Party Name *</span>
-                <input class="field-control" type="text" required [ngModel]="form().partyName" (ngModelChange)="updateForm('partyName', $event)" name="partyName">
-                @if (fieldError('partyName')) {
-                  <span class="field-error">{{ fieldError('partyName') }}</span>
-                }
-              </label>
-              <label class="field full">
-                <span class="field-label">Address</span>
-                <textarea class="field-control" rows="3" [ngModel]="form().address" (ngModelChange)="updateForm('address', $event)" name="address"></textarea>
-              </label>
-              <label class="field">
-                <span class="field-label">Mobile No</span>
-                <input class="field-control" appMarathiNumber mode="int" [maxLength]="10" [ngModel]="form().mobNo" (ngModelChange)="updateForm('mobNo', $event)" name="mobNo">
-              </label>
-              <label class="field">
-                <span class="field-label">PAN No</span>
-                <input class="field-control" type="text" [ngModel]="form().panNo" (ngModelChange)="updateForm('panNo', $event)" name="panNo">
-              </label>
-              <label class="field">
-                <span class="field-label">GST No</span>
-                <input class="field-control" type="text" [ngModel]="form().gstNo" (ngModelChange)="updateForm('gstNo', $event)" name="gstNo">
-              </label>
-              @if (formMode() === 'edit') {
+          <div class="form-grid">
+            <label class="field full" [class.field-invalid]="fieldError('partyName')">
+              <span class="field-label">Party Name *</span>
+              <input class="field-control" type="text" required [ngModel]="form().partyName" (ngModelChange)="updateForm('partyName', $event)" name="partyName">
+              @if (fieldError('partyName')) {
+                <span class="field-error">{{ fieldError('partyName') }}</span>
+              }
+            </label>
+            <label class="field full">
+              <span class="field-label">Address</span>
+              <textarea class="field-control" rows="3" [ngModel]="form().address" (ngModelChange)="updateForm('address', $event)" name="address"></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label">Mobile No</span>
+              <input class="field-control" appMarathiNumber mode="int" [maxLength]="10" [ngModel]="form().mobNo" (ngModelChange)="updateForm('mobNo', $event)" name="mobNo">
+            </label>
+            <label class="field">
+              <span class="field-label">PAN No</span>
+              <input class="field-control" type="text" [ngModel]="form().panNo" (ngModelChange)="updateForm('panNo', $event)" name="panNo">
+            </label>
+            <label class="field">
+              <span class="field-label">GST No</span>
+              <input class="field-control" type="text" [ngModel]="form().gstNo" (ngModelChange)="updateForm('gstNo', $event)" name="gstNo">
+            </label>
+            @if (formMode() === 'edit') {
               <label class="field checkbox-field master-active-field">
                 <span class="field-label">Active</span>
                 <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
               </label>
-              }
-            </div>
+            }
           </div>
-
           <footer class="form-footer">
             <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
             <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
           </footer>
         </form>
       </div>
-    }
-  </div>
+    </div>
+  }
 </section>

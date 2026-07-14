@@ -1,14 +1,14 @@
-<section class="master-hub">
+<section class="stock-dashboard">
   <header class="page-header">
     <div>
-      <h1>Masters</h1>
-      <p>Configure party, ledger, leave and mapping masters</p>
+      <h1>Stock Dashboard</h1>
+      <p>Manage stock entries, items and item groups</p>
     </div>
   </header>
 
-  <div class="master-tiles">
+  <div class="stock-tiles">
     @for (tile of visibleTiles(); track tile.route) {
-      <a class="master-tile" [class]="'tone-' + tile.tone" [routerLink]="tile.route">
+      <a class="stock-tile" [class]="'tone-' + tile.tone" [routerLink]="tile.route">
         <div class="tile-icon" [attr.data-icon]="tile.icon" aria-hidden="true"></div>
         <span class="tile-title">{{ tile.label }}</span>
         <span class="tile-desc">{{ tile.description }}</span>

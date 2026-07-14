@@ -1,0 +1,215 @@
+<section class="audit-page">
+  <header class="page-header">
+    <div>
+      <h1>Inward Register</h1>
+      <p>Maintain incoming official correspondence by organization and year</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-outline" (click)="exportReport('csv')">Export Excel</button>
+      <button type="button" class="btn btn-outline" (click)="printReport()">Print / PDF</button>
+      <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add Inward</button>
+    </div>
+  </header>
+
+  <section class="io-filters" aria-label="Filter inward register">
+    <div class="io-filters-grid">
+      <label class="field">
+        <span class="field-label">Organization *</span>
+        <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="listOrgID.set($event ? +$event : null); onFilterChange()" name="listOrgID">
+          <option [ngValue]="null">-- Select --</option>
+          @for (o of lookups()?.orgs ?? []; track o.orgID) {
+            <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Year</span>
+        <select class="field-control" [ngModel]="filterYioID()" (ngModelChange)="filterYioID.set($event ? +$event : null); onFilterChange()" name="filterYioID">
+          <option [ngValue]="null">-- All --</option>
+          @for (y of lookups()?.years ?? []; track y.yioID) {
+            <option [ngValue]="y.yioID">{{ y.yearName }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Record No</span>
+        <input class="field-control" type="number" [ngModel]="filterRecordNo()" (ngModelChange)="filterRecordNo.set($event ? +$event : null); onFilterChange()" name="filterRecordNo">
+      </label>
+      <label class="field">
+        <span class="field-label">Date From</span>
+        <input class="field-control" type="date" [ngModel]="filterFromDate()" (ngModelChange)="filterFromDate.set($event); onFilterChange()" name="filterFromDate">
+      </label>
+      <label class="field">
+        <span class="field-label">Date To</span>
+        <input class="field-control" type="date" [ngModel]="filterToDate()" (ngModelChange)="filterToDate.set($event); onFilterChange()" name="filterToDate">
+      </label>
+      <label class="field">
+        <span class="field-label">File No</span>
+        <input class="field-control" [ngModel]="filterFileNo()" (ngModelChange)="filterFileNo.set($event); onFilterChange()" name="filterFileNo">
+      </label>
+      <label class="field">
+        <span class="field-label">Letter No</span>
+        <input class="field-control" [ngModel]="filterLetterNo()" (ngModelChange)="filterLetterNo.set($event); onFilterChange()" name="filterLetterNo">
+      </label>
+      <label class="field">
+        <span class="field-label">Subject</span>
+        <input class="field-control" [ngModel]="filterSubject()" (ngModelChange)="filterSubject.set($event); onFilterChange()" name="filterSubject">
+      </label>
+      <label class="field">
+        <span class="field-label">From Whom Received</span>
+        <input class="field-control" [ngModel]="filterFromWhom()" (ngModelChange)="filterFromWhom.set($event); onFilterChange()" name="filterFromWhom">
+      </label>
+      <label class="field">
+        <span class="field-label">Search</span>
+        <input class="field-control" [ngModel]="searchText()" (ngModelChange)="searchText.set($event); onFilterChange()" name="search" placeholder="Search subject, sender, file no">
+      </label>
+    </div>
+  </section>
+
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      <h3>Inward Records</h3>
+      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading inward records...</p> }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('recordNo')">Record No</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('irDate')">Date</button></th>
+              <th>File No</th>
+              <th>Letter No</th>
+              <th>From</th>
+              <th>Subject</th>
+              <th>Year</th>
+              <th>File</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of paginatedItems(); track item.irid) {
+              <tr>
+                <td class="code">{{ item.recordNo }}</td>
+                <td>{{ item.irDate | date:'dd/MM/yyyy' }}</td>
+                <td>{{ item.fileNo || '—' }}</td>
+                <td>{{ item.letterNo || '—' }}</td>
+                <td>{{ item.fromWhomReceived }}</td>
+                <td>{{ item.subject }}</td>
+                <td>{{ item.yearName || '—' }}</td>
+                <td>
+                  @if (item.attachmentPath) {
+                    <button type="button" class="action-btn link" (click)="openAttachment(item.attachmentPath!)">View</button>
+                  } @else { — }
+                </td>
+                <td class="actions">
+                  <button type="button" class="action-btn view" (click)="viewEntry(item)">View</button>
+                  <button type="button" class="action-btn edit" (click)="editEntry(item)">Edit</button>
+                  <button type="button" class="action-btn delete" (click)="deleteEntry(item)">Delete</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="9" class="empty">No inward records found</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-master-list-pagination
+        [total]="filteredItems().length"
+        [pageIndex]="listPageIndex()"
+        [pageSize]="listPageSize()"
+        (pageIndexChange)="goToListPage($event)"
+        (pageSizeChange)="onListPageSizeChange($event)"
+      />
+    </aside>
+  </div>
+
+  @if (formVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-xl">
+        <header class="master-modal-header">
+          <h2>{{ formTitle() }}</h2>
+        </header>
+        <form class="master-modal-form voucher-form" (ngSubmit)="save()">
+          @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
+          <fieldset [disabled]="isViewMode()">
+            <div class="form-grid">
+              <label class="field" [class.field-invalid]="fieldError('orgID')">
+                <span class="field-label">Organization *</span>
+                <select class="field-control" [ngModel]="form().orgID" (ngModelChange)="updateForm('orgID', $event ? +$event : null)" name="orgID">
+                  <option [ngValue]="null">-- Select --</option>
+                  @for (o of lookups()?.orgs ?? []; track o.orgID) {
+                    <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+                  }
+                </select>
+                @if (fieldError('orgID')) { <span class="field-error">{{ fieldError('orgID') }}</span> }
+              </label>
+              <label class="field">
+                <span class="field-label">Record No</span>
+                <input class="field-control field-readonly" readonly [ngModel]="form().recordNo" name="recordNo" placeholder="Auto">
+              </label>
+              <label class="field">
+                <span class="field-label">Year</span>
+                <input class="field-control field-readonly" readonly [ngModel]="form().yearName" name="yearName" placeholder="Auto from active year">
+              </label>
+              <label class="field" [class.field-invalid]="fieldError('irDate')">
+                <span class="field-label">Inward Date *</span>
+                <input class="field-control" type="date" [ngModel]="form().irDate" (ngModelChange)="updateForm('irDate', $event)" name="irDate">
+                @if (fieldError('irDate')) { <span class="field-error">{{ fieldError('irDate') }}</span> }
+              </label>
+              <label class="field">
+                <span class="field-label">File No</span>
+                <input class="field-control" [ngModel]="form().fileNo" (ngModelChange)="updateForm('fileNo', $event)" name="fileNo">
+              </label>
+              <label class="field">
+                <span class="field-label">Letter No</span>
+                <input class="field-control" [ngModel]="form().letterNo" (ngModelChange)="updateForm('letterNo', $event)" name="letterNo">
+              </label>
+              <label class="field full" [class.field-invalid]="fieldError('fromWhomReceived')">
+                <span class="field-label">From Whom Received *</span>
+                <input class="field-control" [ngModel]="form().fromWhomReceived" (ngModelChange)="updateForm('fromWhomReceived', $event)" name="fromWhomReceived">
+                @if (fieldError('fromWhomReceived')) { <span class="field-error">{{ fieldError('fromWhomReceived') }}</span> }
+              </label>
+              <label class="field full" [class.field-invalid]="fieldError('subject')">
+                <span class="field-label">Subject *</span>
+                <textarea class="field-control" rows="2" [ngModel]="form().subject" (ngModelChange)="updateForm('subject', $event)" name="subject"></textarea>
+                @if (fieldError('subject')) { <span class="field-error">{{ fieldError('subject') }}</span> }
+              </label>
+              <label class="field full">
+                <span class="field-label">To Whom Issued</span>
+                <input class="field-control" [ngModel]="form().toWhomIssued" (ngModelChange)="updateForm('toWhomIssued', $event)" name="toWhomIssued">
+              </label>
+              <label class="field full">
+                <span class="field-label">Remark</span>
+                <textarea class="field-control" rows="2" [ngModel]="form().remark" (ngModelChange)="updateForm('remark', $event)" name="remark"></textarea>
+              </label>
+              <div class="field full file-field">
+                <span class="field-label">Attachment</span>
+                @if (form().attachmentPath) {
+                  <div class="file-current">
+                    <button type="button" class="action-btn link" (click)="openAttachment(form().attachmentPath)">{{ form().attachmentPath }}</button>
+                    @if (!isViewMode()) {
+                      <button type="button" class="action-btn delete" (click)="clearAttachment()">Remove</button>
+                    }
+                  </div>
+                }
+                @if (!isViewMode()) {
+                  <input class="field-control" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" (change)="onFileSelected($event)" [disabled]="fileUploading()">
+                  @if (fileUploading()) { <span class="loading-hint">Uploading...</span> }
+                }
+              </div>
+            </div>
+          </fieldset>
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="cancel()">{{ isViewMode() ? 'Close' : 'Cancel' }}</button>
+            @if (!isViewMode()) {
+              <button type="submit" class="btn btn-primary" [disabled]="loading() || fileUploading()">Save</button>
+            }
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</section>

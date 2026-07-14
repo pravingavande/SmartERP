@@ -1,0 +1,51 @@
+@import '../../../shared/styles/master-shared.scss';
+@import '../../audit/party-master/party-master.component.scss';
+@import '../../audit/academic-schedule/academic-schedule.component.scss';
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.io-filters {
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  background: var(--epr-white);
+  border: 1px solid #c5d0de;
+  border-radius: var(--epr-radius);
+  box-shadow: 0 2px 8px rgba(15, 35, 65, 0.06);
+}
+
+.io-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+}
+
+.action-btn.view { color: #175cd3; }
+.action-btn.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #175cd3;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.file-field .file-current {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1100px) {
+  .io-filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .io-filters-grid { grid-template-columns: 1fr; }
+}

@@ -67,8 +67,8 @@
   </div>
 
   @if (formVisible()) {
-    <div class="master-modal-overlay" (click)="cancel()">
-      <div class="master-modal-box" (click)="$event.stopPropagation()">
+    <div class="master-modal-overlay">
+      <div class="master-modal-box">
         <header class="master-modal-header">
           <h2>{{ formMode() === 'edit' ? 'Edit Item Group' : 'New Item Group' }}</h2>
         </header>

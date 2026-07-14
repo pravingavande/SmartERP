@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard, adminMasterGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -23,7 +23,7 @@ export const routes: Routes = [
       {
         path: 'academic-calendar',
         loadComponent: () =>
-          import('./features/academic-calendar/academic-calendar.component').then((m) => m.AcademicCalendarComponent)
+          import('./features/audit/academic-schedule/academic-schedule.component').then((m) => m.AcademicScheduleComponent)
       },
       {
         path: 'event-calendar',
@@ -63,58 +63,104 @@ export const routes: Routes = [
       {
         path: 'audit/ledger-head-master',
         loadComponent: () =>
-          import('./features/audit/ledger-head-master/ledger-head-master.component').then((m) => m.LedgerHeadMasterComponent)
+          import('./features/audit/ledger-head-master/ledger-head-master.component').then((m) => m.LedgerHeadMasterComponent),
+        canActivate: [adminMasterGuard]
       },
       {
         path: 'audit/account-register-define',
         loadComponent: () =>
-          import('./features/audit/account-register-define/account-register-define.component').then((m) => m.AccountRegisterDefineComponent)
+          import('./features/audit/account-register-define/account-register-define.component').then((m) => m.AccountRegisterDefineComponent),
+        canActivate: [adminMasterGuard]
       },
       {
         path: 'audit/donation-head-define',
         loadComponent: () =>
-          import('./features/audit/donation-head-define/donation-head-define.component').then((m) => m.DonationHeadDefineComponent)
+          import('./features/audit/donation-head-define/donation-head-define.component').then((m) => m.DonationHeadDefineComponent),
+        canActivate: [adminMasterGuard]
       },
       {
         path: 'audit/leave-type-master',
         loadComponent: () =>
-          import('./features/employee/leave-type-master/leave-type-master.component').then((m) => m.LeaveTypeMasterComponent)
+          import('./features/employee/leave-type-master/leave-type-master.component').then((m) => m.LeaveTypeMasterComponent),
+        canActivate: [adminMasterGuard]
       },
       {
         path: 'audit/class-master',
         loadComponent: () =>
-          import('./features/audit/class-master/class-master.component').then((m) => m.ClassMasterComponent)
+          import('./features/audit/class-master/class-master.component').then((m) => m.ClassMasterComponent),
+        canActivate: [adminMasterGuard]
       },
       {
         path: 'audit/event-types-master',
         loadComponent: () =>
-          import('./features/audit/event-types-master/event-types-master.component').then((m) => m.EventTypesMasterComponent)
+          import('./features/audit/event-types-master/event-types-master.component').then((m) => m.EventTypesMasterComponent),
+        canActivate: [adminMasterGuard]
       },
       {
         path: 'audit/subject-master',
         loadComponent: () =>
-          import('./features/audit/subject-master/subject-master.component').then((m) => m.SubjectMasterComponent)
+          import('./features/audit/subject-master/subject-master.component').then((m) => m.SubjectMasterComponent),
+        canActivate: [adminMasterGuard]
       },
       {
         path: 'audit/academic-schedule',
-        loadComponent: () =>
-          import('./features/audit/academic-schedule/academic-schedule.component').then((m) => m.AcademicScheduleComponent)
+        redirectTo: 'academic-calendar',
+        pathMatch: 'full'
       },
       {
         path: 'audit/item-group-master',
-        loadComponent: () =>
-          import('./features/audit/item-group-master/item-group-master.component').then((m) => m.ItemGroupMasterComponent)
+        redirectTo: 'stock/item-group-master',
+        pathMatch: 'full'
       },
       {
         path: 'audit/item-master',
-        loadComponent: () =>
-          import('./features/audit/item-master/item-master.component').then((m) => m.ItemMasterComponent)
+        redirectTo: 'stock/item-master',
+        pathMatch: 'full'
       },
       {
         path: 'audit/stock-register',
+        redirectTo: 'stock/register',
+        pathMatch: 'full'
+      },
+      {
+        path: 'stock/dashboard',
+        loadComponent: () =>
+          import('./features/stock/stock-dashboard/stock-dashboard.component').then((m) => m.StockDashboardComponent)
+      },
+      {
+        path: 'stock/register',
         loadComponent: () =>
           import('./features/audit/stock-register/stock-register.component').then((m) => m.StockRegisterComponent)
       },
+      {
+        path: 'stock/item-group-master',
+        loadComponent: () =>
+          import('./features/audit/item-group-master/item-group-master.component').then((m) => m.ItemGroupMasterComponent),
+        canActivate: [adminMasterGuard]
+      },
+      {
+        path: 'stock/item-master',
+        loadComponent: () =>
+          import('./features/audit/item-master/item-master.component').then((m) => m.ItemMasterComponent),
+        canActivate: [adminMasterGuard]
+      },
+      { path: 'stock', pathMatch: 'full', redirectTo: 'stock/dashboard' },
+      {
+        path: 'io/dashboard',
+        loadComponent: () =>
+          import('./features/io/io-dashboard/io-dashboard.component').then((m) => m.IoDashboardComponent)
+      },
+      {
+        path: 'io/inward',
+        loadComponent: () =>
+          import('./features/io/inward-register/inward-register.component').then((m) => m.InwardRegisterComponent)
+      },
+      {
+        path: 'io/outward',
+        loadComponent: () =>
+          import('./features/io/outward-register/outward-register.component').then((m) => m.OutwardRegisterComponent)
+      },
+      { path: 'io', pathMatch: 'full', redirectTo: 'io/dashboard' },
       {
         path: 'tickets',
         loadComponent: () =>

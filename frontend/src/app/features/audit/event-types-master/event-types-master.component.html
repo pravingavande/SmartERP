@@ -68,8 +68,8 @@
   </div>
 
   @if (formVisible()) {
-    <div class="master-modal-overlay" (click)="cancel()">
-      <div class="master-modal-box master-modal-wide" (click)="$event.stopPropagation()">
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
         <header class="master-modal-header">
           <h2>{{ formMode() === 'edit' ? 'Edit Event Type' : 'New Event Type' }}</h2>
         </header>

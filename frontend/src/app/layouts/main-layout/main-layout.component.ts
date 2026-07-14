@@ -67,7 +67,7 @@ export class MainLayoutComponent {
     {
       title: 'Academic',
       items: [
-        { label: 'शैक्षणिक दिनदर्शिका', icon: 'academic-calendar', route: '/academic-calendar' },
+        { label: 'Academic Scheduler', icon: 'academic-calendar', route: '/academic-calendar' },
         { label: 'Event Calendar', icon: 'event-calendar', route: '/event-calendar' },
         { label: 'Schools', icon: 'school', route: '/schools' },
         { label: 'Students', icon: 'students', route: '/students' }
@@ -76,6 +76,10 @@ export class MainLayoutComponent {
     {
       title: 'Audit',
       items: [{ label: 'Audit Dashboard', icon: 'audit-dashboard', route: '/audit/dashboard' }]
+    },
+    {
+      title: 'Stock',
+      items: [{ label: 'Stock Dashboard', icon: 'stock', route: '/stock/dashboard' }]
     },
     {
       title: 'Masters',

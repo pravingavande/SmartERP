@@ -36,6 +36,8 @@ public static class DependencyInjection
         services.AddScoped<ILeaveService, LeaveService>();
         services.AddScoped<IMasterRepository, MasterRepository>();
         services.AddScoped<IMasterService, MasterService>();
+        services.AddScoped<IIoRegisterRepository, IoRegisterRepository>();
+        services.AddScoped<IIoRegisterService, IoRegisterService>();
 
         return services;
     }

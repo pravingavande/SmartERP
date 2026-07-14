@@ -4,9 +4,7 @@
       <h1>Ledger Head Master</h1>
       <p>Sanstha-wise ledger heads for voucher entries</p>
     </div>
-    @if (!formVisible()) {
-      <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
-    }
+    <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
   </header>
 
   @if (!formVisible()) {
@@ -85,8 +83,8 @@
   </div>
 
   @if (formVisible()) {
-    <div class="master-modal-overlay" (click)="cancel()">
-      <div class="master-modal-box master-modal-wide" (click)="$event.stopPropagation()">
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
         <header class="master-modal-header">
           <h2>{{ formMode() === 'edit' ? 'Edit Ledger Head' : 'New Ledger Head' }}</h2>
         </header>

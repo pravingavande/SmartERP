@@ -281,9 +281,9 @@ export class AcademicScheduleComponent {
 
   formTitle(): string {
     const mode = this.formMode();
-    if (mode === 'view') return 'View Academic Schedule';
-    if (mode === 'edit') return 'Edit Academic Schedule';
-    return 'New Academic Schedule';
+    if (mode === 'view') return 'View Academic Scheduler';
+    if (mode === 'edit') return 'Edit Academic Scheduler';
+    return 'New Academic Scheduler';
   }
 
   private loadSchedule(asid: number, mode: FormMode): void {

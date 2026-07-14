@@ -1,0 +1,42 @@
+@import '../../audit/master-hub/master-hub.component.scss';
+
+.stock-dashboard {
+  padding: 0;
+}
+
+.stock-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.stock-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #c5d0de;
+  border-radius: var(--epr-radius);
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 35, 65, 0.06);
+  text-decoration: none;
+  color: inherit;
+  min-height: 8.5rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: var(--epr-orange);
+    box-shadow: 0 4px 14px rgba(232, 119, 34, 0.15);
+    transform: translateY(-1px);
+  }
+
+  &.tone-stock { border-top: 3px solid #00897b; }
+  &.tone-item { border-top: 3px solid #5e35b1; }
+  &.tone-item-group { border-top: 3px solid #0277bd; }
+}
+
+.tile-icon {
+  &[data-icon='stock'] {
+    background: linear-gradient(135deg, #e0f2f1, #b2dfdb);
+  }
+}
