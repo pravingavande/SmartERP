@@ -126,6 +126,7 @@ public sealed class TeacherService : ITeacherService
         Firstname = Trim(request.Firstname),
         MiddleName = Trim(request.MiddleName),
         LastName = Trim(request.LastName),
+        EmployeeShortName = Trim(request.EmployeeShortName),
         PermanentAddress = Trim(request.PermanentAddress),
         CityName = Trim(request.CityName),
         PhotoPath = Trim(request.PhotoPath),

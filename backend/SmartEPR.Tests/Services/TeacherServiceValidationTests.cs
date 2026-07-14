@@ -45,6 +45,78 @@ public sealed class TeacherServiceValidationTests
     }
 
     [Fact]
+    public void ValidateSave_RejectsMissingDesignation()
+    {
+        var request = ValidRequest();
+        request.DesignationCode = null;
+        Assert.Equal("Designation is required.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsMissingUserType()
+    {
+        var request = ValidRequest();
+        request.StaffTypeID = null;
+        Assert.Equal("User type is required.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsMissingGender()
+    {
+        var request = ValidRequest();
+        request.GenderCode = null;
+        Assert.Equal("Gender is required.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsMissingMobile()
+    {
+        var request = ValidRequest();
+        request.MobileNo1 = "";
+        Assert.Equal("Mobile no. 1 is required.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsInvalidMobile2()
+    {
+        var request = ValidRequest();
+        request.MobileNo2 = "123";
+        Assert.Equal("Mobile no. 2 must be a 10-digit number.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_AcceptsValidMobile2()
+    {
+        var request = ValidRequest();
+        request.MobileNo2 = "9123456789";
+        Assert.Null(TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsNegativeRetirementYear()
+    {
+        var request = ValidRequest();
+        request.RetirementYear = -1;
+        Assert.Equal("Retirement year must be numeric.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_AcceptsEmployeeShortNameWithoutValidationError()
+    {
+        var request = ValidRequest();
+        request.EmployeeShortName = "R.P.";
+        Assert.Null(TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_AcceptsEmptyEmployeeShortName()
+    {
+        var request = ValidRequest();
+        request.EmployeeShortName = null;
+        Assert.Null(TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
     public void ValidateSave_RejectsInvalidMobile()
     {
         var request = ValidRequest();

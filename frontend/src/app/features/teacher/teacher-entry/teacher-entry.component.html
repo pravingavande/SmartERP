@@ -210,6 +210,15 @@
                   <input class="field-control" [ngModel]="form().lastName" (ngModelChange)="updateForm('lastName', $event)" name="lastName">
                   @if (fieldError('lastName')) { <span class="field-error">{{ fieldError('lastName') }}</span> }
                 </label>
+                <label class="field">
+                  <span class="field-label">Employee Name</span>
+                  <input class="field-control" readonly [value]="form().employeeName || employeeNamePreview() || '—'" name="employeeName">
+                  <small class="field-hint">Stored automatically from first, middle and last name</small>
+                </label>
+                <label class="field">
+                  <span class="field-label">Employee Short Name</span>
+                  <input class="field-control" [ngModel]="form().employeeShortName" (ngModelChange)="updateForm('employeeShortName', $event)" name="employeeShortName" placeholder="Short name for typing">
+                </label>
                 <label class="field field-span-2">
                   <span class="field-label">Address</span>
                   <textarea class="field-control" rows="2" [ngModel]="form().permanentAddress" (ngModelChange)="updateForm('permanentAddress', $event)" name="permanentAddress"></textarea>

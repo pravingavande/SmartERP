@@ -36,6 +36,8 @@ export interface EmployeeListItem {
   firstname: string;
   middleName: string;
   lastName: string;
+  employeeName: string;
+  employeeShortName: string;
   mobileNo1: string;
   orgID: number | null;
   organizationName: string;
@@ -88,6 +90,8 @@ export interface EmployeeFormState {
   firstname: string;
   middleName: string;
   lastName: string;
+  employeeName: string;
+  employeeShortName: string;
   permanentAddress: string;
   localAddress: string;
   genderCode: number | null;

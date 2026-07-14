@@ -97,6 +97,7 @@ public sealed class TeacherRepository : ITeacherRepository
         p.Add("@Firstname", request.Firstname);
         p.Add("@MiddleName", request.MiddleName);
         p.Add("@LastName", request.LastName);
+        p.Add("@EmployeeShortName", request.EmployeeShortName);
         p.Add("@PermanentAddress", request.PermanentAddress);
         p.Add("@CityName", request.CityName);
         p.Add("@PhotoPath", request.PhotoPath);

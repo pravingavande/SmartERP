@@ -55,6 +55,8 @@ public sealed class TeacherListItemDto
     public string? Firstname { get; init; }
     public string? MiddleName { get; init; }
     public string? LastName { get; init; }
+    public string? EmployeeName { get; init; }
+    public string? EmployeeShortName { get; init; }
     public string? MobileNo1 { get; init; }
     public string? ShalarthID { get; init; }
     public long? OrgID { get; init; }
@@ -92,6 +94,8 @@ public sealed class TeacherDto
     public string? Firstname { get; init; }
     public string? MiddleName { get; init; }
     public string? LastName { get; init; }
+    public string? EmployeeName { get; init; }
+    public string? EmployeeShortName { get; init; }
     public string? PermanentAddress { get; init; }
     public string? CityName { get; init; }
     public string? PhotoPath { get; init; }
@@ -143,6 +147,7 @@ public sealed class SaveTeacherRequestDto
     public string? Firstname { get; set; }
     public string? MiddleName { get; set; }
     public string? LastName { get; set; }
+    public string? EmployeeShortName { get; set; }
     public string? PermanentAddress { get; set; }
     public string? CityName { get; set; }
     public string? PhotoPath { get; set; }

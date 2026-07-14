@@ -88,6 +88,8 @@ public sealed class EmployeeRepository : IEmployeeRepository
             Firstname = header.Firstname,
             MiddleName = header.MiddleName,
             LastName = header.LastName,
+            EmployeeName = header.EmployeeName,
+            EmployeeShortName = header.EmployeeShortName,
             PermanentAddress = header.PermanentAddress,
             LocalAddress = header.LocalAddress,
             GenderCode = header.GenderCode,
@@ -118,6 +120,7 @@ public sealed class EmployeeRepository : IEmployeeRepository
         p.Add("@Firstname", request.Firstname);
         p.Add("@MiddleName", request.MiddleName);
         p.Add("@LastName", request.LastName);
+        p.Add("@EmployeeShortName", request.EmployeeShortName);
         p.Add("@PermanentAddress", request.PermanentAddress);
         p.Add("@LocalAddress", request.LocalAddress);
         p.Add("@GenderCode", request.GenderCode);

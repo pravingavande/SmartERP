@@ -19,6 +19,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
+import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 
 type FormMode = 'new' | 'edit' | 'view';
@@ -105,7 +106,13 @@ export class EmployeeEntryComponent {
   readonly isLastWizardStep = computed(() => this.activeSection() === 'schools');
   readonly displayName = computed(() => {
     const f = this.form();
-    return [f.firstname, f.middleName, f.lastName].filter(Boolean).join(' ').trim() || 'Employee';
+    return f.employeeName?.trim()
+      || [f.firstname, f.middleName, f.lastName].filter(Boolean).join(' ').trim()
+      || 'Employee';
+  });
+  readonly employeeNamePreview = computed(() => {
+    const f = this.form();
+    return buildEmployeeName(f.firstname, f.middleName, f.lastName);
   });
 
   private eduSeq = 0;
@@ -556,6 +563,8 @@ export class EmployeeEntryComponent {
       firstname: '',
       middleName: '',
       lastName: '',
+      employeeName: '',
+      employeeShortName: '',
       permanentAddress: '',
       localAddress: '',
       genderCode: null,

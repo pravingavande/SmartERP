@@ -54,6 +54,8 @@ export interface TeacherListItem {
   firstname: string;
   middleName: string;
   lastName: string;
+  employeeName: string;
+  employeeShortName: string;
   mobileNo1: string;
   shalarthID: string;
   orgID: number | null;
@@ -82,6 +84,8 @@ export interface TeacherFormState {
   firstname: string;
   middleName: string;
   lastName: string;
+  employeeName: string;
+  employeeShortName: string;
   permanentAddress: string;
   cityName: string;
   photoPath: string;

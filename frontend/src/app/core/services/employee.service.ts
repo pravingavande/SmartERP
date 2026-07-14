@@ -57,6 +57,7 @@ export class EmployeeService {
       firstname: form.firstname,
       middleName: form.middleName,
       lastName: form.lastName,
+      employeeShortName: form.employeeShortName,
       permanentAddress: form.permanentAddress,
       localAddress: form.localAddress,
       genderCode: form.genderCode,
@@ -169,6 +170,8 @@ export class EmployeeService {
     Firstname?: string;
     MiddleName?: string;
     LastName?: string;
+    EmployeeName?: string;
+    EmployeeShortName?: string;
     MobileNo1?: string;
     OrgID?: number | null;
     OrganizationName?: string;
@@ -189,6 +192,8 @@ export class EmployeeService {
       firstname,
       middleName,
       lastName,
+      employeeName: raw.employeeName ?? raw.EmployeeName ?? '',
+      employeeShortName: raw.employeeShortName ?? raw.EmployeeShortName ?? '',
       mobileNo1: raw.mobileNo1 ?? raw.MobileNo1 ?? '',
       orgID: raw.orgID ?? raw.OrgID ?? null,
       organizationName: raw.organizationName ?? raw.OrganizationName ?? '',
@@ -211,6 +216,8 @@ export class EmployeeService {
     Firstname?: string;
     MiddleName?: string;
     LastName?: string;
+    EmployeeName?: string;
+    EmployeeShortName?: string;
     PermanentAddress?: string;
     LocalAddress?: string;
     address?: string;
@@ -303,6 +310,8 @@ export class EmployeeService {
       firstname: raw.firstname ?? raw.Firstname ?? '',
       middleName: raw.middleName ?? raw.MiddleName ?? '',
       lastName: raw.lastName ?? raw.LastName ?? '',
+      employeeName: raw.employeeName ?? raw.EmployeeName ?? '',
+      employeeShortName: raw.employeeShortName ?? raw.EmployeeShortName ?? '',
       permanentAddress: raw.permanentAddress ?? raw.PermanentAddress ?? raw.address ?? raw.Address ?? '',
       localAddress: raw.localAddress ?? raw.LocalAddress ?? '',
       genderCode: raw.genderCode ?? raw.GenderCode ?? null,

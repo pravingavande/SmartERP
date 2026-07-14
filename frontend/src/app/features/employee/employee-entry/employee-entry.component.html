@@ -157,6 +157,15 @@
                     <span class="field-label">Last Name</span>
                     <input class="field-control" [ngModel]="form().lastName" (ngModelChange)="updateForm('lastName', $event)" name="lastName">
                   </label>
+                  <label class="field">
+                    <span class="field-label">Employee Name</span>
+                    <input class="field-control" readonly [value]="form().employeeName || employeeNamePreview() || '—'" name="employeeName">
+                    <small class="field-hint">Stored automatically from first, middle and last name</small>
+                  </label>
+                  <label class="field">
+                    <span class="field-label">Employee Short Name</span>
+                    <input class="field-control" [ngModel]="form().employeeShortName" (ngModelChange)="updateForm('employeeShortName', $event)" name="employeeShortName" placeholder="Short name for typing">
+                  </label>
                   <label class="field" [class.field-invalid]="fieldError('mobileNo1')">
                     <span class="field-label">Mobile No 1 *</span>
                     <input class="field-control" appMarathiNumber mode="int" [maxLength]="10" [ngModel]="form().mobileNo1" (ngModelChange)="updateForm('mobileNo1', $event)" name="mobileNo1">

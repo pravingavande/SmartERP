@@ -18,6 +18,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
+import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import {
   mapTeacherBackendMessageToFieldErrors,
@@ -87,7 +88,13 @@ export class TeacherEntryComponent {
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly displayName = computed(() => {
     const f = this.form();
-    return [f.firstname, f.middleName, f.lastName].filter(Boolean).join(' ').trim() || 'Teacher';
+    return f.employeeName?.trim()
+      || [f.firstname, f.middleName, f.lastName].filter(Boolean).join(' ').trim()
+      || 'Teacher';
+  });
+  readonly employeeNamePreview = computed(() => {
+    const f = this.form();
+    return buildEmployeeName(f.firstname, f.middleName, f.lastName);
   });
 
   constructor() {
@@ -370,6 +377,8 @@ export class TeacherEntryComponent {
       firstname: '',
       middleName: '',
       lastName: '',
+      employeeName: '',
+      employeeShortName: '',
       permanentAddress: '',
       cityName: '',
       photoPath: '',

@@ -31,6 +31,8 @@ public sealed class EmployeeListItemDto
     public string? Firstname { get; init; }
     public string? MiddleName { get; init; }
     public string? LastName { get; init; }
+    public string? EmployeeName { get; init; }
+    public string? EmployeeShortName { get; init; }
     public string? MobileNo1 { get; init; }
     public long? OrgID { get; init; }
     public string? OrganizationName { get; init; }
@@ -60,6 +62,8 @@ public sealed class EmployeeDto
     public string? Firstname { get; init; }
     public string? MiddleName { get; init; }
     public string? LastName { get; init; }
+    public string? EmployeeName { get; init; }
+    public string? EmployeeShortName { get; init; }
     public string? PermanentAddress { get; init; }
     public string? LocalAddress { get; init; }
     public long? GenderCode { get; init; }
@@ -122,6 +126,7 @@ public sealed class SaveEmployeeRequestDto
     public string? Firstname { get; init; }
     public string? MiddleName { get; init; }
     public string? LastName { get; init; }
+    public string? EmployeeShortName { get; init; }
     public string? PermanentAddress { get; init; }
     public string? LocalAddress { get; init; }
     public long? GenderCode { get; init; }
