@@ -1,0 +1,92 @@
+@import '../../employee/employee-entry/employee-entry.component.scss';
+
+.teacher-page {
+  padding: 0;
+}
+
+.teacher-layout {
+  display: grid;
+  gap: 1rem;
+
+  &.list-only {
+    grid-template-columns: 1fr;
+  }
+
+  &.form-only {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tab-title {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  color: var(--epr-navy);
+}
+
+.photo-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.photo-preview-box {
+  width: 140px;
+  height: 160px;
+  border: 1px solid #c5d0de;
+  border-radius: var(--epr-radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.photo-placeholder {
+  color: var(--epr-muted);
+  font-size: 0.85rem;
+}
+
+.photo-upload {
+  flex: 1;
+  min-width: 220px;
+}
+
+.reset-password-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.inactive-row {
+  opacity: 0.65;
+}
+
+.action-btn.delete {
+  color: #b42318;
+}
+
+@media print {
+  .no-print,
+  .page-header .header-actions,
+  .list-filters,
+  .list-panel {
+    display: none !important;
+  }
+
+  .form-panel {
+    box-shadow: none;
+    border: none;
+  }
+}

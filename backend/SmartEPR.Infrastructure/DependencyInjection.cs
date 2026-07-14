@@ -32,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<ITicketService, TicketService>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         services.AddScoped<IEmployeeService, EmployeeService>();
+        services.AddScoped<ITeacherRepository, TeacherRepository>();
+        services.AddScoped<ITeacherService, TeacherService>();
         services.AddScoped<ILeaveRepository, LeaveRepository>();
         services.AddScoped<ILeaveService, LeaveService>();
         services.AddScoped<IMasterRepository, MasterRepository>();

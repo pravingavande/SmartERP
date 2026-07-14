@@ -61,6 +61,7 @@ export class MainLayoutComponent {
       items: [
         { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
         { label: 'Teachers & Staff', icon: 'staff', route: '/staff' },
+        { label: 'Teacher Master', icon: 'staff', route: '/teacher-master' },
         { label: 'Employee Leave Apply', icon: 'attendance', route: '/staff/leave-apply' }
       ]
     },

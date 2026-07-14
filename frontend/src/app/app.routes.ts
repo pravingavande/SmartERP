@@ -184,6 +184,11 @@ export const routes: Routes = [
           import('./features/employee/employee-entry/employee-entry.component').then((m) => m.EmployeeEntryComponent)
       },
       {
+        path: 'teacher-master',
+        loadComponent: () =>
+          import('./features/teacher/teacher-entry/teacher-entry.component').then((m) => m.TeacherEntryComponent)
+      },
+      {
         path: 'staff/leave-type-master',
         redirectTo: 'audit/leave-type-master',
         pathMatch: 'full'
