@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,13 +18,14 @@ import {
   validateInwardForm
 } from '../../../core/utils/io-register-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { todayIsoDate } from '../../../core/utils/date.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-inward-register',
-  imports: [FormsModule, DatePipe, MasterListPaginationComponent],
+  imports: [FormsModule, DatePipe, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './inward-register.component.html',
   styleUrl: './inward-register.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -340,7 +342,7 @@ export class InwardRegisterComponent {
       irid: null,
       orgID: null,
       recordNo: null,
-      irDate: '',
+      irDate: todayIsoDate(),
       fileNo: '',
       letterNo: '',
       fromWhomReceived: '',

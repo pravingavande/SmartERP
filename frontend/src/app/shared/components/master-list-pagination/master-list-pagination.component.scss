@@ -8,8 +8,8 @@
   padding: 0.65rem 0.85rem 0.85rem;
   border-top: 1px solid #d8e0ea;
   background: #fafbfd;
-  font-size: 0.82rem;
-  color: var(--epr-muted, #5a6b7d);
+  font-size: 0.92rem;
+  color: var(--epr-text-table);
 
   .page-size-field {
     display: inline-flex;
@@ -19,6 +19,7 @@
     select {
       min-width: 4.25rem;
       padding: 0.3rem 0.45rem;
+    font-size: var(--epr-font-size-input);
       border: 1px solid #c5d0dc;
       border-radius: 6px;
       background: #fff;

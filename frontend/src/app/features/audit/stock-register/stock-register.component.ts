@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { CurrencyPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -20,7 +21,7 @@ type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-stock-register',
-  imports: [FormsModule, CurrencyPipe, MarathiNumberInputDirective, MasterListPaginationComponent],
+  imports: [FormsModule, CurrencyPipe, MarathiNumberInputDirective, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './stock-register.component.html',
   styleUrl: './stock-register.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

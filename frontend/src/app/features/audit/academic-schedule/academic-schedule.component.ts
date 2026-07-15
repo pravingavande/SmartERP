@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,6 +18,7 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateAcademicScheduleForm } from '../../../core/utils/master-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { todayIsoDate } from '../../../core/utils/date.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit' | 'view';
@@ -25,7 +27,7 @@ const ALLOWED_FILE_EXT = new Set(['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']);
 
 @Component({
   selector: 'app-academic-schedule',
-  imports: [FormsModule, DatePipe, MasterListPaginationComponent],
+  imports: [FormsModule, DatePipe, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './academic-schedule.component.html',
   styleUrl: './academic-schedule.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -152,6 +154,7 @@ export class AcademicScheduleComponent {
     this.saveError.set(null);
     const base = this.emptyForm();
     base.underOrgID = this.listUnderOrgId();
+    base.tDate = todayIsoDate();
     this.form.set(base);
     this.master
       .getCurrentAyId()

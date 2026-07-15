@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-subject-master',
-  imports: [FormsModule, MasterListPaginationComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './subject-master.component.html',
   styleUrl: './subject-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

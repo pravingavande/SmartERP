@@ -1,4 +1,5 @@
 using SmartEPR.Core.DTOs.Donation;
+using SmartEPR.Core.DTOs.Reports;
 
 namespace SmartEPR.Core.Interfaces;
 
@@ -14,6 +15,8 @@ public interface IDonationRepository
     Task<DonationListItemDto?> GetByIdAsync(long drId, CancellationToken cancellationToken = default);
     Task<long> SaveAsync(long userId, SaveDonationRequestDto request, CancellationToken cancellationToken = default);
     Task DeleteAsync(long drId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DonationReportDetailRowDto>> GetReportDetailAsync(DonationReportFilterDto filter, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DonationReportUserSummaryRowDto>> GetReportUserSummaryAsync(DonationReportFilterDto filter, CancellationToken cancellationToken = default);
 }
 
 public interface IDonationService

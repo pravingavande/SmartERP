@@ -74,8 +74,8 @@
                     <td>{{ item.noOfDay ?? '—' }}</td>
                     <td>{{ item.leavePermissionName || '—' }}</td>
                     <td class="actions">
-                      <button type="button" class="action-btn view" (click)="viewEntry(item)">View</button>
-                      <button type="button" class="action-btn edit" (click)="editEntry(item)">Edit</button>
+                      <app-list-action-btn action="view" (clicked)="viewEntry(item)" />
+                      <app-list-action-btn action="edit" (clicked)="editEntry(item)" />
                     </td>
                   </tr>
                 } @empty {

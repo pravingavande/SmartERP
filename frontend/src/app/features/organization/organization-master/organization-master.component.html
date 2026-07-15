@@ -1,0 +1,344 @@
+<section class="audit-page master-page org-master-page">
+  <header class="page-header">
+    <div>
+      <h1>Organization Master</h1>
+      <p>Maintain organizations, sansthas, schools and related documents</p>
+    </div>
+    <div class="header-actions">
+      @if (!formVisible()) {
+        <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Organization</button>
+      } @else {
+        <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
+      }
+    </div>
+  </header>
+
+  <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
+    @if (!formVisible()) {
+    <aside class="list-panel">
+      <div class="list-filters org-filters">
+        <label class="field">
+          <span class="field-label">Organization Name</span>
+          <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" placeholder="Search name, city, UDISE">
+        </label>
+        <label class="field">
+          <span class="field-label">Business Category</span>
+          <select class="field-control" [ngModel]="listFilter().businessCategoryID" (ngModelChange)="onFilterChange('businessCategoryID', $event ? +$event : null)" name="filterBusinessCategory">
+            <option [ngValue]="null">All</option>
+            @for (bc of lookups()?.businessCategories ?? []; track bc.id) {
+              <option [ngValue]="bc.id">{{ bc.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">School Category</span>
+          <select class="field-control" [ngModel]="listFilter().schoolCategoryID" (ngModelChange)="onFilterChange('schoolCategoryID', $event ? +$event : null)" name="filterSchoolCategory">
+            <option [ngValue]="null">All</option>
+            @for (sc of lookups()?.schoolCategories ?? []; track sc.id) {
+              <option [ngValue]="sc.id">{{ sc.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Under Sanstha</span>
+          <select class="field-control" [ngModel]="listFilter().underOrgID" (ngModelChange)="onFilterChange('underOrgID', $event ? +$event : null)" name="filterUnderOrg">
+            <option [ngValue]="null">All</option>
+            @for (s of lookups()?.sansthaOrgs ?? []; track s.orgID) {
+              <option [ngValue]="s.orgID">{{ s.organizationName }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">City</span>
+          <input class="field-control" [ngModel]="listFilter().cityName" (ngModelChange)="onFilterChange('cityName', $event)" name="filterCity" placeholder="City">
+        </label>
+        <label class="field">
+          <span class="field-label">Active Status</span>
+          <select class="field-control" [ngModel]="listFilter().isActive" (ngModelChange)="onFilterChange('isActive', $event)" name="filterActive">
+            <option [ngValue]="true">Active</option>
+            <option [ngValue]="false">Inactive</option>
+            <option [ngValue]="null">All</option>
+          </select>
+        </label>
+      </div>
+
+      @if (listLoading()) { <p class="loading-hint">Loading organizations...</p> }
+
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Sr</th>
+              <th>Organization</th>
+              <th>Business Category</th>
+              <th>Under Sanstha</th>
+              <th>City</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of paginatedItems(); track item.orgID; let i = $index) {
+              <tr [class.inactive-row]="!item.isActive">
+                <td>{{ item.srNo ?? '—' }}</td>
+                <td class="name">{{ item.organizationName }}</td>
+                <td>{{ item.businessCategoryName || '—' }}</td>
+                <td>{{ item.underOrgName || '—' }}</td>
+                <td>{{ item.cityName || '—' }}</td>
+                <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+                <td class="actions">
+                  <div class="action-group">
+                    <app-list-action-btn action="view" (clicked)="viewItem(item)" />
+                    <app-list-action-btn action="edit" (clicked)="editItem(item)" />
+                    @if (item.isActive) {
+                      <app-list-action-btn action="delete" (clicked)="deleteItem(item)" />
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="empty">No organizations found</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-master-list-pagination
+        [total]="items().length"
+        [pageIndex]="listPageIndex()"
+        [pageSize]="listPageSize()"
+        (pageIndexChange)="goToListPage($event)"
+        (pageSizeChange)="onListPageSizeChange($event)"
+      />
+    </aside>
+    }
+
+    @if (formVisible()) {
+      <div class="form-panel org-form-panel">
+        <header class="org-form-head">
+          <h2>
+            @if (isViewMode()) { View Organization }
+            @else if (isEditMode()) { Edit Organization }
+            @else { New Organization }
+          </h2>
+        </header>
+
+        <nav class="org-tabs" aria-label="Organization tabs">
+          <button type="button" class="org-tab" [class.active]="activeTab() === 'basic'" (click)="setTab('basic')">Basic Details</button>
+          <button type="button" class="org-tab" [class.active]="activeTab() === 'documents'" [class.disabled]="!documentsTabEnabled()" [disabled]="!documentsTabEnabled()" (click)="setTab('documents')">
+            Organization Documents
+          </button>
+        </nav>
+        @if (!documentsTabEnabled()) {
+          <p class="tab-hint">Save basic details first to enable Organization Documents.</p>
+        }
+
+        @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
+
+        @if (activeTab() === 'basic') {
+          <form class="voucher-form org-form" (ngSubmit)="saveBasic()">
+            <fieldset [disabled]="isViewMode()">
+              <div class="form-grid">
+                <label class="field" [class.field-invalid]="fieldError('businessCategoryID')">
+                  <span class="field-label">Business Category *</span>
+                  <select class="field-control" required [ngModel]="form().businessCategoryID" (ngModelChange)="updateForm('businessCategoryID', $event ? +$event : null)" name="businessCategoryID">
+                    <option [ngValue]="null">-- Select --</option>
+                    @for (bc of lookups()?.businessCategories ?? []; track bc.id) {
+                      <option [ngValue]="bc.id">{{ bc.name }}</option>
+                    }
+                  </select>
+                  @if (fieldError('businessCategoryID')) { <span class="field-error">{{ fieldError('businessCategoryID') }}</span> }
+                </label>
+
+                @if (isSchoolCategory()) {
+                  <label class="field" [class.field-invalid]="fieldError('underOrgID')">
+                    <span class="field-label">Under Sanstha *</span>
+                    <select class="field-control" required [ngModel]="form().underOrgID" (ngModelChange)="updateForm('underOrgID', $event ? +$event : null)" name="underOrgID">
+                      <option [ngValue]="null">-- Select --</option>
+                      @for (s of lookups()?.sansthaOrgs ?? []; track s.orgID) {
+                        <option [ngValue]="s.orgID">{{ s.organizationName }}</option>
+                      }
+                    </select>
+                    @if (fieldError('underOrgID')) { <span class="field-error">{{ fieldError('underOrgID') }}</span> }
+                  </label>
+                }
+
+                <label class="field">
+                  <span class="field-label">Sr No</span>
+                  <input class="field-control" type="number" min="0" step="1" [ngModel]="form().srNo" (ngModelChange)="updateForm('srNo', $event === '' || $event == null ? null : +$event)" name="srNo" placeholder="Auto">
+                </label>
+
+                <label class="field" [class.field-invalid]="fieldError('schoolCategoryID')">
+                  <span class="field-label">School Category *</span>
+                  <select class="field-control" required [ngModel]="form().schoolCategoryID" (ngModelChange)="updateForm('schoolCategoryID', $event ? +$event : null)" name="schoolCategoryID">
+                    <option [ngValue]="null">-- Select --</option>
+                    @for (sc of lookups()?.schoolCategories ?? []; track sc.id) {
+                      <option [ngValue]="sc.id">{{ sc.name }}</option>
+                    }
+                  </select>
+                  @if (fieldError('schoolCategoryID')) { <span class="field-error">{{ fieldError('schoolCategoryID') }}</span> }
+                </label>
+
+                <label class="field full" [class.field-invalid]="fieldError('organizationName')">
+                  <span class="field-label">Organization Name *</span>
+                  <input class="field-control" required [ngModel]="form().organizationName" (ngModelChange)="updateForm('organizationName', $event)" name="organizationName">
+                  @if (fieldError('organizationName')) { <span class="field-error">{{ fieldError('organizationName') }}</span> }
+                </label>
+
+                <label class="field full">
+                  <span class="field-label">Address</span>
+                  <textarea class="field-control" rows="2" [ngModel]="form().address" (ngModelChange)="updateForm('address', $event)" name="address"></textarea>
+                </label>
+
+                <label class="field">
+                  <span class="field-label">City Name</span>
+                  <input class="field-control" [ngModel]="form().cityName" (ngModelChange)="updateForm('cityName', $event)" name="cityName">
+                </label>
+
+                <label class="field">
+                  <span class="field-label">UDISE No</span>
+                  <input class="field-control" [ngModel]="form().udiesNo" (ngModelChange)="updateForm('udiesNo', $event)" name="udiesNo">
+                </label>
+
+                <label class="field">
+                  <span class="field-label">School TIN No</span>
+                  <input class="field-control" [ngModel]="form().schoolTinNo" (ngModelChange)="updateForm('schoolTinNo', $event)" name="schoolTinNo">
+                </label>
+
+                <label class="field">
+                  <span class="field-label">Shalarth ID</span>
+                  <input class="field-control" [ngModel]="form().sharlarthID" (ngModelChange)="updateForm('sharlarthID', $event)" name="sharlarthID">
+                </label>
+
+                <label class="field" [class.field-invalid]="fieldError('panNo')">
+                  <span class="field-label">PAN No</span>
+                  <input class="field-control" [ngModel]="form().panNo" (ngModelChange)="updateForm('panNo', $event)" name="panNo">
+                  @if (fieldError('panNo')) { <span class="field-error">{{ fieldError('panNo') }}</span> }
+                </label>
+
+                <label class="field" [class.field-invalid]="fieldError('emailID')">
+                  <span class="field-label">Email ID</span>
+                  <input class="field-control" type="email" [ngModel]="form().emailID" (ngModelChange)="updateForm('emailID', $event)" name="emailID">
+                  @if (fieldError('emailID')) { <span class="field-error">{{ fieldError('emailID') }}</span> }
+                </label>
+
+                <label class="field" [class.field-invalid]="fieldError('phoneNo')">
+                  <span class="field-label">Phone No</span>
+                  <input class="field-control" [ngModel]="form().phoneNo" (ngModelChange)="updateForm('phoneNo', $event)" name="phoneNo">
+                  @if (fieldError('phoneNo')) { <span class="field-error">{{ fieldError('phoneNo') }}</span> }
+                </label>
+
+                <label class="field" [class.field-invalid]="fieldError('mobileNo')">
+                  <span class="field-label">Mobile No</span>
+                  <input class="field-control" [ngModel]="form().mobileNo" (ngModelChange)="updateForm('mobileNo', $event)" name="mobileNo">
+                  @if (fieldError('mobileNo')) { <span class="field-error">{{ fieldError('mobileNo') }}</span> }
+                </label>
+
+                <label class="field" [class.field-invalid]="fieldError('webSite')">
+                  <span class="field-label">Website</span>
+                  <input class="field-control" [ngModel]="form().webSite" (ngModelChange)="updateForm('webSite', $event)" name="webSite">
+                  @if (fieldError('webSite')) { <span class="field-error">{{ fieldError('webSite') }}</span> }
+                </label>
+
+                <label class="field" [class.field-invalid]="fieldError('establishmentYear')">
+                  <span class="field-label">Establishment Year</span>
+                  <input class="field-control" [ngModel]="form().establishmentYear" (ngModelChange)="updateForm('establishmentYear', $event)" name="establishmentYear">
+                  @if (fieldError('establishmentYear')) { <span class="field-error">{{ fieldError('establishmentYear') }}</span> }
+                </label>
+
+                <label class="field">
+                  <span class="field-label">Registration No</span>
+                  <input class="field-control" [ngModel]="form().regNo" (ngModelChange)="updateForm('regNo', $event)" name="regNo">
+                </label>
+
+                <label class="field">
+                  <span class="field-label">80G Permission</span>
+                  <input class="field-control" [ngModel]="form().permission80G" (ngModelChange)="updateForm('permission80G', $event)" name="permission80G">
+                </label>
+
+                <label class="field full">
+                  <span class="field-label">Remark</span>
+                  <textarea class="field-control" rows="2" [ngModel]="form().remark" (ngModelChange)="updateForm('remark', $event)" name="remark"></textarea>
+                </label>
+
+                @if (isEditMode()) {
+                  <label class="field field-check master-active-field">
+                    <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
+                    <span>Is Active</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+            @if (!isViewMode()) {
+              <footer class="form-footer">
+                <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+                <button type="submit" class="btn btn-primary" [disabled]="loading()">Save Basic Details</button>
+              </footer>
+            }
+          </form>
+        }
+
+        @if (activeTab() === 'documents') {
+          <div class="documents-tab org-form">
+            <div class="doc-toolbar">
+              <h3>Organization Documents</h3>
+              @if (!isViewMode()) {
+                <button type="button" class="btn btn-outline btn-sm" (click)="addDocumentRow()">+ Add Document</button>
+              }
+            </div>
+            <div class="records-table-wrap">
+              <table class="records-table doc-table">
+                <thead>
+                  <tr>
+                    <th>Document Name</th>
+                    <th>Upload</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of form().documents; track row.rowId; let i = $index) {
+                    <tr>
+                      <td>
+                        <select class="field-control" [disabled]="isViewMode()" [ngModel]="row.documentID" (ngModelChange)="updateDocument(i, { documentID: $event ? +$event : null })" [name]="'docName' + i">
+                          <option [ngValue]="null">-- Select --</option>
+                          @for (d of documentOptions(); track d.documentID) {
+                            <option [ngValue]="d.documentID">{{ d.documentName }}</option>
+                          }
+                        </select>
+                      </td>
+                      <td>
+                        @if (!isViewMode()) {
+                          <input class="field-control file-input" type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onDocumentFileSelected(i, $event)" [name]="'docFile' + i">
+                        }
+                        @if (row.selectedFileName || row.documentPath) {
+                          <span class="file-name">{{ row.selectedFileName || row.documentPath }}</span>
+                        }
+                      </td>
+                      <td class="actions">
+                        <div class="action-group">
+                          @if (row.documentPath) {
+                            <app-list-action-btn action="view" (clicked)="openDocument(row.documentPath)" />
+                            <button type="button" class="btn btn-outline btn-sm" (click)="downloadDocument(row.documentPath)">Download</button>
+                          }
+                          @if (!isViewMode() && form().documents.length > 1) {
+                            <app-list-action-btn action="delete" (clicked)="removeDocumentRow(i)" />
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            @if (!isViewMode()) {
+              <footer class="form-footer">
+                <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
+                <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="saveDocuments()">Save Documents</button>
+              </footer>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>

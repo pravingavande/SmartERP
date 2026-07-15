@@ -23,6 +23,14 @@ export class MasterHubComponent {
 
   private readonly tiles: MasterTile[] = [
     {
+      label: 'Organization Master',
+      description: 'Manage sansthas, schools and organization documents',
+      icon: 'register',
+      route: '/schools',
+      tone: 'account',
+      adminOnly: true
+    },
+    {
       label: 'Party Master',
       description: 'Manage parties for vouchers and transactions',
       icon: 'party',

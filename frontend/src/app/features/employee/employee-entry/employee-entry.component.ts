@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -42,7 +43,7 @@ const SECTION_ORDER: FormSection[] = ['basic', 'education', 'documents', 'school
 
 @Component({
   selector: 'app-employee-entry',
-  imports: [FormsModule, MarathiNumberInputDirective],
+  imports: [FormsModule, MarathiNumberInputDirective, ListActionBtnComponent],
   templateUrl: './employee-entry.component.html',
   styleUrl: './employee-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -64,8 +64,8 @@
                     <td>{{ e.userRoleName || '—' }}</td>
                     <td>{{ e.organizationName || '—' }}</td>
                     <td class="actions">
-                      <button type="button" class="action-btn view" (click)="viewEmployee(e)">View</button>
-                      <button type="button" class="action-btn edit" (click)="editEmployee(e)">Edit</button>
+                      <app-list-action-btn action="view" (clicked)="viewEmployee(e)" />
+                      <app-list-action-btn action="edit" (clicked)="editEmployee(e)" />
                     </td>
                   </tr>
                 } @empty {

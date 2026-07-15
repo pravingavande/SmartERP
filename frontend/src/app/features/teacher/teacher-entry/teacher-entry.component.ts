@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -47,7 +48,7 @@ const SECTION_ORDER: FormSection[] = ['basic', 'documents', 'schools'];
 
 @Component({
   selector: 'app-teacher-entry',
-  imports: [FormsModule, MarathiNumberInputDirective],
+  imports: [FormsModule, MarathiNumberInputDirective, ListActionBtnComponent],
   templateUrl: './teacher-entry.component.html',
   styleUrl: './teacher-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -78,7 +79,7 @@ export class TeacherEntryComponent {
   readonly wizardActive = signal(false);
   readonly highestUnlockedStep = signal(1);
   readonly formSteps = FORM_STEPS;
-  readonly listFilter = signal<TeacherListFilter>({ isActive: true });
+  readonly listFilter = signal<TeacherListFilter>({ isActive: null });
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
   readonly resetPasswordValue = signal('');
@@ -101,12 +102,7 @@ export class TeacherEntryComponent {
     return Math.min(total, (this.listPageIndex() + 1) * this.listPageSize());
   });
   readonly isSansthaUser = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
-  readonly schoolOrgs = computed(() => {
-    const orgs = this.lookups()?.orgs ?? [];
-    const sansthaId = this.auth.currentUser()?.sansthaId;
-    if (!sansthaId) return orgs;
-    return orgs.filter((o) => o.orgID !== sansthaId);
-  });
+  readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly isWizardFlow = computed(() => this.wizardActive() && !this.isViewMode());
   readonly isLastWizardStep = computed(() => this.activeSection() === 'schools');
@@ -166,11 +162,7 @@ export class TeacherEntryComponent {
         this.lookups.set(data);
         if (!data.orgs?.length) {
           this.errorMessage.set('No schools found for your login.');
-          this.loadList();
-          return;
         }
-        const defaultOrg = this.resolveDefaultOrgId(data.orgs, profile);
-        this.listFilter.update((f) => ({ ...f, orgId: defaultOrg }));
         this.loadList();
       });
   }
@@ -430,8 +422,11 @@ export class TeacherEntryComponent {
     this.loading.set(true);
     this.fieldErrors.set({});
     this.saveError.set(null);
+    const payload = this.formMode() === 'new'
+      ? { ...this.form(), isActive: true }
+      : this.form();
     this.teacherService
-      .save(this.form())
+      .save(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ data: saved, message }) => {
         this.loading.set(false);

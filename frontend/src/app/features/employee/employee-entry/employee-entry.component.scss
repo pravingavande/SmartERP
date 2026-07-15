@@ -129,14 +129,17 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.78rem;
+  font-size: var(--epr-font-size-table);
+  color: var(--epr-text-table);
 
   th,
   td {
     border: 1px solid #c5d0de;
-    padding: 0.4rem 0.35rem;
+    padding: 0.55rem 0.5rem;
     text-align: left;
     vertical-align: middle;
+    color: var(--epr-text-table);
+    line-height: 1.45;
   }
 
   thead th {
@@ -146,8 +149,13 @@
     background: #e8eef6;
     color: var(--epr-navy);
     font-weight: 700;
+    font-size: var(--epr-font-size-table-header);
     white-space: nowrap;
     box-shadow: 0 2px 4px rgba(30, 58, 110, 0.1);
+  }
+
+  td {
+    font-weight: 500;
   }
 
   tr.active {
@@ -180,9 +188,13 @@
 
 .actions {
   white-space: nowrap;
+
+  app-list-action-btn + app-list-action-btn {
+    margin-left: 0.15rem;
+  }
 }
 
-.action-btn {
+.action-btn:not(.icon-btn) {
   border: none;
   background: transparent;
   font-size: 0.72rem;
@@ -199,7 +211,7 @@
     color: #1a3f6e;
   }
 
-  & + .action-btn {
+  & + .action-btn:not(.icon-btn) {
     margin-left: 0.5rem;
   }
 
@@ -405,20 +417,21 @@ fieldset {
 }
 
 .field-label {
-  font-size: 0.82rem;
+  font-size: var(--epr-font-size-label);
   font-weight: 700;
-  color: #1a2f4d;
+  color: var(--epr-text-label);
+  line-height: 1.35;
 }
 
 .field-control {
   width: 100%;
   box-sizing: border-box;
   font: inherit;
-  font-size: 0.92rem;
+  font-size: var(--epr-font-size-input);
   font-weight: 500;
-  color: #0f1f33;
+  color: var(--epr-text-strong);
   background: #fff;
-  padding: 0.62rem 0.75rem;
+  padding: 0.65rem 0.8rem;
   border: 1.5px solid #9eb0c8;
   border-radius: 8px;
   box-shadow: inset 0 1px 2px rgba(15, 35, 65, 0.06);

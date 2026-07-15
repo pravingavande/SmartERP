@@ -18,13 +18,13 @@
   }
 
   .field-label {
-    font-size: 0.72rem;
+    font-size: var(--epr-font-size-label);
     font-weight: 700;
   }
 
   .field-control {
-    font-size: 0.8rem;
-    padding: 0.38rem 0.48rem;
+    font-size: var(--epr-font-size-input);
+    padding: 0.5rem 0.6rem;
   }
 
   .field-search {
@@ -107,6 +107,25 @@
 
 .pan-address-row {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Teacher list: View + Edit + Deactivate need a wider actions column */
+.teacher-page .records-table {
+  thead th.actions-col,
+  td.actions {
+    min-width: 11.5rem;
+    max-width: none;
+    width: 1%;
+    overflow: visible;
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  td.actions .action-group {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.35rem;
+  }
 }
 
 .reset-password-row {

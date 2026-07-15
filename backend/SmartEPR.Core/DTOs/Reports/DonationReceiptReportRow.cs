@@ -34,4 +34,9 @@ public sealed class DonationReceiptReportRow
     public string Remark { get; init; } = string.Empty;
     public string ReceiverSignatureName { get; init; } = string.Empty;
     public string PrintedOn { get; init; } = string.Empty;
+    public string UserName { get; init; } = string.Empty;
+    public string TotalReceipts { get; init; } = string.Empty;
+    public decimal AmountValue { get; init; }
+    public string FromDate { get; init; } = string.Empty;
+    public string ToDate { get; init; } = string.Empty;
 }

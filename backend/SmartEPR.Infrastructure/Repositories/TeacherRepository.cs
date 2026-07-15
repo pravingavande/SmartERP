@@ -163,6 +163,7 @@ public sealed class TeacherRepository : ITeacherRepository
         var p = new DynamicParameters();
         p.Add("@UserID", request.UserID > 0 ? request.UserID : null, dbType: DbType.Int64, direction: ParameterDirection.InputOutput);
         p.Add("@OrgID", request.OrgID);
+        p.Add("@SrNo", request.SrNo);
         p.Add("@StaffTypeID", request.StaffTypeID ?? 2);
         p.Add("@UserRoleID", request.UserRoleID);
         p.Add("@DesignationCode", request.DesignationCode);

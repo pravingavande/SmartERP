@@ -61,6 +61,11 @@ export const routes: Routes = [
           import('./features/audit/party-master/party-master.component').then((m) => m.PartyMasterComponent)
       },
       {
+        path: 'audit/organization-master',
+        redirectTo: 'schools',
+        pathMatch: 'full'
+      },
+      {
         path: 'audit/ledger-head-master',
         loadComponent: () =>
           import('./features/audit/ledger-head-master/ledger-head-master.component').then((m) => m.LedgerHeadMasterComponent),
@@ -169,8 +174,8 @@ export const routes: Routes = [
       {
         path: 'schools',
         loadComponent: () =>
-          import('./features/placeholder/coming-soon.component').then((m) => m.ComingSoonComponent),
-        data: { title: 'Schools' }
+          import('./features/organization/organization-master/organization-master.component').then((m) => m.OrganizationMasterComponent),
+        canActivate: [adminMasterGuard]
       },
       {
         path: 'students',
@@ -213,8 +218,7 @@ export const routes: Routes = [
       {
         path: 'reports',
         loadComponent: () =>
-          import('./features/placeholder/coming-soon.component').then((m) => m.ComingSoonComponent),
-        data: { title: 'Reports' }
+          import('./features/reports/reports-hub/reports-hub.component').then((m) => m.ReportsHubComponent)
       },
       {
         path: 'users',

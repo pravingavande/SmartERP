@@ -44,7 +44,8 @@
 
   h2 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: #1a2f4d;
   }
 }
@@ -87,10 +88,10 @@
   }
 
   span {
-    font-size: 0.88rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: #1a2f4d;
-    line-height: 1.2;
+    line-height: 1.3;
   }
 }
 
@@ -104,12 +105,30 @@
   color: inherit;
 }
 
-/* Compact action column across master list tables */
+.records-table-wrap,
+.records-table-scroll {
+  max-height: min(70vh, calc(100vh - 14rem)) !important;
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
 .records-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+
+  thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    background: #e8eef6 !important;
+    box-shadow: 0 2px 4px rgba(30, 58, 110, 0.12) !important;
+  }
+
   thead th:last-child,
+  th.actions-col,
   td.actions {
     width: 1%;
-    max-width: 7.25rem;
+    max-width: 11rem;
     white-space: nowrap;
     padding-left: 0.25rem;
     padding-right: 0.25rem;
@@ -118,8 +137,8 @@
   }
 
   td.actions {
-    .action-btn + .action-btn {
-      margin-left: 0.5rem;
+    app-list-action-btn + app-list-action-btn {
+      margin-left: 0.15rem;
     }
   }
 }
@@ -129,10 +148,11 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
-.action-btn {
+/* Legacy text action buttons (forms, attachments) */
+.action-btn:not(.icon-btn) {
   border: none;
   background: transparent;
   font-size: 0.72rem;
@@ -159,6 +179,6 @@
   }
 }
 
-.action-btn.delete {
+.action-btn.delete:not(.icon-btn) {
   color: #b42318;
 }

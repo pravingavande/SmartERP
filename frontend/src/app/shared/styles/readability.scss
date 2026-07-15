@@ -1,0 +1,69 @@
+/* Shared readability tokens — import via styles.scss (global) or master SCSS chains */
+
+:root {
+  --epr-font-size-base: 15px;
+  --epr-font-size-table: 0.95rem;
+  --epr-font-size-table-header: 0.92rem;
+  --epr-font-size-label: 0.9rem;
+  --epr-font-size-input: 1rem;
+  --epr-font-size-hint: 0.85rem;
+  --epr-text-strong: #0f172a;
+  --epr-text-table: #1e293b;
+  --epr-text-label: #1a2f4d;
+}
+
+@mixin epr-table-readable {
+  font-size: var(--epr-font-size-table);
+  color: var(--epr-text-table);
+
+  th,
+  td {
+    padding: 0.55rem 0.5rem;
+    color: var(--epr-text-table);
+    line-height: 1.45;
+  }
+
+  th {
+    font-size: var(--epr-font-size-table-header);
+    font-weight: 700;
+    color: var(--epr-navy);
+  }
+
+  td {
+    font-weight: 500;
+  }
+
+  .name,
+  .code {
+    font-weight: 600;
+    color: var(--epr-navy);
+  }
+
+  .empty {
+    font-size: var(--epr-font-size-table);
+  }
+}
+
+@mixin epr-field-readable {
+  .field-label {
+    font-size: var(--epr-font-size-label);
+    font-weight: 700;
+    color: var(--epr-text-label);
+    line-height: 1.35;
+  }
+
+  .field-control,
+  select.field-control,
+  textarea.field-control,
+  input.field-control {
+    font-size: var(--epr-font-size-input);
+    font-weight: 500;
+    color: var(--epr-text-strong);
+    line-height: 1.4;
+  }
+
+  .field-hint {
+    font-size: var(--epr-font-size-hint);
+    color: #475569;
+  }
+}

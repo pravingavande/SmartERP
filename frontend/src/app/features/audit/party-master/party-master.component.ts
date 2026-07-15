@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +20,7 @@ type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-party-master',
-  imports: [FormsModule, MarathiNumberInputDirective, MasterListPaginationComponent],
+  imports: [FormsModule, MarathiNumberInputDirective, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './party-master.component.html',
   styleUrl: './party-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -189,6 +190,33 @@ export class PartyMasterComponent {
   cancel(): void {
     this.closeForm();
     this.errorMessage.set(null);
+  }
+
+  deleteParty(item: PartyMaster): void {
+    if (!item.isActive) return;
+    if (!confirm(`Delete party "${item.partyName}"?`)) return;
+    this.loading.set(true);
+    this.audit
+      .saveParty({
+        partyID: item.partyID,
+        orgID: item.orgID,
+        partyName: item.partyName,
+        address: item.address ?? '',
+        mobNo: item.mobNo ?? '',
+        panNo: item.panNo ?? '',
+        gstNo: item.gstNo ?? '',
+        isActive: false
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ data, message }) => {
+        this.loading.set(false);
+        if (!data) {
+          this.toast.showError(message ?? 'Unable to delete party.', 'Party');
+          return;
+        }
+        this.toast.showSuccess('Party deleted.', 'Party');
+        this.loadList();
+      });
   }
 
   closeForm(): void {

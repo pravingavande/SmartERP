@@ -1,0 +1,95 @@
+<section class="reports-page audit-page master-page">
+  <header class="page-header page-header--compact">
+    <h1>Reports</h1>
+  </header>
+
+  @if (lookupsLoading()) {
+    <p class="loading-hint">Loading filters...</p>
+  }
+
+  <div class="reports-layout">
+    <aside class="report-list-panel">
+      <div class="report-list-head">Donation</div>
+      <nav class="report-nav" aria-label="Report list">
+        @for (report of reports; track report.id) {
+          <button
+            type="button"
+            class="report-nav-item"
+            [class.active]="activeReport().id === report.id"
+            [title]="report.titleMr"
+            (click)="selectReport(report)"
+          >
+            <span class="report-nav-item__en">{{ report.titleEn }}</span>
+            <span class="report-nav-item__mr">{{ report.titleMr }}</span>
+          </button>
+        }
+      </nav>
+    </aside>
+
+    <div class="report-filter-panel">
+      <header class="report-filter-head">
+        <h2>{{ activeReport().titleEn }}</h2>
+        <span class="report-filter-head__mr">{{ activeReport().titleMr }}</span>
+      </header>
+
+      <div class="list-filters report-filters">
+        <label class="field">
+          <span class="field-label">School / Organization</span>
+          <select class="field-control" [ngModel]="filter().orgId" (ngModelChange)="updateFilter('orgId', $event ? +$event : null)" name="orgId">
+            <option [ngValue]="null">All</option>
+            @for (o of lookups()?.orgs ?? []; track o.orgID) {
+              <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+            }
+          </select>
+        </label>
+
+        @if (activeReport().showDonationHead) {
+          <label class="field">
+            <span class="field-label">Donation Head</span>
+            <select class="field-control" [ngModel]="filter().drHeadId" (ngModelChange)="updateFilter('drHeadId', $event ? +$event : null)" name="drHeadId">
+              <option [ngValue]="null">All</option>
+              @for (h of lookups()?.drHeads ?? []; track h.drHeadID) {
+                <option [ngValue]="h.drHeadID">{{ h.drHeadName }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        @if (activeReport().showPaymentType) {
+          <label class="field">
+            <span class="field-label">Payment Type</span>
+            <select class="field-control" [ngModel]="filter().paymentTypeId" (ngModelChange)="updateFilter('paymentTypeId', $event ? +$event : null)" name="paymentTypeId">
+              <option [ngValue]="null">All</option>
+              @for (p of lookups()?.paymentTypes ?? []; track p.paymentTypeID) {
+                <option [ngValue]="p.paymentTypeID">{{ p.paymentType }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        @if (activeReport().showMinAmount) {
+          <label class="field">
+            <span class="field-label">Min Amount</span>
+            <input class="field-control" type="number" min="0" step="1" [ngModel]="filter().minAmount" (ngModelChange)="updateFilter('minAmount', $event === '' || $event == null ? null : +$event)" name="minAmount" placeholder="200">
+          </label>
+        }
+
+        <label class="field">
+          <span class="field-label">From Date *</span>
+          <input class="field-control" type="date" required [ngModel]="filter().fromDate" (ngModelChange)="updateFilter('fromDate', $event)" name="fromDate">
+        </label>
+
+        <label class="field">
+          <span class="field-label">To Date *</span>
+          <input class="field-control" type="date" required [ngModel]="filter().toDate" (ngModelChange)="updateFilter('toDate', $event)" name="toDate">
+        </label>
+      </div>
+
+      <footer class="report-actions">
+        <button type="button" class="btn btn-primary" [disabled]="generating() || lookupsLoading()" (click)="generatePdf()">
+          {{ generating() ? 'Generating...' : 'View / Print PDF' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+</section>

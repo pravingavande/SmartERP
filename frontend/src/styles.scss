@@ -8,8 +8,8 @@
   --epr-white: #ffffff;
   --epr-bg: #f4f6f9;
   --epr-border: #dee2e6;
-  --epr-text: #212529;
-  --epr-muted: #6c757d;
+  --epr-text: #0f172a;
+  --epr-muted: #475569;
   --epr-sidebar: #254a7a;
   --epr-sidebar-deep: #1e3a6e;
   --epr-sidebar-hover: rgba(255, 255, 255, 0.12);
@@ -17,6 +17,15 @@
   --epr-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   --epr-radius: 8px;
   --epr-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --epr-font-size-base: 15px;
+  --epr-font-size-table: 0.95rem;
+  --epr-font-size-table-header: 0.92rem;
+  --epr-font-size-label: 0.9rem;
+  --epr-font-size-input: 1rem;
+  --epr-font-size-hint: 0.85rem;
+  --epr-text-strong: #0f172a;
+  --epr-text-table: #1e293b;
+  --epr-text-label: #1a2f4d;
 }
 
 *,
@@ -31,7 +40,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: var(--epr-font);
-  font-size: 14px;
+  font-size: var(--epr-font-size-base);
   color: var(--epr-text);
   background: var(--epr-bg);
   -webkit-font-smoothing: antialiased;
@@ -57,17 +66,19 @@ button {
 }
 
 input,
-button {
-  font-size: 14px;
+button,
+select,
+textarea {
+  font-size: var(--epr-font-size-input);
 }
 
 .field-error {
   display: block;
   margin-top: 0.25rem;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #c62828;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .field.field-invalid > .field-control,
@@ -93,6 +104,6 @@ button {
   background: #fff5f5;
   border: 1px solid #f0c0c0;
   color: #c62828;
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   font-weight: 600;
 }

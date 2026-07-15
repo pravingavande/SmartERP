@@ -63,8 +63,8 @@
                   <td class="amt">{{ d.amount | currency:'INR':'symbol':'1.2-2' }}</td>
                   <td class="actions">
                     <div class="action-group">
-                      <button type="button" class="action-btn edit" title="Edit" (click)="editEntry(d)">Edit</button>
-                      <button type="button" class="action-btn delete" title="Delete" (click)="confirmDeleteEntry(d)">Delete</button>
+                      <app-list-action-btn action="edit" (clicked)="editEntry(d)" />
+                      <app-list-action-btn action="delete" (clicked)="confirmDeleteEntry(d)" />
                       <button type="button" class="action-btn print" title="Print" (click)="reprintEntry(d)">Print</button>
                     </div>
                   </td>

@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,13 +13,14 @@ import { LeaveService } from '../../../core/services/leave.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { todayIsoDate } from '../../../core/utils/date.util';
 import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-leave-apply',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, ListActionBtnComponent],
   templateUrl: './leave-apply.component.html',
   styleUrl: './leave-apply.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -283,12 +285,12 @@ export class LeaveApplyComponent {
       userLeaveApplyID: null,
       orgID: orgId,
       recordNo: null,
-      tDate: new Date().toISOString().slice(0, 10),
+      tDate: todayIsoDate(),
       userID: null,
       leaveTypeID: null,
       leaveReason: '',
-      fromDate: '',
-      toDate: '',
+      fromDate: todayIsoDate(),
+      toDate: todayIsoDate(),
       noOfDay: null,
       adminRemak: '',
       leavePermissionID: null,

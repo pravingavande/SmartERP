@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-leave-type-master',
-  imports: [FormsModule, MasterListPaginationComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './leave-type-master.component.html',
   styleUrl: './leave-type-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

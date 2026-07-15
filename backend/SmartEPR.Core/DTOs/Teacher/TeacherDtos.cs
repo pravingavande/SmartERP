@@ -167,6 +167,7 @@ public sealed class SaveTeacherRequestDto
     public long UserID { get; set; }
     public long? OrgID { get; set; }
     public int? StaffTypeID { get; set; }
+    public int? SrNo { get; set; }
     public int? UserRoleID { get; set; }
     public long? DesignationCode { get; set; }
     public string? Firstname { get; set; }

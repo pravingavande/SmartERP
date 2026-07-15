@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,7 +19,7 @@ type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-item-master',
-  imports: [FormsModule, DecimalPipe, MasterListPaginationComponent],
+  imports: [FormsModule, DecimalPipe, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './item-master.component.html',
   styleUrl: './item-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

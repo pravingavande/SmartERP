@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using SmartEPR.Core.DTOs.Donation;
+using SmartEPR.Core.DTOs.Reports;
 using SmartEPR.Core.Interfaces;
 using SmartEPR.Infrastructure.Data;
 
@@ -107,6 +108,27 @@ public sealed class DonationRepository : IDonationRepository
         var p = new DynamicParameters();
         p.Add("@DRID", drId);
         return _executor.ExecuteAsync("dbo.sp_Donation_Delete", p, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<DonationReportDetailRowDto>> GetReportDetailAsync(DonationReportFilterDto filter, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", filter.OrgID);
+        p.Add("@DRHeadID", filter.DRHeadID);
+        p.Add("@PaymentTypeID", filter.PaymentTypeID);
+        p.Add("@MinAmount", filter.MinAmount);
+        p.Add("@FromDate", filter.FromDate?.Date);
+        p.Add("@ToDate", filter.ToDate?.Date);
+        return _executor.QueryListAsync<DonationReportDetailRowDto>("dbo.sp_Donation_GetReportDetail", p, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<DonationReportUserSummaryRowDto>> GetReportUserSummaryAsync(DonationReportFilterDto filter, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", filter.OrgID);
+        p.Add("@FromDate", filter.FromDate?.Date);
+        p.Add("@ToDate", filter.ToDate?.Date);
+        return _executor.QueryListAsync<DonationReportUserSummaryRowDto>("dbo.sp_Donation_GetReportUserSummary", p, cancellationToken);
     }
 
     private sealed class NextNoRow

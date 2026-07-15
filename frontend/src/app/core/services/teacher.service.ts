@@ -73,6 +73,7 @@ export class TeacherService {
     const payload = {
       userID: form.userID ?? 0,
       orgID: form.orgID,
+      srNo: form.srNo,
       staffTypeID: form.staffTypeID ?? TEACHER_STAFF_TYPE_ID,
       userRoleID: form.userRoleID,
       designationCode: form.designationCode,

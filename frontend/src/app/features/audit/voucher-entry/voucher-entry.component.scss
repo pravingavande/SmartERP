@@ -1,3 +1,5 @@
+@import '../../../shared/styles/readability.scss';
+
 .audit-page {
 
   padding: 0;
@@ -46,7 +48,7 @@
 
     color: var(--epr-muted);
 
-    font-size: 0.85rem;
+    font-size: 0.92rem;
 
   }
 
@@ -291,7 +293,9 @@
 
   border-collapse: collapse;
 
-  font-size: 0.84rem;
+  font-size: var(--epr-font-size-table);
+
+  color: var(--epr-text-table);
 
 
 
@@ -299,9 +303,13 @@
 
     border: 1px solid #c5d0de;
 
-    padding: 0.4rem 0.35rem;
+    padding: 0.55rem 0.5rem;
 
     vertical-align: middle;
+
+    color: var(--epr-text-table);
+
+    line-height: 1.45;
 
   }
 
@@ -315,6 +323,8 @@
 
     font-weight: 700;
 
+    font-size: var(--epr-font-size-table-header);
+
     text-align: left;
 
     position: sticky;
@@ -326,6 +336,10 @@
   }
 
 
+
+  td {
+    font-weight: 500;
+  }
 
   tr.active {
 
@@ -624,14 +638,14 @@ fieldset {
 
   .field-label {
     margin-bottom: 0.2rem;
-    font-size: 0.78rem;
+    font-size: var(--epr-font-size-label);
   }
 
   .field-control,
   .detail-table select,
   .detail-table input {
-    padding: 0.38rem 0.5rem;
-    font-size: 0.85rem;
+    padding: 0.45rem 0.55rem;
+    font-size: var(--epr-font-size-input);
   }
 
   .narration-input {
@@ -783,13 +797,15 @@ fieldset {
 
 .field-label {
 
-  font-size: 0.82rem;
+  font-size: var(--epr-font-size-label);
 
   font-weight: 700;
 
-  color: #1a2f4d;
+  color: var(--epr-text-label);
 
   letter-spacing: 0.01em;
+
+  line-height: 1.35;
 
 }
 
@@ -801,15 +817,15 @@ fieldset {
 
   font: inherit;
 
-  font-size: 0.92rem;
+  font-size: var(--epr-font-size-input);
 
   font-weight: 500;
 
-  color: #0f1f33;
+  color: var(--epr-text-strong);
 
   background: #ffffff;
 
-  padding: 0.62rem 0.75rem;
+  padding: 0.65rem 0.8rem;
 
   border: 1.5px solid #9eb0c8;
 

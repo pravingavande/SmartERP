@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -23,7 +24,7 @@ type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-ledger-head-master',
-  imports: [FormsModule, MasterListPaginationComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './ledger-head-master.component.html',
   styleUrl: './ledger-head-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -279,6 +280,32 @@ export class LedgerHeadMasterComponent {
   cancel(): void {
     this.closeForm();
     this.errorMessage.set(null);
+  }
+
+  deleteEntry(item: LedgerHeadMaster): void {
+    if (!item.isActive) return;
+    if (!confirm(`Delete ledger head "${item.ledgerHead}"?`)) return;
+    this.loading.set(true);
+    this.audit
+      .saveLedgerHead({
+        ledgerHeadID: item.ledgerHeadID,
+        underOrgID: item.underOrgID,
+        srNo: item.srNo,
+        ledgerHead: item.ledgerHead,
+        ledgerHeadShort: item.ledgerHeadShort ?? '',
+        ledgerTypeID: item.ledgerTypeID,
+        isActive: false
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ data, message }) => {
+        this.loading.set(false);
+        if (!data) {
+          this.toast.showError(message ?? 'Unable to delete ledger head.', 'Ledger Head');
+          return;
+        }
+        this.toast.showSuccess('Ledger head deleted.', 'Ledger Head');
+        this.loadList();
+      });
   }
 
   closeForm(): void {

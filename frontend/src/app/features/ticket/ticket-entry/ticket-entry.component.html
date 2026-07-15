@@ -65,9 +65,10 @@
                   <td>{{ t.replyRequired || '—' }}</td>
                   <td>{{ t.submittedDate || t.createdDate | date:'dd/MM/yy HH:mm' }}</td>
                   <td class="actions">
-                    <button type="button" class="action-btn view" (click)="viewEntry(t)">View</button>
+                    <app-list-action-btn action="view" (clicked)="viewEntry(t)" />
                     @if (canRaiseTicket()) {
-                      <button type="button" class="action-btn edit" (click)="editEntry(t)">Edit</button>
+                      <app-list-action-btn action="edit" (clicked)="editEntry(t)" />
+                      <app-list-action-btn action="delete" (clicked)="confirmDeleteEntry(t)" />
                     }
                   </td>
                 </tr>

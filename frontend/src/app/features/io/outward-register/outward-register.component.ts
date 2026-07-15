@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,13 +19,14 @@ import {
   validateOutwardForm
 } from '../../../core/utils/io-register-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { todayIsoDate } from '../../../core/utils/date.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-outward-register',
-  imports: [FormsModule, DatePipe, CurrencyPipe, MarathiNumberInputDirective, MasterListPaginationComponent],
+  imports: [FormsModule, DatePipe, CurrencyPipe, MarathiNumberInputDirective, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './outward-register.component.html',
   styleUrl: './outward-register.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -321,12 +323,12 @@ export class OutwardRegisterComponent {
       orid: null,
       orgID: null,
       recordNo: null,
-      orDate: '',
+      orDate: todayIsoDate(),
       enclosures: '',
       address: '',
       subject: '',
       fileNo: '',
-      orrDate: '',
+      orrDate: todayIsoDate(),
       expensesAmt: 0,
       remark: '',
       attachmentPath: '',

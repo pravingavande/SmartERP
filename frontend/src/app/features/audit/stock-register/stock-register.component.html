@@ -50,8 +50,8 @@
                 <td class="code">{{ item.amount | currency:'INR':'symbol':'1.2-2' }}</td>
                 <td>{{ item.remark || '—' }}</td>
                 <td class="actions">
-                  <button type="button" class="action-btn edit" (click)="editEntry(item)">Edit</button>
-                  <button type="button" class="action-btn delete" (click)="deleteEntry(item)">Delete</button>
+                  <app-list-action-btn action="edit" (clicked)="editEntry(item)" />
+                  <app-list-action-btn action="delete" (clicked)="deleteEntry(item)" />
                 </td>
               </tr>
             } @empty {

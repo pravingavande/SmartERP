@@ -32,7 +32,7 @@
               <th>Name</th>
               <th>Mobile</th>
               <th>Status</th>
-              <th></th>
+              <th class="actions-col">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -43,7 +43,12 @@
                 <td>{{ p.mobNo || '—' }}</td>
                 <td>{{ p.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
-                  <button type="button" class="action-btn edit" (click)="editParty(p)">Edit</button>
+                  <div class="action-group">
+                    <app-list-action-btn action="edit" (clicked)="editParty(p)" />
+                    @if (p.isActive) {
+                      <app-list-action-btn action="delete" (clicked)="deleteParty(p)" />
+                    }
+                  </div>
                 </td>
               </tr>
             } @empty {

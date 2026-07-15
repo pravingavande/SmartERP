@@ -34,7 +34,7 @@
                 <td>{{ item.leaveTypeName }}</td>
                 <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
-                  <button type="button" class="action-btn edit" (click)="editItem(item)">Edit</button>
+                  <app-list-action-btn action="edit" (clicked)="editItem(item)" />
                 </td>
               </tr>
             } @empty {

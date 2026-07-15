@@ -93,7 +93,7 @@
                   <th>Subject</th>
                   <th>User Role</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  <th class="actions-col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -108,11 +108,13 @@
                     <td>{{ t.userRoleName || '—' }}</td>
                     <td>{{ t.isActive ? 'Active' : 'Inactive' }}</td>
                     <td class="actions">
-                      <button type="button" class="action-btn view" (click)="viewTeacher(t)">View</button>
-                      <button type="button" class="action-btn edit" (click)="editTeacher(t)">Edit</button>
-                      @if (t.isActive) {
-                        <button type="button" class="action-btn delete" (click)="deleteTeacher(t)">Deactivate</button>
-                      }
+                      <div class="action-group">
+                        <app-list-action-btn action="view" (clicked)="viewTeacher(t)" />
+                        <app-list-action-btn action="edit" (clicked)="editTeacher(t)" />
+                        @if (t.isActive) {
+                          <app-list-action-btn action="delete" (clicked)="deleteTeacher(t)" />
+                        }
+                      </div>
                     </td>
                   </tr>
                 } @empty {
@@ -208,7 +210,7 @@
                     </label>
                     <label class="field">
                       <span class="field-label">Sr No</span>
-                      <input class="field-control" readonly [value]="form().srNo ?? 'Auto'" name="srNo">
+                      <input class="field-control" type="number" min="0" step="1" [ngModel]="form().srNo" (ngModelChange)="updateForm('srNo', $event === '' || $event == null ? null : +$event)" name="srNo" placeholder="Auto">
                     </label>
                     <label class="field" [class.field-invalid]="fieldError('firstname')">
                       <span class="field-label">First Name *</span>
@@ -447,10 +449,12 @@
                       <input type="checkbox" [ngModel]="form().closeFlag" (ngModelChange)="updateForm('closeFlag', $event)" name="closeFlag">
                       <span>Close Flag</span>
                     </label>
-                    <label class="field field-check">
-                      <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
-                      <span>Is Active</span>
-                    </label>
+                    @if (formMode() === 'edit') {
+                      <label class="field field-check">
+                        <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
+                        <span>Is Active</span>
+                      </label>
+                    }
                     @if (form().createdAt) {
                       <label class="field">
                         <span class="field-label">Created At</span>

@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -23,12 +24,13 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import { coerceEnglishIntegerString, coerceEnglishNumber, formatAadharDisplay, filterAadharTyping, normalizeAadharDigits } from '../../../core/utils/marathi-numerals';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { todayIsoDate } from '../../../core/utils/date.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-donation-entry',
-  imports: [FormsModule, CurrencyPipe, DatePipe, MarathiNumberInputDirective, RouterLink],
+  imports: [FormsModule, CurrencyPipe, DatePipe, MarathiNumberInputDirective, RouterLink, ListActionBtnComponent],
   templateUrl: './donation-entry.component.html',
   styleUrl: './donation-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -472,7 +474,7 @@ export class DonationEntryComponent {
       drID: null,
       receiptNo: 1,
       orgIDReceiptNo: 1,
-      receiptDate: new Date().toISOString().slice(0, 10),
+      receiptDate: todayIsoDate(),
       drHeadID: null,
       donorName: '',
       address: '',
@@ -482,8 +484,8 @@ export class DonationEntryComponent {
       amount: 0,
       paymentTypeID: CASH_PAYMENT_TYPE_ID,
       transactionNo: '',
-      transactionDate: '',
-      depositDate: '',
+      transactionDate: todayIsoDate(),
+      depositDate: todayIsoDate(),
       bankName: '',
       ledgerHeadBankID: null,
       remark: '',

@@ -1,3 +1,4 @@
+import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -22,7 +23,7 @@ type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-ticket-entry',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, ListActionBtnComponent],
   templateUrl: './ticket-entry.component.html',
   styleUrl: './ticket-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -370,6 +371,21 @@ export class TicketEntryComponent {
   cancel(): void {
     this.closeForm();
     this.errorMessage.set(null);
+  }
+
+  confirmDeleteEntry(item: TicketListItem): void {
+    if (!confirm(`Delete ticket ${item.ticketNo ?? item.ticketID}?`)) return;
+    this.ticketService
+      .delete(item.ticketID)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((ok) => {
+        if (ok) {
+          this.toast.showSuccess('Ticket deleted.', 'Ticket');
+          this.loadList();
+        } else {
+          this.toast.showError('Unable to delete ticket.', 'Ticket');
+        }
+      });
   }
 
   closeForm(): void {

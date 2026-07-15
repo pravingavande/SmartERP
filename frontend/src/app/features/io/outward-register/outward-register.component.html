@@ -101,9 +101,9 @@
                   } @else { — }
                 </td>
                 <td class="actions">
-                  <button type="button" class="action-btn view" (click)="viewEntry(item)">View</button>
-                  <button type="button" class="action-btn edit" (click)="editEntry(item)">Edit</button>
-                  <button type="button" class="action-btn delete" (click)="deleteEntry(item)">Delete</button>
+                  <app-list-action-btn action="view" (clicked)="viewEntry(item)" />
+                  <app-list-action-btn action="edit" (clicked)="editEntry(item)" />
+                  <app-list-action-btn action="delete" (clicked)="deleteEntry(item)" />
                 </td>
               </tr>
             } @empty {

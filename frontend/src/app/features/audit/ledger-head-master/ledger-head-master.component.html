@@ -46,7 +46,7 @@
               <th>Short Name</th>
               <th>Type</th>
               <th>Status</th>
-              <th></th>
+              <th class="actions-col">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -58,7 +58,12 @@
                 <td>{{ h.ledgerType || '—' }}</td>
                 <td>{{ h.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
-                  <button type="button" class="action-btn edit" (click)="editEntry(h)">Edit</button>
+                  <div class="action-group">
+                    <app-list-action-btn action="edit" (clicked)="editEntry(h)" />
+                    @if (h.isActive) {
+                      <app-list-action-btn action="delete" (clicked)="deleteEntry(h)" />
+                    }
+                  </div>
                 </td>
               </tr>
             } @empty {

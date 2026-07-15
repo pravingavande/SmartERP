@@ -115,9 +115,9 @@
                   }
                 </td>
                 <td class="actions">
-                  <button type="button" class="action-btn view" (click)="viewItem(item)">View</button>
-                  <button type="button" class="action-btn edit" (click)="editItem(item)">Edit</button>
-                  <button type="button" class="action-btn delete" (click)="deleteItem(item)">Delete</button>
+                  <app-list-action-btn action="view" (clicked)="viewItem(item)" />
+                  <app-list-action-btn action="edit" (clicked)="editItem(item)" />
+                  <app-list-action-btn action="delete" (clicked)="deleteItem(item)" />
                 </td>
               </tr>
             } @empty {

@@ -82,8 +82,8 @@
                 <td class="remark-col">{{ v.remark || '—' }}</td>
                 <td class="actions">
                   <div class="action-group">
-                    <button type="button" class="action-btn edit" title="Edit" (click)="editVoucher(v)">Edit</button>
-                    <button type="button" class="action-btn delete" title="Delete" (click)="confirmDeleteVoucher(v)">Delete</button>
+                    <app-list-action-btn action="edit" (clicked)="editVoucher(v)" />
+                    <app-list-action-btn action="delete" (clicked)="confirmDeleteVoucher(v)" />
                     <button type="button" class="action-btn print" title="Print" (click)="reprintVoucher(v)">Print</button>
                   </div>
                 </td>

@@ -44,8 +44,8 @@
                 <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
                   @if (canManage()) {
-                    <button type="button" class="action-btn edit" (click)="editItem(item)">Edit</button>
-                    <button type="button" class="action-btn delete" (click)="deleteItem(item)">Delete</button>
+                    <app-list-action-btn action="edit" (clicked)="editItem(item)" />
+                    <app-list-action-btn action="delete" (clicked)="deleteItem(item)" />
                   } @else {
                     <span class="muted">View only</span>
                   }
