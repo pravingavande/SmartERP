@@ -177,6 +177,17 @@
   .donor { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .amt { color: var(--epr-orange); font-weight: 600; white-space: nowrap; text-align: right; }
   .empty { text-align: center; color: var(--epr-muted); padding: 0.75rem; }
+
+  thead th:last-child,
+  td.actions {
+    width: 1%;
+    max-width: 7.25rem;
+    white-space: nowrap;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    text-align: center;
+  }
+
   .actions { white-space: nowrap; }
 }
 
@@ -229,16 +240,16 @@
 .action-group {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 .action-btn {
   border: 1px solid transparent;
   background: #fff;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-  padding: 0.22rem 0.45rem;
+  padding: 0.18rem 0.35rem;
   border-radius: 6px;
 
   &.edit {

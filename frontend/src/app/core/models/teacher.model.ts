@@ -1,4 +1,8 @@
 import { OrgOption } from './audit.model';
+import { EmployeeDocumentLine, EmployeeSchoolLine } from './employee.model';
+
+export type TeacherDocumentLine = EmployeeDocumentLine;
+export type TeacherSchoolLine = EmployeeSchoolLine;
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -30,6 +34,7 @@ export interface TeacherLookups {
   categories: IdNameOption[];
   bloodGroups: IdNameOption[];
   shifts: IdNameOption[];
+  documents: CodeNameOption[];
 }
 
 export interface TeacherLookupsBundle {
@@ -126,6 +131,8 @@ export interface TeacherFormState {
   closeFlag: boolean;
   isActive: boolean;
   createdAt: string;
+  documents: TeacherDocumentLine[];
+  schools: TeacherSchoolLine[];
 }
 
 export const TEACHER_PHOTO_MAX_BYTES = 2 * 1024 * 1024;

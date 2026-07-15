@@ -166,6 +166,16 @@
     color: var(--epr-muted);
     padding: 1.5rem;
   }
+
+  thead th:last-child,
+  td.actions {
+    width: 1%;
+    max-width: 7.25rem;
+    white-space: nowrap;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    text-align: center;
+  }
 }
 
 .actions {
@@ -175,11 +185,11 @@
 .action-btn {
   border: none;
   background: transparent;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
   cursor: pointer;
-  padding: 0.2rem 0.35rem;
-  margin-right: 0.15rem;
+  padding: 0.15rem 0.2rem;
+  line-height: 1.2;
 
   &.view {
     color: var(--epr-navy);
@@ -187,6 +197,10 @@
 
   &.edit {
     color: #1a3f6e;
+  }
+
+  & + .action-btn {
+    margin-left: 0.5rem;
   }
 
   &:hover {

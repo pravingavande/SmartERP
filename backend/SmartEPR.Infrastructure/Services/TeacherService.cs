@@ -164,7 +164,9 @@ public sealed class TeacherService : ITeacherService
         AppUserName = Trim(request.AppUserName),
         AppPassword = request.AppPassword,
         CloseFlag = request.CloseFlag,
-        IsActive = request.IsActive
+        IsActive = request.IsActive,
+        Documents = request.Documents,
+        Schools = request.Schools
     };
 
     private static string? Trim(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of, Subject, switchMap, debounceTime, distinctUntilChanged } from 'rxjs';
+import { forkJoin, Subject, switchMap, debounceTime, distinctUntilChanged } from 'rxjs';
 import {
+  TeacherDocumentLine,
   TeacherFormState,
   TeacherListFilter,
   TeacherListItem,
   TeacherLookupsBundle,
+  TeacherSchoolLine,
   TEACHER_STAFF_TYPE_ID
 } from '../../../core/models/teacher.model';
 import { UserProfile } from '../../../core/models/dashboard.model';
@@ -27,6 +29,21 @@ import {
 } from '../../../core/utils/teacher-validation.util';
 
 type FormMode = 'new' | 'edit' | 'view';
+type FormSection = 'basic' | 'documents' | 'schools';
+
+interface FormStep {
+  id: FormSection;
+  step: number;
+  label: string;
+}
+
+const FORM_STEPS: FormStep[] = [
+  { id: 'basic', step: 1, label: 'Basic Details' },
+  { id: 'documents', step: 2, label: 'Documents' },
+  { id: 'schools', step: 3, label: 'School History' }
+];
+
+const SECTION_ORDER: FormSection[] = ['basic', 'documents', 'schools'];
 
 @Component({
   selector: 'app-teacher-entry',
@@ -41,8 +58,9 @@ export class TeacherEntryComponent {
   private readonly dashboardService = inject(DashboardService);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly filterChanges$ = new Subject<void>();
-  private filterDebounceSubscribed = false;
+  private readonly listReload$ = new Subject<void>();
+  private readonly searchChanges$ = new Subject<string>();
+  private searchDebounceSubscribed = false;
 
   readonly loading = signal(false);
   readonly listLoading = signal(false);
@@ -56,6 +74,10 @@ export class TeacherEntryComponent {
   readonly form = signal<TeacherFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
+  readonly activeSection = signal<FormSection>('basic');
+  readonly wizardActive = signal(false);
+  readonly highestUnlockedStep = signal(1);
+  readonly formSteps = FORM_STEPS;
   readonly listFilter = signal<TeacherListFilter>({ isActive: true });
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
@@ -86,6 +108,8 @@ export class TeacherEntryComponent {
     return orgs.filter((o) => o.orgID !== sansthaId);
   });
   readonly isViewMode = computed(() => this.formMode() === 'view');
+  readonly isWizardFlow = computed(() => this.wizardActive() && !this.isViewMode());
+  readonly isLastWizardStep = computed(() => this.activeSection() === 'schools');
   readonly displayName = computed(() => {
     const f = this.form();
     return f.employeeName?.trim()
@@ -97,8 +121,11 @@ export class TeacherEntryComponent {
     return buildEmployeeName(f.firstname, f.middleName, f.lastName);
   });
 
+  private docSeq = 0;
+  private schoolSeq = 0;
+
   constructor() {
-    this.filterChanges$
+    this.listReload$
       .pipe(
         switchMap(() => {
           this.listLoading.set(true);
@@ -113,14 +140,17 @@ export class TeacherEntryComponent {
         if (this.listPageIndex() > maxPage) this.listPageIndex.set(maxPage);
       });
 
-    this.destroyRef.onDestroy(() => this.filterChanges$.complete());
+    this.destroyRef.onDestroy(() => {
+      this.listReload$.complete();
+      this.searchChanges$.complete();
+    });
     this.loadLookups();
   }
 
   loadLookups(): void {
     this.lookupsLoading.set(true);
     this.errorMessage.set(null);
-    this.ensureFilterDebounce();
+    this.ensureSearchDebounce();
     forkJoin({
       lookups: this.teacherService.getLookups(),
       profile: this.dashboardService.getProfile()
@@ -128,13 +158,15 @@ export class TeacherEntryComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ lookups: data, profile }) => {
         this.lookupsLoading.set(false);
-        this.lookups.set(data);
         if (!data) {
           this.errorMessage.set('Unable to load teacher masters. Please refresh or contact admin.');
+          this.loadList();
           return;
         }
+        this.lookups.set(data);
         if (!data.orgs?.length) {
           this.errorMessage.set('No schools found for your login.');
+          this.loadList();
           return;
         }
         const defaultOrg = this.resolveDefaultOrgId(data.orgs, profile);
@@ -156,10 +188,12 @@ export class TeacherEntryComponent {
     return orgs.length === 1 ? orgs[0].orgID : null;
   }
 
-  private ensureFilterDebounce(): void {
-    if (this.filterDebounceSubscribed) return;
-    this.filterDebounceSubscribed = true;
-    this.filterChanges$.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe();
+  private ensureSearchDebounce(): void {
+    if (this.searchDebounceSubscribed) return;
+    this.searchDebounceSubscribed = true;
+    this.searchChanges$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadList());
   }
 
   updateListFilter<K extends keyof TeacherListFilter>(key: K, value: TeacherListFilter[K]): void {
@@ -170,11 +204,13 @@ export class TeacherEntryComponent {
   }
 
   onSearchChange(value: string): void {
-    this.updateListFilter('search', value);
+    this.listFilter.update((f) => ({ ...f, search: value }));
+    this.listPageIndex.set(0);
+    this.searchChanges$.next(value);
   }
 
   loadList(): void {
-    this.filterChanges$.next();
+    this.listReload$.next();
   }
 
   newTeacher(): void {
@@ -187,6 +223,9 @@ export class TeacherEntryComponent {
     this.errorMessage.set(null);
     this.formMode.set('new');
     this.formVisible.set(true);
+    this.activeSection.set('basic');
+    this.wizardActive.set(true);
+    this.highestUnlockedStep.set(1);
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.resetPasswordValue.set('');
@@ -208,10 +247,13 @@ export class TeacherEntryComponent {
         }
         this.formMode.set('edit');
         this.formVisible.set(true);
+        this.activeSection.set('basic');
+        this.wizardActive.set(false);
+        this.highestUnlockedStep.set(3);
         this.fieldErrors.set({});
         this.saveError.set(null);
         this.resetPasswordValue.set('');
-        this.form.set(data);
+        this.form.set(this.ensureChildRows(data));
       });
   }
 
@@ -227,9 +269,49 @@ export class TeacherEntryComponent {
   closeForm(): void {
     this.formVisible.set(false);
     this.formMode.set('new');
+    this.wizardActive.set(false);
+    this.highestUnlockedStep.set(1);
+    this.activeSection.set('basic');
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.loadList();
+  }
+
+  sectionStep(section: FormSection): number {
+    return FORM_STEPS.find((s) => s.id === section)?.step ?? 1;
+  }
+
+  isSectionEnabled(section: FormSection): boolean {
+    if (!this.isWizardFlow()) return true;
+    return this.sectionStep(section) <= this.highestUnlockedStep();
+  }
+
+  isSectionCompleted(section: FormSection): boolean {
+    if (!this.isWizardFlow()) return false;
+    return this.sectionStep(section) < this.sectionStep(this.activeSection());
+  }
+
+  setSection(section: FormSection): void {
+    if (!this.isSectionEnabled(section)) return;
+    this.activeSection.set(section);
+  }
+
+  saveAndNext(): void {
+    this.persistTeacher({ advance: true, close: false });
+  }
+
+  saveAndFinish(): void {
+    this.persistTeacher({ advance: false, close: true });
+  }
+
+  onFormSubmit(): void {
+    if (this.isViewMode()) return;
+    if (this.isWizardFlow()) {
+      if (this.isLastWizardStep()) this.saveAndFinish();
+      else this.saveAndNext();
+      return;
+    }
+    this.persistTeacher({ advance: false, close: true });
   }
 
   updateForm<K extends keyof TeacherFormState>(key: K, value: TeacherFormState[K]): void {
@@ -246,6 +328,19 @@ export class TeacherEntryComponent {
           if (srNo) this.updateForm('srNo', srNo);
         });
     }
+  }
+
+  onSchoolOrgChange(index: number, orgId: number | null): void {
+    const org = this.schoolOrgs().find((o) => o.orgID === orgId);
+    this.form.update((f) => {
+      const schools = [...f.schools];
+      schools[index] = {
+        ...schools[index],
+        orgID: orgId,
+        schoolCode: org?.schoolCode ?? schools[index].schoolCode
+      };
+      return { ...f, schools };
+    });
   }
 
   onPhotoSelected(event: Event): void {
@@ -274,20 +369,69 @@ export class TeacherEntryComponent {
       });
   }
 
+  addDocumentRow(): void {
+    this.form.update((f) => ({
+      ...f,
+      documents: [...f.documents, this.createDocumentLine()]
+    }));
+  }
+
+  removeDocumentRow(index: number): void {
+    this.form.update((f) => {
+      const documents = f.documents.filter((_, i) => i !== index);
+      return { ...f, documents: documents.length ? documents : [this.createDocumentLine()] };
+    });
+  }
+
+  updateDocument(index: number, patch: Partial<TeacherDocumentLine>): void {
+    this.form.update((f) => {
+      const documents = [...f.documents];
+      documents[index] = { ...documents[index], ...patch };
+      return { ...f, documents };
+    });
+  }
+
+  onDocumentFileSelected(index: number, event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.updateDocument(index, { empDocumentPath: file.name, selectedFileName: file.name });
+  }
+
+  addSchoolRow(): void {
+    this.form.update((f) => ({
+      ...f,
+      schools: [...f.schools, this.createSchoolLine(f.schools.length + 1)]
+    }));
+  }
+
+  removeSchoolRow(index: number): void {
+    this.form.update((f) => {
+      const schools = f.schools.filter((_, i) => i !== index).map((row, i) => ({ ...row, srNo: i + 1 }));
+      return { ...f, schools: schools.length ? schools : [this.createSchoolLine(1)] };
+    });
+  }
+
+  updateSchool(index: number, patch: Partial<TeacherSchoolLine>): void {
+    this.form.update((f) => {
+      const schools = [...f.schools];
+      schools[index] = { ...schools[index], ...patch };
+      return { ...f, schools };
+    });
+  }
+
   save(): void {
+    this.persistTeacher({ advance: false, close: true });
+  }
+
+  private persistTeacher(options: { advance: boolean; close: boolean }): void {
     if (this.isViewMode()) return;
-    const f = this.form();
-    const errors = validateTeacherForm(f, { requirePassword: !f.userID });
-    if (hasFieldErrors(errors)) {
-      this.fieldErrors.set(errors);
-      return;
-    }
+    if (!this.validateCurrentStep()) return;
 
     this.loading.set(true);
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.teacherService
-      .save(f)
+      .save(this.form())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ data: saved, message }) => {
         this.loading.set(false);
@@ -298,10 +442,56 @@ export class TeacherEntryComponent {
           toastOnSave(this.toast, false, { entity: 'Teacher', mode: this.formMode(), errorMessage: message ?? 'Unable to save teacher.' });
           return;
         }
-        this.form.set(saved);
+
+        const wasNew = !this.form().userID;
+        this.form.set(this.ensureChildRows(saved));
         this.formMode.set('edit');
+
+        if (this.isWizardFlow()) {
+          const currentStep = this.sectionStep(this.activeSection());
+          this.highestUnlockedStep.update((max) => Math.max(max, currentStep + 1));
+
+          if (options.advance) {
+            const next = this.nextSection(this.activeSection());
+            if (next) {
+              this.activeSection.set(next);
+              toastOnSave(this.toast, true, {
+                entity: wasNew && currentStep === 1 ? 'Basic details' : 'Teacher',
+                mode: wasNew ? 'new' : 'edit'
+              });
+              return;
+            }
+          }
+
+          if (options.close) {
+            toastOnSave(this.toast, true, { entity: 'Teacher', mode: wasNew ? 'new' : 'edit' });
+            this.closeForm();
+            return;
+          }
+        }
+
         toastOnSave(this.toast, true, { entity: 'Teacher', mode: this.formMode() });
+        if (options.close) this.closeForm();
       });
+  }
+
+  private validateCurrentStep(): boolean {
+    if (this.activeSection() !== 'basic') return true;
+
+    const f = this.form();
+    const errors = validateTeacherForm(f, { requirePassword: !f.userID });
+    if (hasFieldErrors(errors)) {
+      this.fieldErrors.set(errors);
+      this.activeSection.set('basic');
+      return false;
+    }
+    return true;
+  }
+
+  private nextSection(current: FormSection): FormSection | null {
+    const index = SECTION_ORDER.indexOf(current);
+    if (index < 0 || index >= SECTION_ORDER.length - 1) return null;
+    return SECTION_ORDER[index + 1];
   }
 
   deleteTeacher(item: TeacherListItem): void {
@@ -366,6 +556,39 @@ export class TeacherEntryComponent {
     return this.fieldErrors()[key] ?? null;
   }
 
+  private ensureChildRows(data: TeacherFormState): TeacherFormState {
+    return {
+      ...data,
+      documents: data.documents.length ? data.documents : [this.createDocumentLine()],
+      schools: data.schools.length ? data.schools : [this.createSchoolLine(1)]
+    };
+  }
+
+  private createDocumentLine(): TeacherDocumentLine {
+    return {
+      rowId: `doc-${++this.docSeq}`,
+      empDocumentCode: null,
+      empDocumentPath: '',
+      selectedFileName: null
+    };
+  }
+
+  private createSchoolLine(srNo: number): TeacherSchoolLine {
+    return {
+      rowId: `sch-${++this.schoolSeq}`,
+      srNo,
+      orgID: null,
+      schoolCode: null,
+      designationCode: null,
+      teachClass: '',
+      teachSubject: '',
+      schoolJoiningDate: '',
+      schoolLeaveDate: '',
+      sansthaTransferOrderNoAndDate: '',
+      zpTransferOrderNoAndDate: ''
+    };
+  }
+
   private emptyForm(): TeacherFormState {
     return {
       userID: null,
@@ -418,7 +641,9 @@ export class TeacherEntryComponent {
       appPassword: '',
       closeFlag: false,
       isActive: true,
-      createdAt: ''
+      createdAt: '',
+      documents: [this.createDocumentLine()],
+      schools: [this.createSchoolLine(1)]
     };
   }
 }

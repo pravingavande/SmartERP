@@ -13,6 +13,8 @@ import {
   TeacherListItem,
   TeacherLookups,
   TeacherLookupsBundle,
+  TeacherDocumentLine,
+  TeacherSchoolLine,
   TEACHER_STAFF_TYPE_ID,
   UserRoleOption
 } from '../models/teacher.model';
@@ -115,7 +117,24 @@ export class TeacherService {
       appUserName: form.appUserName,
       appPassword: form.appPassword || null,
       closeFlag: form.closeFlag,
-      isActive: form.isActive
+      isActive: form.isActive,
+      documents: form.documents
+        .filter((d) => d.empDocumentCode)
+        .map((d) => ({ empDocumentCode: d.empDocumentCode, empDocumentPath: d.empDocumentPath || '' })),
+      schools: form.schools
+        .filter((s) => s.orgID || s.designationCode || s.teachClass || s.teachSubject)
+        .map((s) => ({
+          srNo: s.srNo,
+          orgID: s.orgID,
+          schoolCode: s.schoolCode,
+          designationCode: s.designationCode,
+          teachClass: s.teachClass,
+          teachSubject: s.teachSubject,
+          schoolJoiningDate: s.schoolJoiningDate || null,
+          schoolLeaveDate: s.schoolLeaveDate || null,
+          sansthaTransferOrderNoAndDate: s.sansthaTransferOrderNoAndDate,
+          zpTransferOrderNoAndDate: s.zpTransferOrderNoAndDate
+        }))
     };
 
     return this.http.post<ApiResponse<Record<string, unknown>>>(this.base, payload).pipe(
@@ -166,7 +185,8 @@ export class TeacherService {
         religions: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'religions', 'Religions')),
         categories: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'categories', 'Categories')),
         bloodGroups: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'bloodGroups', 'BloodGroups')),
-        shifts: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'shifts', 'Shifts'))
+        shifts: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'shifts', 'Shifts')),
+        documents: this.normalizeCodeNames(this.pickArray<CodeNameOption>(lk, 'documents', 'Documents'))
       }
     };
   }
@@ -258,6 +278,10 @@ export class TeacherService {
   private mapToForm(raw: unknown): TeacherFormState {
     const r = raw as Record<string, unknown>;
     const photoPath = String(r['photoPath'] ?? r['PhotoPath'] ?? '');
+
+    const documents = (r['documents'] ?? r['Documents'] ?? []) as unknown[];
+    const schools = (r['schools'] ?? r['Schools'] ?? []) as unknown[];
+
     return {
       userID: (r['userID'] ?? r['UserID'] ?? null) as number | null,
       srNo: (r['srNo'] ?? r['SrNo'] ?? null) as number | null,
@@ -309,7 +333,37 @@ export class TeacherService {
       appPassword: '',
       closeFlag: Boolean(r['closeFlag'] ?? r['CloseFlag'] ?? false),
       isActive: Boolean(r['isActive'] ?? r['IsActive'] ?? true),
-      createdAt: this.toDateInput(r['createdAt'] ?? r['CreatedAt'])
+      createdAt: this.toDateInput(r['createdAt'] ?? r['CreatedAt']),
+      documents: documents.map((d, i) => this.mapDocumentLine(d, i)),
+      schools: schools.map((s, i) => this.mapSchoolLine(s, i))
+    };
+  }
+
+  private mapDocumentLine(raw: unknown, index: number): TeacherDocumentLine {
+    const d = raw as Record<string, unknown>;
+    const path = String(d['empDocumentPath'] ?? d['EmpDocumentPath'] ?? '');
+    return {
+      rowId: `doc-${index}`,
+      empDocumentCode: (d['empDocumentCode'] ?? d['EmpDocumentCode'] ?? null) as number | null,
+      empDocumentPath: path,
+      selectedFileName: path || null
+    };
+  }
+
+  private mapSchoolLine(raw: unknown, index: number): TeacherSchoolLine {
+    const s = raw as Record<string, unknown>;
+    return {
+      rowId: `sch-${index}`,
+      srNo: Number(s['srNo'] ?? s['SrNo'] ?? index + 1),
+      orgID: (s['orgID'] ?? s['OrgID'] ?? null) as number | null,
+      schoolCode: (s['schoolCode'] ?? s['SchoolCode'] ?? null) as number | null,
+      designationCode: (s['designationCode'] ?? s['DesignationCode'] ?? null) as number | null,
+      teachClass: String(s['teachClass'] ?? s['TeachClass'] ?? ''),
+      teachSubject: String(s['teachSubject'] ?? s['TeachSubject'] ?? ''),
+      schoolJoiningDate: this.toDateInput(s['schoolJoiningDate'] ?? s['SchoolJoiningDate']),
+      schoolLeaveDate: this.toDateInput(s['schoolLeaveDate'] ?? s['SchoolLeaveDate']),
+      sansthaTransferOrderNoAndDate: String(s['sansthaTransferOrderNoAndDate'] ?? s['SansthaTransferOrderNoAndDate'] ?? ''),
+      zpTransferOrderNoAndDate: String(s['zpTransferOrderNoAndDate'] ?? s['ZPTransferOrderNoAndDate'] ?? '')
     };
   }
 

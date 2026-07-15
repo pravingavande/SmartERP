@@ -464,16 +464,31 @@ fieldset {
   .desc { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .amt { color: var(--epr-orange); font-weight: 600; white-space: nowrap; }
   .empty { text-align: center; color: var(--epr-muted); padding: 0.75rem; }
+
+  thead th:last-child,
+  td.actions {
+    width: 1%;
+    max-width: 7.25rem;
+    white-space: nowrap;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    text-align: center;
+  }
+
   .actions { white-space: nowrap; }
 }
 
 .action-btn {
   border: none;
   background: transparent;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
   cursor: pointer;
-  padding: 0.2rem 0.35rem;
+  padding: 0.15rem 0.2rem;
+
+  & + .action-btn {
+    margin-left: 0.5rem;
+  }
 
   &.view { color: var(--epr-navy); }
   &.edit { color: #1a3f6e; }

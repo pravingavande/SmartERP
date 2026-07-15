@@ -28,6 +28,7 @@ public sealed class TeacherLookupsDto
     public IReadOnlyList<IdNameOptionDto> Categories { get; init; } = [];
     public IReadOnlyList<IdNameOptionDto> BloodGroups { get; init; } = [];
     public IReadOnlyList<IdNameOptionDto> Shifts { get; init; } = [];
+    public IReadOnlyList<CodeNameOptionDto> Documents { get; init; } = [];
 }
 
 public sealed class TeacherLookupsBundleDto
@@ -135,6 +136,30 @@ public sealed class TeacherDto
     public bool? CloseFlag { get; init; }
     public bool? IsActive { get; init; }
     public DateTime? CreatedAt { get; init; }
+    public IReadOnlyList<TeacherDocumentDto> Documents { get; init; } = [];
+    public IReadOnlyList<TeacherSchoolDto> Schools { get; init; } = [];
+}
+
+public sealed class TeacherDocumentDto
+{
+    public long UserID { get; init; }
+    public long? EmpDocumentCode { get; init; }
+    public string? EmpDocumentPath { get; init; }
+}
+
+public sealed class TeacherSchoolDto
+{
+    public long TID { get; init; }
+    public long? SrNo { get; init; }
+    public long? OrgID { get; init; }
+    public long? SchoolCode { get; init; }
+    public long? DesignationCode { get; init; }
+    public string? TeachClass { get; init; }
+    public string? TeachSubject { get; init; }
+    public DateTime? SchoolJoiningDate { get; init; }
+    public DateTime? SchoolLeaveDate { get; init; }
+    public string? SansthaTransferOrderNoAndDate { get; init; }
+    public string? ZPTransferOrderNoAndDate { get; init; }
 }
 
 public sealed class SaveTeacherRequestDto
@@ -186,6 +211,28 @@ public sealed class SaveTeacherRequestDto
     public string? AppPassword { get; set; }
     public bool CloseFlag { get; set; }
     public bool IsActive { get; set; } = true;
+    public IReadOnlyList<SaveTeacherDocumentDto> Documents { get; set; } = [];
+    public IReadOnlyList<SaveTeacherSchoolDto> Schools { get; set; } = [];
+}
+
+public sealed class SaveTeacherDocumentDto
+{
+    public long? EmpDocumentCode { get; init; }
+    public string? EmpDocumentPath { get; init; }
+}
+
+public sealed class SaveTeacherSchoolDto
+{
+    public long SrNo { get; init; }
+    public long? OrgID { get; init; }
+    public long? SchoolCode { get; init; }
+    public long? DesignationCode { get; init; }
+    public string? TeachClass { get; init; }
+    public string? TeachSubject { get; init; }
+    public DateTime? SchoolJoiningDate { get; init; }
+    public DateTime? SchoolLeaveDate { get; init; }
+    public string? SansthaTransferOrderNoAndDate { get; init; }
+    public string? ZPTransferOrderNoAndDate { get; init; }
 }
 
 public sealed class ResetTeacherPasswordRequestDto

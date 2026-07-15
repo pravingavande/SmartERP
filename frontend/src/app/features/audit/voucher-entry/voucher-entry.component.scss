@@ -368,7 +368,7 @@
   col.col-party { width: 26%; }
   col.col-amt { width: 6.25rem; }
   col.col-remark { width: 32%; }
-  col.col-actions { width: 8.75rem; }
+  col.col-actions { width: 7.25rem; }
 
   th.col-vno,
   td.code {
@@ -408,9 +408,9 @@
 
   th.col-actions,
   td.actions {
-    width: 8.75rem;
-    max-width: 8.75rem;
-    min-width: 8.75rem;
+    width: 1%;
+    max-width: 7.25rem;
+    min-width: 0;
     padding-left: 0.25rem;
     padding-right: 0.25rem;
   }
@@ -420,7 +420,7 @@
   }
 
   .action-btn {
-    padding: 0.26rem 0.38rem;
+    padding: 0.22rem 0.35rem;
     font-size: 0.68rem;
   }
 
@@ -476,7 +476,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 

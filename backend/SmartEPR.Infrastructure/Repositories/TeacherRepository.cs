@@ -1,4 +1,6 @@
 using System.Data;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dapper;
 using SmartEPR.Core.DTOs.Teacher;
 using SmartEPR.Core.Interfaces;
@@ -8,6 +10,12 @@ namespace SmartEPR.Infrastructure.Repositories;
 
 public sealed class TeacherRepository : ITeacherRepository
 {
+    private static readonly JsonSerializerOptions ChildRowJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     private readonly SqlConnectionFactory _connectionFactory;
     private readonly StoredProcedureExecutor _executor;
 
@@ -34,6 +42,7 @@ public sealed class TeacherRepository : ITeacherRepository
         var categories = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();
         var bloodGroups = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();
         var shifts = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();
+        var documents = (await multi.ReadAsync<CodeNameRow>().ConfigureAwait(false)).AsList();
 
         return new TeacherLookupsDto
         {
@@ -44,7 +53,8 @@ public sealed class TeacherRepository : ITeacherRepository
             Religions = MapIdName(religions, x => x.ReligionID, x => x.ReligionName),
             Categories = MapIdName(categories, x => x.CategoryID, x => x.CategoryName),
             BloodGroups = MapIdName(bloodGroups, x => x.BloodGroupID, x => x.BloodGroupName),
-            Shifts = MapIdName(shifts, x => x.ShiftID, x => x.ShiftName)
+            Shifts = MapIdName(shifts, x => x.ShiftID, x => x.ShiftName),
+            Documents = MapCodeName(documents, x => x.DocumentCode, x => x.DocumentName)
         };
     }
 
@@ -62,11 +72,73 @@ public sealed class TeacherRepository : ITeacherRepository
         return _executor.QueryListAsync<TeacherListItemDto>("dbo.sp_Teacher_GetList", p, cancellationToken);
     }
 
-    public Task<TeacherDto?> GetByIdAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<TeacherDto?> GetByIdAsync(long userId, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserID", userId);
-        return _executor.QuerySingleOrDefaultAsync<TeacherDto>("dbo.sp_Teacher_GetById", p, cancellationToken);
+
+        var header = await _executor.QuerySingleOrDefaultAsync<TeacherDto>("dbo.sp_Teacher_GetById", p, cancellationToken).ConfigureAwait(false);
+        if (header is null)
+            return null;
+
+        var documents = await _executor.QueryListAsync<TeacherDocumentDto>("dbo.sp_Employee_Document_GetByUserId", p, cancellationToken).ConfigureAwait(false);
+        var schools = await _executor.QueryListAsync<TeacherSchoolDto>("dbo.sp_Employee_School_GetByUserId", p, cancellationToken).ConfigureAwait(false);
+
+        return new TeacherDto
+        {
+            UserID = header.UserID,
+            SrNo = header.SrNo,
+            OrgID = header.OrgID,
+            StaffTypeID = header.StaffTypeID,
+            UserRoleID = header.UserRoleID,
+            DesignationCode = header.DesignationCode,
+            Firstname = header.Firstname,
+            MiddleName = header.MiddleName,
+            LastName = header.LastName,
+            EmployeeName = header.EmployeeName,
+            EmployeeShortName = header.EmployeeShortName,
+            PermanentAddress = header.PermanentAddress,
+            CityName = header.CityName,
+            PhotoPath = header.PhotoPath,
+            GenderCode = header.GenderCode,
+            Dob = header.Dob,
+            AdharCardNo = header.AdharCardNo,
+            ShalarthID = header.ShalarthID,
+            ScaleOfPay = header.ScaleOfPay,
+            CasteName = header.CasteName,
+            ReligionID = header.ReligionID,
+            CategoryID = header.CategoryID,
+            BloodGroupID = header.BloodGroupID,
+            MobileNo1 = header.MobileNo1,
+            MobileNo2 = header.MobileNo2,
+            EmailID = header.EmailID,
+            PanNo = header.PanNo,
+            Remark = header.Remark,
+            SubjectName1 = header.SubjectName1,
+            SubjectName2 = header.SubjectName2,
+            SubjectName3 = header.SubjectName3,
+            SQualification = header.SQualification,
+            BQualification = header.BQualification,
+            AfterDegreePassedSubjects = header.AfterDegreePassedSubjects,
+            SansthaOrderNoAndDate = header.SansthaOrderNoAndDate,
+            ZPOrderNoAndDate = header.ZPOrderNoAndDate,
+            SansthaServiceOrderNoAndDate = header.SansthaServiceOrderNoAndDate,
+            ZPServiceOrderNoAndDate = header.ZPServiceOrderNoAndDate,
+            DateOfWorkingStart = header.DateOfWorkingStart,
+            JTCategoryID = header.JTCategoryID,
+            PaymentGradeDate = header.PaymentGradeDate,
+            NivadGradeDate = header.NivadGradeDate,
+            RetirementYear = header.RetirementYear,
+            ServiceOutDate = header.ServiceOutDate,
+            ShiftID = header.ShiftID,
+            AppUserName = header.AppUserName,
+            AppPassword = header.AppPassword,
+            CloseFlag = header.CloseFlag,
+            IsActive = header.IsActive,
+            CreatedAt = header.CreatedAt,
+            Documents = documents,
+            Schools = schools
+        };
     }
 
     public async Task<int?> GetNextSrNoAsync(long orgId, CancellationToken cancellationToken = default)
@@ -137,6 +209,8 @@ public sealed class TeacherRepository : ITeacherRepository
         p.Add("@CloseFlag", request.CloseFlag);
         p.Add("@IsActive", request.IsActive);
         p.Add("@UpdatePassword", updatePassword);
+        p.Add("@DocumentsJson", JsonSerializer.Serialize(request.Documents, ChildRowJsonOptions));
+        p.Add("@SchoolsJson", JsonSerializer.Serialize(request.Schools, ChildRowJsonOptions));
 
         await _executor.ExecuteAsync("dbo.sp_Teacher_Save", p, cancellationToken).ConfigureAwait(false);
         return p.Get<long>("@UserID");
@@ -185,6 +259,8 @@ public sealed class TeacherRepository : ITeacherRepository
         public string? DesignationName { get; init; }
         public long? GenderCode { get; init; }
         public string? GenderName { get; init; }
+        public long? DocumentCode { get; init; }
+        public string? DocumentName { get; init; }
     }
 
     private sealed class IdNameRow
