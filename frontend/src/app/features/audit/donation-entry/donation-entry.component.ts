@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { DonationService } from '../../../core/services/donation.service';
+import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ReportPrintService } from '../../../core/services/report-print.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -15,11 +16,11 @@ import {
   Donation,
   DonationFormState,
   DonationListItem,
-  DonationLookups,
   DRHeadOption,
   FyOption,
   BankLedgerHeadOption
 } from '../../../core/models/donation.model';
+import { AuditLookups } from '../../../core/models/audit.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import { coerceEnglishIntegerString, coerceEnglishNumber, formatAadharDisplay, filterAadharTyping, normalizeAadharDigits } from '../../../core/utils/marathi-numerals';
@@ -37,6 +38,7 @@ type FormMode = 'new' | 'edit' | 'view';
 })
 export class DonationEntryComponent {
   private readonly donation = inject(DonationService);
+  private readonly audit = inject(AuditService);
   private readonly toast = inject(ToastService);
   private readonly reportPrint = inject(ReportPrintService);
   private readonly dashboardService = inject(DashboardService);
@@ -47,7 +49,7 @@ export class DonationEntryComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly saveError = signal<string | null>(null);
-  readonly lookups = signal<DonationLookups | null>(null);
+  readonly lookups = signal<AuditLookups | null>(null);
   readonly drHeads = signal<DRHeadOption[]>([]);
   readonly donations = signal<DonationListItem[]>([]);
   readonly form = signal<DonationFormState>(this.emptyForm());
@@ -102,7 +104,7 @@ export class DonationEntryComponent {
   loadLookups(): void {
     this.lookupsLoading.set(true);
     forkJoin({
-      lookups: this.donation.getLookups(),
+      lookups: this.audit.getLookups(),
       profile: this.dashboardService.getProfile()
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -110,20 +112,23 @@ export class DonationEntryComponent {
         this.lookupsLoading.set(false);
         this.lookups.set(data);
         if (!data?.orgs?.length) {
-          this.errorMessage.set('No schools found for your login.');
+          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
           return;
         }
 
-        const fyId = data.fyList[0]?.fyID ?? null;
+        const activeFy = data.fyList[0] ?? null;
         const orgId = this.resolveDefaultOrgId(data, profile);
+        const fyId = activeFy?.fyID ?? null;
+
         this.listOrgID.set(orgId);
         this.listFyID.set(fyId);
         this.form.update((f) => ({ ...f, orgID: orgId, fyID: fyId }));
+        this.errorMessage.set(null);
         this.loadList();
       });
   }
 
-  private resolveDefaultOrgId(data: DonationLookups, profile: UserProfile | null): number | null {
+  private resolveDefaultOrgId(data: AuditLookups, profile: UserProfile | null): number | null {
     if (profile?.schoolCode) {
       const match = data.orgs.find((o) => o.schoolCode === profile.schoolCode);
       if (match) return match.orgID;
@@ -138,6 +143,7 @@ export class DonationEntryComponent {
   onListOrgChange(orgId: number | null): void {
     this.listOrgID.set(orgId);
     this.listPageIndex.set(0);
+    this.form.update((f) => ({ ...f, orgID: orgId }));
     this.closeForm();
     this.loadList();
   }
@@ -145,6 +151,7 @@ export class DonationEntryComponent {
   onListFyChange(fyId: number | null): void {
     this.listFyID.set(fyId);
     this.listPageIndex.set(0);
+    this.form.update((f) => ({ ...f, fyID: fyId }));
     this.closeForm();
     this.loadList();
   }
@@ -451,7 +458,10 @@ export class DonationEntryComponent {
   }
 
   bankLedgerHeads(): BankLedgerHeadOption[] {
-    return this.lookups()?.bankLedgerHeads ?? [];
+    return (this.lookups()?.bankLedgerHeads ?? []).map((b) => ({
+      ledgerHeadID: b.ledgerHeadID,
+      ledgerHead: b.ledgerHead
+    }));
   }
 
   private isDateWithinFy(date: string): boolean {

@@ -182,15 +182,60 @@ export class VoucherEntryComponent {
   }
 
   private resolveDefaultOrgId(data: AuditLookups, profile: UserProfile | null): number | null {
-    if (profile?.schoolCode) {
-      const match = data.orgs.find((o) => o.schoolCode === profile.schoolCode);
+    const schoolCode = profile?.schoolCode ?? (profile as { SchoolCode?: number } | null)?.SchoolCode;
+    const profileOrgId = profile?.orgId ?? (profile as { orgID?: number } | null)?.orgID;
+    if (schoolCode) {
+      const match = data.orgs.find((o) => o.schoolCode === schoolCode);
       if (match) return match.orgID;
     }
-    if (profile?.orgId) {
-      const match = data.orgs.find((o) => o.orgID === profile.orgId);
+    if (profileOrgId) {
+      const match = data.orgs.find((o) => o.orgID === profileOrgId);
       if (match) return match.orgID;
     }
     return data.orgs.length === 1 ? data.orgs[0].orgID : data.orgs[0]?.orgID ?? null;
+  }
+
+  private resolveDefaultAccountRegisterId(registers: AccountRegisterOption[]): number | null {
+    if (!registers.length) return null;
+    if (registers.length === 1) return registers[0].accountRegisterID;
+
+    const keyword = this.isReceiptVoucher() ? 'receipt' : 'payment';
+    const matched = registers.find((r) => r.accountRegister.toLowerCase().includes(keyword));
+    return matched?.accountRegisterID ?? registers[0].accountRegisterID;
+  }
+
+  private applyAccountRegisterDefaults(registers: AccountRegisterOption[]): void {
+    this.accountRegisters.set(registers);
+    if (!registers.length) {
+      this.listAccountRegisterID.set(null);
+      if (this.formVisible()) {
+        this.errorMessage.set('No account register mapped for this school. Configure under Account Register Define.');
+      }
+      return;
+    }
+
+    this.errorMessage.set(null);
+    const defaultId = this.resolveDefaultAccountRegisterId(registers);
+    const currentListId = this.listAccountRegisterID();
+    const listId =
+      currentListId && registers.some((r) => r.accountRegisterID === currentListId)
+        ? currentListId
+        : defaultId;
+    this.listAccountRegisterID.set(listId);
+
+    if (this.formVisible() && this.formMode() === 'new') {
+      const formRegisterId = this.form().accountRegisterID;
+      const formId =
+        formRegisterId && registers.some((r) => r.accountRegisterID === formRegisterId)
+          ? formRegisterId
+          : listId;
+      if (formId !== formRegisterId) {
+        this.form.update((f) => ({ ...f, accountRegisterID: formId }));
+      }
+      if (formId) {
+        this.onAccountRegisterChange();
+      }
+    }
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -254,12 +299,7 @@ export class VoucherEntryComponent {
 
   private loadOrgDependents(orgId: number, reloadListOnly: boolean): void {
     this.audit.getAccountRegisters(orgId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((r) => {
-      this.accountRegisters.set(r);
-      if (r.length) {
-        this.errorMessage.set(null);
-      } else if (this.formVisible()) {
-        this.errorMessage.set('No account register mapped for this school. Configure under Account Register Define.');
-      }
+      this.applyAccountRegisterDefaults(r);
     });
     this.loadParties(orgId, this.form().partyTID);
     if (reloadListOnly || !this.formVisible()) {
@@ -327,8 +367,13 @@ export class VoucherEntryComponent {
   newVoucher(): void {
     const orgId = this.listOrgID();
     const fyId = this.listFyID();
+    const accountRegisterId = this.listAccountRegisterID();
     if (!orgId || !fyId) {
       this.errorMessage.set('Select Org / School and Financial Year on the list page before adding new.');
+      return;
+    }
+    if (!accountRegisterId) {
+      this.errorMessage.set('No account register mapped for this school. Configure under Account Register Define.');
       return;
     }
     const fy = this.activeFy();
@@ -344,13 +389,11 @@ export class VoucherEntryComponent {
       ...this.emptyForm(),
       orgID: orgId,
       fyID: fyId,
-      accountRegisterID: this.listAccountRegisterID(),
+      accountRegisterID: accountRegisterId,
       vDate: this.clampDateToFy(today, fy) || today
     });
     this.loadOrgDependents(orgId, false);
-    if (this.listAccountRegisterID()) {
-      this.onAccountRegisterChange();
-    }
+    this.onAccountRegisterChange();
   }
 
   editVoucher(item: VoucherListItem): void {
@@ -396,7 +439,11 @@ export class VoucherEntryComponent {
         this.applyVoucherToForm(v);
         this.listOrgID.set(v.orgID);
         this.listFyID.set(v.fyID);
-        this.audit.getAccountRegisters(v.orgID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((r) => this.accountRegisters.set(r));
+        this.listAccountRegisterID.set(v.accountRegisterID ?? null);
+        this.audit
+          .getAccountRegisters(v.orgID)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((r) => this.accountRegisters.set(r));
         this.loadParties(v.orgID, v.partyTID ?? null);
         v.details.forEach((d) => this.loadNarrations(d.ledgerHeadID));
       });

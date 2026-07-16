@@ -26,8 +26,8 @@
     </label>
     <label class="field">
       <span class="field-label">Account Register</span>
-      <select class="field-control" [disabled]="!listOrgID()" [ngModel]="listAccountRegisterID()" (ngModelChange)="onListAccountRegisterChange($event ? +$event : null)" name="listAccountRegisterID">
-        <option [ngValue]="null">-- All Registers --</option>
+      <select class="field-control" [disabled]="lookupsLoading() || !listOrgID()" [ngModel]="listAccountRegisterID()" (ngModelChange)="onListAccountRegisterChange($event ? +$event : null)" name="listAccountRegisterID">
+        <option [ngValue]="null">-- Select Register --</option>
         @for (r of accountRegisters(); track r.accountRegisterID) {
           <option [ngValue]="r.accountRegisterID">{{ r.accountRegister }}</option>
         }
@@ -183,7 +183,6 @@
                 <div class="detail-table-wrap">
                   <table class="detail-table">
                     <colgroup>
-                      <col class="col-sr">
                       <col class="col-ledger">
                       <col class="col-narration">
                       <col class="col-amount">
@@ -193,7 +192,6 @@
                     </colgroup>
                     <thead>
                       <tr>
-                        <th class="sr-col">Sr.No</th>
                         <th class="ledger-col">Ledger Head</th>
                         <th class="narration-col">Narration</th>
                         <th class="amount-col">Amount</th>
@@ -207,9 +205,6 @@
                     <tbody>
                       @for (line of form().details; track line.rowId; let i = $index) {
                         <tr>
-                          <td class="sr-col">
-                            <span class="sr-no">{{ line.srNo }}</span>
-                          </td>
                           <td class="ledger-col" [class.cell-invalid]="detailFieldError(i, 'ledgerHeadId')">
                             <select required [disabled]="isViewMode()" [ngModel]="line.ledgerHeadId" (ngModelChange)="updateDetail(i, 'ledgerHeadId', $event ? +$event : null); loadNarrations($event ? +$event : null)" [name]="'lh' + i">
                               <option [ngValue]="null">-- Select --</option>
@@ -247,7 +242,7 @@
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td colspan="3" class="total-label">Total Amount</td>
+                        <td colspan="2" class="total-label">Total Amount</td>
                         <td class="total-value amount-col" [class.cell-invalid]="fieldError('detailsTotal')">
                           {{ totalAmount() | currency:'INR':'symbol':'1.2-2' }}
                           @if (fieldError('detailsTotal')) {

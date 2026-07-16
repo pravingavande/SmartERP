@@ -17,8 +17,8 @@
   <div class="list-filters">
     <label class="field">
       <span class="field-label">Org / School</span>
-      <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
-        <option [ngValue]="null">-- All Schools --</option>
+      <select class="field-control" [disabled]="lookupsLoading()" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
+        <option [ngValue]="null">-- Select School --</option>
         @for (o of lookups()?.orgs ?? []; track o.orgID) {
           <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
         }
@@ -26,14 +26,17 @@
     </label>
     <label class="field">
       <span class="field-label">Financial Year</span>
-      <select class="field-control" [ngModel]="listFyID()" (ngModelChange)="onListFyChange($event ? +$event : null)" name="listFyID">
-        <option [ngValue]="null">-- All FY --</option>
+      <select class="field-control" [disabled]="lookupsLoading()" [ngModel]="listFyID()" (ngModelChange)="onListFyChange($event ? +$event : null)" name="listFyID">
+        <option [ngValue]="null">-- Select FY --</option>
         @for (fy of lookups()?.fyList ?? []; track fy.fyID) {
           <option [ngValue]="fy.fyID">{{ fy.fyName }}</option>
         }
       </select>
     </label>
   </div>
+  @if (lookupsLoading()) {
+    <p class="loading-hint">Loading schools and financial years...</p>
+  }
   @if (errorMessage() && !formVisible()) {
     <p class="error list-error">{{ errorMessage() }}</p>
   }

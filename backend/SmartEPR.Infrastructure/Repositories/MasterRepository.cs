@@ -145,7 +145,7 @@ public sealed class MasterRepository : IMasterRepository
         p.Add("@TMonth", request.TMonth);
         p.Add("@ClassID", request.ClassID);
         p.Add("@SubjectID", request.SubjectID);
-        p.Add("@TDate", request.TDate);
+        p.Add("@SrNo", request.SrNo > 0 ? request.SrNo : null);
         p.Add("@Title", request.Title);
         p.Add("@Description", request.Description);
         p.Add("@WeekID", request.WeekID);

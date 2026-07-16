@@ -10,7 +10,11 @@ import {
   DonationListItem,
   DonationLookups,
   DRHeadDefine,
-  DRHeadOption
+  DRHeadOption,
+  OrgOption,
+  PaymentTypeOption,
+  FyOption,
+  BankLedgerHeadOption
 } from '../models/donation.model';
 import { coerceEnglishIntegerString, coerceEnglishNumber, normalizeAadharDigits } from '../utils/marathi-numerals';
 
@@ -27,10 +31,19 @@ export class DonationService {
     return this.http.get<ApiResponse<DonationLookups>>(`${this.base}/lookups`).pipe(
       map((r) => {
         if (!r.success || !r.data) return null;
+        const raw = r.data as DonationLookups & {
+          Orgs?: OrgOption[];
+          FyList?: FyOption[];
+          PaymentTypes?: PaymentTypeOption[];
+          DrHeads?: DRHeadOption[];
+          BankLedgerHeads?: BankLedgerHeadOption[];
+        };
         return {
-          ...r.data,
-          orgs: this.auth.filterSchoolOrgs(r.data.orgs ?? []),
-          bankLedgerHeads: r.data.bankLedgerHeads ?? []
+          orgs: this.auth.filterSchoolOrgs((raw.orgs ?? raw.Orgs ?? []).map((o) => this.normalizeOrg(o))),
+          drHeads: (raw.drHeads ?? raw.DrHeads ?? []).map((h) => this.normalizeDrHead(h)),
+          paymentTypes: (raw.paymentTypes ?? raw.PaymentTypes ?? []).map((p) => this.normalizePaymentType(p)),
+          fyList: (raw.fyList ?? raw.FyList ?? []).map((fy) => this.normalizeFy(fy)),
+          bankLedgerHeads: (raw.bankLedgerHeads ?? raw.BankLedgerHeads ?? []).map((b) => this.normalizeBankLedger(b))
         };
       }),
       catchError(() => of(null))
@@ -144,6 +157,44 @@ export class DonationService {
   }
 
   /** API may return `drid` (all-caps acronym) instead of `drID` until backend DTO is updated. */
+  private normalizeOrg(raw: OrgOption & { OrgID?: number; OrganizationName?: string; SchoolCode?: number | null }): OrgOption {
+    return {
+      orgID: raw.orgID ?? raw.OrgID ?? 0,
+      organizationName: raw.organizationName ?? raw.OrganizationName ?? '',
+      schoolCode: raw.schoolCode ?? raw.SchoolCode ?? null
+    };
+  }
+
+  private normalizeFy(raw: FyOption & { FyID?: number; FyName?: string; FromDate?: string; ToDate?: string }): FyOption {
+    return {
+      fyID: raw.fyID ?? raw.FyID ?? 0,
+      fyName: raw.fyName ?? raw.FyName ?? '',
+      fromDate: raw.fromDate ?? raw.FromDate ?? '',
+      toDate: raw.toDate ?? raw.ToDate ?? ''
+    };
+  }
+
+  private normalizePaymentType(raw: PaymentTypeOption & { PaymentTypeID?: number; PaymentType?: string }): PaymentTypeOption {
+    return {
+      paymentTypeID: raw.paymentTypeID ?? raw.PaymentTypeID ?? 0,
+      paymentType: raw.paymentType ?? raw.PaymentType ?? ''
+    };
+  }
+
+  private normalizeDrHead(raw: DRHeadOption & { DRHeadID?: number; DRHeadName?: string }): DRHeadOption {
+    return {
+      drHeadID: raw.drHeadID ?? raw.DRHeadID ?? 0,
+      drHeadName: raw.drHeadName ?? raw.DRHeadName ?? ''
+    };
+  }
+
+  private normalizeBankLedger(raw: BankLedgerHeadOption & { LedgerHeadID?: number; LedgerHead?: string }): BankLedgerHeadOption {
+    return {
+      ledgerHeadID: raw.ledgerHeadID ?? raw.LedgerHeadID ?? 0,
+      ledgerHead: raw.ledgerHead ?? raw.LedgerHead ?? ''
+    };
+  }
+
   private normalizeDonation<T extends DonationListItem>(item: T & {
     drid?: number;
     bankName?: string | null;

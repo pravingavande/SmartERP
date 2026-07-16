@@ -140,6 +140,14 @@ export class TicketService {
     );
   }
 
+  fileUrl(fileName: string): string {
+    return `${this.ticketBase}/file/${encodeURIComponent(fileName)}`;
+  }
+
+  downloadFile(url: string): Observable<Blob> {
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
   delete(ticketId: number): Observable<boolean> {
     return this.http.delete<ApiResponse<boolean>>(`${this.ticketBase}/${ticketId}`).pipe(
       map((r) => r.success),

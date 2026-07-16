@@ -33,7 +33,6 @@
         <table class="records-table">
           <thead>
             <tr>
-              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('itemGroupName')">Item Group</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
               <th>Actions</th>
@@ -42,7 +41,6 @@
           <tbody>
             @for (item of paginatedItems(); track item.itemGroupID) {
               <tr>
-                <td class="code">{{ item.srNo }}</td>
                 <td>{{ item.itemGroupName }}</td>
                 <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
@@ -51,7 +49,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="4" class="empty">No item groups for selected school</td></tr>
+              <tr><td colspan="3" class="empty">No item groups for selected school</td></tr>
             }
           </tbody>
         </table>
@@ -75,12 +73,6 @@
         <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
           <div class="form-grid">
-            @if (formMode() === 'edit') {
-              <label class="field">
-                <span class="field-label">Sr No</span>
-                <input class="field-control" type="text" readonly [value]="formSrNo() ?? '—'" name="srNo">
-              </label>
-            }
             <label class="field full" [class.field-invalid]="fieldError('itemGroupName')">
               <span class="field-label">Item Group Name *</span>
               <input class="field-control" required [ngModel]="form().itemGroupName" (ngModelChange)="updateForm('itemGroupName', $event)" name="itemGroupName">

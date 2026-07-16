@@ -112,7 +112,7 @@ export class AuditService {
   getAccountRegisters(orgId: number): Observable<AccountRegisterOption[]> {
     const params = new HttpParams().set('orgId', orgId.toString());
     return this.http.get<ApiResponse<AccountRegisterOption[]>>(`${this.base}/account-registers`, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
+      map((r) => (r.success && r.data ? r.data.map((item) => this.normalizeAccountRegister(item)) : [])),
       catchError(() => of([]))
     );
   }
@@ -278,6 +278,20 @@ export class AuditService {
       shortName: raw.shortName ?? raw.ShortName ?? null,
       schoolCode: raw.schoolCode ?? raw.SchoolCode ?? null,
       underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? null
+    };
+  }
+
+  private normalizeAccountRegister(
+    raw: AccountRegisterOption & {
+      AccountRegisterID?: number;
+      AccountRegister?: string;
+      OrgID?: number;
+    }
+  ): AccountRegisterOption {
+    return {
+      accountRegisterID: raw.accountRegisterID ?? raw.AccountRegisterID ?? 0,
+      accountRegister: raw.accountRegister ?? raw.AccountRegister ?? '',
+      orgID: raw.orgID ?? raw.OrgID ?? 0
     };
   }
 

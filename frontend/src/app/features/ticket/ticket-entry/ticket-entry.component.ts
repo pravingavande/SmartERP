@@ -281,6 +281,19 @@ export class TicketEntryComponent {
     });
   }
 
+  openAttachment(fileName: string | null | undefined): void {
+    if (!fileName?.trim()) return;
+    const url = this.ticketService.fileUrl(fileName);
+    this.ticketService.downloadFile(url).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      },
+      error: () => this.toast.showError('Unable to open file.', 'View failed')
+    });
+  }
+
   save(): void {
     if (!this.canEditCurrent()) return;
     const f = this.form();

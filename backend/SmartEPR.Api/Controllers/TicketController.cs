@@ -143,6 +143,20 @@ public sealed class TicketController : ControllerBase
         return Ok(ApiResponse<string>.Ok(storedName, "File uploaded."));
     }
 
+    [HttpGet("file/{fileName}")]
+    public IActionResult DownloadFile(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains("..", StringComparison.Ordinal))
+            return BadRequest(ApiResponse<bool>.Fail("Invalid file name."));
+
+        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "Tickets");
+        var fullPath = Path.Combine(uploadDir, fileName);
+        if (!System.IO.File.Exists(fullPath))
+            return NotFound(ApiResponse<bool>.Fail("File not found."));
+
+        return PhysicalFile(fullPath, "application/octet-stream", fileName);
+    }
+
     [HttpDelete("{ticketId:long}")]
     public async Task<IActionResult> Delete(long ticketId, CancellationToken cancellationToken)
     {

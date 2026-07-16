@@ -41,7 +41,6 @@
         <table class="records-table">
           <thead>
             <tr>
-              <th>Sr.No</th>
               <th>Ledger Head</th>
               <th>Short Name</th>
               <th>Type</th>
@@ -52,7 +51,6 @@
           <tbody>
             @for (h of paginatedLedgerHeads(); track h.ledgerHeadID) {
               <tr [class.active]="form().ledgerHeadID === h.ledgerHeadID">
-                <td class="code">{{ h.srNo }}</td>
                 <td>{{ h.ledgerHead }}</td>
                 <td>{{ h.ledgerHeadShort || '—' }}</td>
                 <td>{{ h.ledgerType || '—' }}</td>
@@ -68,7 +66,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="empty">No ledger heads for selected Sanstha / type</td>
+                <td colspan="5" class="empty">No ledger heads for selected Sanstha / type</td>
               </tr>
             }
           </tbody>
@@ -105,10 +103,6 @@
               <label class="field full">
                 <span class="field-label">Org / Sanstha</span>
                 <input class="field-control field-readonly" type="text" readonly [value]="selectedOrgName()">
-              </label>
-              <label class="field">
-                <span class="field-label">Sr.No</span>
-                <input class="field-control field-readonly" type="number" readonly [ngModel]="form().srNo" name="srNo">
               </label>
               <label class="field" [class.field-invalid]="fieldError('ledgerTypeID')">
                 <span class="field-label">Ledger Type *</span>

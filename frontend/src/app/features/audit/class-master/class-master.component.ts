@@ -34,7 +34,7 @@ export class ClassMasterComponent {
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
   readonly searchText = signal('');
-  readonly sortKey = signal<keyof ClassMasterItem>('classID');
+  readonly sortKey = signal<keyof ClassMasterItem>('className');
   readonly sortDir = signal<SortDirection>('asc');
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);

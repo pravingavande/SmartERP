@@ -270,7 +270,6 @@
                   <table class="detail-table">
                     <thead>
                       <tr>
-                        <th>Sr</th>
                         <th>Education</th>
                         <th>University / Board</th>
                         <th>Year</th>
@@ -283,7 +282,6 @@
                     <tbody>
                       @for (row of form().education; track row.rowId; let i = $index) {
                         <tr>
-                          <td>{{ row.srNo }}</td>
                           <td>
                             <select class="field-control" [ngModel]="row.educationCodePassExam" (ngModelChange)="updateEducation(i, { educationCodePassExam: $event ? +$event : null })" [name]="'eduCode' + i">
                               <option [ngValue]="null">-- Select --</option>
@@ -389,7 +387,6 @@
                   <table class="detail-table detail-table-wide">
                     <thead>
                       <tr>
-                        <th>Sr</th>
                         <th>School / Org</th>
                         <th>Designation</th>
                         <th>Class</th>
@@ -402,7 +399,6 @@
                     <tbody>
                       @for (row of form().schools; track row.rowId; let i = $index) {
                         <tr>
-                          <td>{{ row.srNo }}</td>
                           <td>
                             <select class="field-control" [ngModel]="row.orgID" (ngModelChange)="onSchoolOrgChange(i, $event ? +$event : null)" [name]="'schOrg' + i">
                               <option [ngValue]="null">-- Select --</option>

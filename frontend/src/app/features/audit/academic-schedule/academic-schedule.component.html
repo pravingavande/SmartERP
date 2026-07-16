@@ -63,14 +63,6 @@
           }
         </select>
       </label>
-      <label class="field">
-        <span class="field-label">Date From</span>
-        <input class="field-control" type="date" [ngModel]="listFromDate()" (ngModelChange)="listFromDate.set($event); onFilterChange()" name="listFromDate">
-      </label>
-      <label class="field">
-        <span class="field-label">Date To</span>
-        <input class="field-control" type="date" [ngModel]="listToDate()" (ngModelChange)="listToDate.set($event); onFilterChange()" name="listToDate">
-      </label>
     </div>
     <label class="field schedule-search">
       <span class="field-label">Search</span>
@@ -88,7 +80,7 @@
         <table class="records-table">
           <thead>
             <tr>
-              <th><button type="button" class="sort-btn" (click)="toggleSort('tDate')">Date</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('title')">Title</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('className')">Class</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('subjectName')">Subject</button></th>
@@ -101,7 +93,7 @@
           <tbody>
             @for (item of paginatedItems(); track item.asid) {
               <tr>
-                <td class="date-col">{{ item.tDate | date:'dd/MM/yyyy' }}</td>
+                <td>{{ item.srNo || '—' }}</td>
                 <td>{{ item.title }}</td>
                 <td>{{ item.className ?? '—' }}</td>
                 <td>{{ item.subjectName ?? '—' }}</td>
@@ -213,11 +205,12 @@
                 @if (fieldError('weekID')) { <span class="field-error">{{ fieldError('weekID') }}</span> }
               </label>
 
-              <label class="field" [class.field-invalid]="fieldError('tDate')">
-                <span class="field-label">Date *</span>
-                <input class="field-control" type="date" [ngModel]="form().tDate" (ngModelChange)="updateForm('tDate', $event)" name="tDate">
-                @if (fieldError('tDate')) { <span class="field-error">{{ fieldError('tDate') }}</span> }
-              </label>
+              @if (form().srNo) {
+                <label class="field">
+                  <span class="field-label">Sr No</span>
+                  <input class="field-control" type="number" readonly [ngModel]="form().srNo" name="srNo">
+                </label>
+              }
 
               <label class="field full" [class.field-invalid]="fieldError('title')">
                 <span class="field-label">Title *</span>
@@ -234,7 +227,8 @@
                 <span class="field-label">Attachment</span>
                 @if (form().fileAttachment) {
                   <div class="file-current">
-                    <button type="button" class="action-btn link" (click)="openAttachment(form().fileAttachment)">{{ form().fileAttachment }}</button>
+                    <button type="button" class="action-btn link" (click)="openAttachment(form().fileAttachment)">View</button>
+                    <span class="file-name">{{ form().fileAttachment }}</span>
                     @if (!isViewMode()) {
                       <button type="button" class="action-btn delete" (click)="clearAttachment()">Remove</button>
                     }

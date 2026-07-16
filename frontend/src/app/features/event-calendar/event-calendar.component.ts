@@ -9,10 +9,16 @@ import { ToastService } from '../../core/services/toast.service';
 import { CalendarEvent, EventLookups, LocationOption, SaveEventRequest } from '../../core/models/calendar.model';
 import {
   buildMonthGrid,
+  buildWeekDays,
+  CalendarViewMode,
+  dayRange,
   EVENT_STATUSES,
+  formatDayLabel,
   formatMonthLabel,
+  formatWeekLabel,
   monthRange,
-  toIsoDate
+  toIsoDate,
+  weekRange
 } from '../../core/constants/calendar.constants';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../core/utils/form-field-errors';
 import { toastOnSave } from '../../core/utils/toast-save.util';
@@ -36,6 +42,8 @@ export class EventCalendarComponent {
   readonly statuses = EVENT_STATUSES;
   readonly weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  readonly viewMode = signal<CalendarViewMode>('month');
+  readonly viewDate = signal(new Date());
   readonly viewYear = signal(new Date().getFullYear());
   readonly viewMonth = signal(new Date().getMonth());
   readonly loading = signal(false);
@@ -55,7 +63,16 @@ export class EventCalendarComponent {
   readonly form = signal(this.emptyForm());
 
   readonly monthLabel = () => formatMonthLabel(this.viewYear(), this.viewMonth());
+  readonly periodLabel = computed(() => {
+    const mode = this.viewMode();
+    const date = this.viewDate();
+    if (mode === 'today') return formatDayLabel(date);
+    if (mode === 'week') return formatWeekLabel(date);
+    return formatMonthLabel(this.viewYear(), this.viewMonth());
+  });
   readonly monthDays = () => buildMonthGrid(this.viewYear(), this.viewMonth());
+  readonly weekDaysGrid = computed(() => buildWeekDays(this.viewDate()));
+  readonly todayIso = computed(() => toIsoDate(this.viewDate()));
   readonly canManage = computed(() => this.lookups()?.canManageEvents ?? false);
   readonly isSingleSchoolUser = computed(() => {
     const lookups = this.lookups();
@@ -97,9 +114,9 @@ export class EventCalendarComponent {
     this.monthReload$
       .pipe(
         switchMap(() => {
-          const { from, to } = monthRange(this.viewYear(), this.viewMonth());
+          const range = this.activeRange();
           this.loading.set(true);
-          return this.calendarService.getEvents(from, to, this.searchText());
+          return this.calendarService.getEvents(range.from, range.to, this.searchText());
         }),
         takeUntilDestroyed(this.destroyRef)
       )
@@ -116,20 +133,47 @@ export class EventCalendarComponent {
     if (pendingId > 0) this.openEventById(pendingId);
 
     this.destroyRef.onDestroy(() => this.monthReload$.complete());
-    this.loadMonth();
+    this.loadEvents();
   }
 
-  prevMonth(): void { this.shiftMonth(-1); }
-  nextMonth(): void { this.shiftMonth(1); }
+  prevPeriod(): void {
+    const mode = this.viewMode();
+    if (mode === 'month') this.shiftMonth(-1);
+    else if (mode === 'week') this.shiftDays(-7);
+    else this.shiftDays(-1);
+  }
+
+  nextPeriod(): void {
+    const mode = this.viewMode();
+    if (mode === 'month') this.shiftMonth(1);
+    else if (mode === 'week') this.shiftDays(7);
+    else this.shiftDays(1);
+  }
+
+  setViewMode(mode: CalendarViewMode): void {
+    this.viewMode.set(mode);
+    const now = new Date();
+    if (mode === 'month') {
+      this.viewYear.set(now.getFullYear());
+      this.viewMonth.set(now.getMonth());
+      this.viewDate.set(now);
+    } else {
+      this.viewDate.set(now);
+      this.viewYear.set(now.getFullYear());
+      this.viewMonth.set(now.getMonth());
+    }
+    this.loadEvents();
+  }
 
   goToday(): void {
     const now = new Date();
     this.viewYear.set(now.getFullYear());
     this.viewMonth.set(now.getMonth());
-    this.loadMonth();
+    this.viewDate.set(now);
+    this.loadEvents();
   }
 
-  onSearch(): void { this.loadMonth(); }
+  onSearch(): void { this.loadEvents(); }
 
   openNew(dateIso?: string): void {
     if (!this.canManage()) return;
@@ -223,7 +267,7 @@ export class EventCalendarComponent {
       }
       toastOnSave(this.toast, true, { entity: 'Event', mode: f.eventID ? 'edit' : 'new' });
       this.showModal.set(false);
-      this.loadMonth();
+      this.loadEvents();
     });
   }
 
@@ -233,7 +277,7 @@ export class EventCalendarComponent {
     if (!confirm(`Delete event "${this.form().title}"?`)) return;
     this.calendarService.deleteEvent(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.showModal.set(false);
-      this.loadMonth();
+      this.loadEvents();
     });
   }
 
@@ -264,8 +308,16 @@ export class EventCalendarComponent {
     this.form.update((f) => ({ ...f, orgIDs: [] }));
   }
 
-  @HostListener('document:click')
-  closeSchoolPicker(): void {
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.schoolPickerOpen()) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('.school-multiselect')) return;
+    this.schoolPickerOpen.set(false);
+  }
+
+  closeSchoolPicker(event?: Event): void {
+    event?.stopPropagation();
     this.schoolPickerOpen.set(false);
   }
 
@@ -312,16 +364,46 @@ export class EventCalendarComponent {
     this.form.update((f) => ({ ...f, [key]: value }));
   }
 
+  openAttachment(fileName: string): void {
+    if (!fileName?.trim()) return;
+    const url = this.calendarService.fileUrl(fileName);
+    this.calendarService.downloadFile(url).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      },
+      error: () => this.toast.showError('Unable to open file.')
+    });
+  }
+
+  private activeRange(): { from: string; to: string } {
+    const mode = this.viewMode();
+    if (mode === 'today') return dayRange(this.viewDate());
+    if (mode === 'week') return weekRange(this.viewDate());
+    return monthRange(this.viewYear(), this.viewMonth());
+  }
+
+  private shiftDays(delta: number): void {
+    const next = new Date(this.viewDate());
+    next.setDate(next.getDate() + delta);
+    this.viewDate.set(next);
+    this.viewYear.set(next.getFullYear());
+    this.viewMonth.set(next.getMonth());
+    this.loadEvents();
+  }
+
   private shiftMonth(delta: number): void {
     let m = this.viewMonth() + delta;
     let y = this.viewYear();
     if (m < 0) { m = 11; y--; } else if (m > 11) { m = 0; y++; }
     this.viewMonth.set(m);
     this.viewYear.set(y);
-    this.loadMonth();
+    this.viewDate.set(new Date(y, m, 1));
+    this.loadEvents();
   }
 
-  private loadMonth(): void { this.monthReload$.next(); }
+  private loadEvents(): void { this.monthReload$.next(); }
 
   private loadLocationSuggestions(term: string): void {
     const underOrgId = this.form().underOrgID ?? this.lookups()?.sansthaOrgs[0];

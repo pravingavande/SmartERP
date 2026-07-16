@@ -102,7 +102,6 @@ export function validateAcademicScheduleForm(form: AcademicScheduleFormState): F
     ...requireId(form.subjectID, 'subjectID', 'Subject'),
     ...requireId(form.weekID, 'weekID', 'Week'),
     ...requireId(form.ayID, 'ayID', 'Academic year'),
-    ...requireText(form.tDate, 'tDate', 'Date'),
     ...requireText(form.title, 'title', 'Title')
   };
 }
@@ -129,6 +128,5 @@ export function mapBackendMessageToFieldErrors(message?: string | null): FieldEr
   if (text.includes('week')) return { weekID: message };
   if (text.includes('month')) return { tMonth: message };
   if (text.includes('academic year')) return { ayID: message };
-  if (text.includes('date')) return { tDate: message };
   return {};
 }

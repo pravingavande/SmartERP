@@ -30,6 +30,11 @@
   .field-search {
     grid-column: span 2;
   }
+
+  .field-org-wide {
+    grid-column: span 2;
+    min-width: 14rem;
+  }
 }
 
 .teacher-layout {

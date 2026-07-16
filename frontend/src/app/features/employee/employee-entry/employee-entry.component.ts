@@ -19,6 +19,7 @@ import { EmployeeService } from '../../../core/services/employee.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { todayIsoDate } from '../../../core/utils/date.util';
 import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
 import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
@@ -547,7 +548,7 @@ export class EmployeeEntryComponent {
       designationCode: null,
       teachClass: '',
       teachSubject: '',
-      schoolJoiningDate: '',
+      schoolJoiningDate: todayIsoDate(),
       schoolLeaveDate: '',
       sansthaTransferOrderNoAndDate: '',
       zpTransferOrderNoAndDate: ''
@@ -569,7 +570,7 @@ export class EmployeeEntryComponent {
       permanentAddress: '',
       localAddress: '',
       genderCode: null,
-      dob: '',
+      dob: todayIsoDate(),
       adharCardNo: '',
       mobileNo1: '',
       mobileNo2: '',

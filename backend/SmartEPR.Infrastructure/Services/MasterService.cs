@@ -111,8 +111,7 @@ public sealed class MasterService : IMasterService
             MasterValidators.RequirePositiveId(request.ClassID, "Class"),
             MasterValidators.RequirePositiveId(request.SubjectID, "Subject"),
             MasterValidators.RequirePositiveId(request.WeekID, "Week"),
-            MasterValidators.RequireText(request.Title, "Title"),
-            MasterValidators.RequireDate(request.TDate, "Date"));
+            MasterValidators.RequireText(request.Title, "Title"));
 
         if (error is not null) return (null, error);
 

@@ -92,7 +92,7 @@ public sealed class AcademicScheduleDto
     public int TMonth { get; init; }
     public long ClassID { get; init; }
     public long SubjectID { get; init; }
-    public DateTime TDate { get; init; }
+    public int SrNo { get; init; }
     public string Title { get; init; } = string.Empty;
     public string? Description { get; init; }
     public long WeekID { get; init; }
@@ -122,8 +122,8 @@ public sealed class SaveAcademicScheduleRequestDto
     [JsonPropertyName("subjectID")]
     public long SubjectID { get; set; }
 
-    [JsonPropertyName("tDate")]
-    public DateTime TDate { get; set; }
+    [JsonPropertyName("srNo")]
+    public int SrNo { get; set; }
 
     [JsonPropertyName("title")]
     public string Title { get; set; } = string.Empty;

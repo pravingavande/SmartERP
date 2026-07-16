@@ -28,7 +28,6 @@
         <table class="records-table">
           <thead>
             <tr>
-              <th>Sr No</th>
               <th>Event Type</th>
               <th>Organization</th>
               <th>Status</th>
@@ -38,7 +37,6 @@
           <tbody>
             @for (item of paginatedItems(); track item.eventTypeID) {
               <tr>
-                <td>{{ item.srNo }}</td>
                 <td>{{ item.eventType }}</td>
                 <td>{{ item.underOrgName || '—' }}</td>
                 <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
@@ -52,7 +50,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="empty">No event types found</td></tr>
+              <tr><td colspan="4" class="empty">No event types found</td></tr>
             }
           </tbody>
         </table>
@@ -85,12 +83,6 @@
               </select>
               @if (fieldError('underOrgID')) { <span class="field-error">{{ fieldError('underOrgID') }}</span> }
             </label>
-            @if (formMode() === 'edit') {
-              <label class="field">
-                <span class="field-label">Sr No</span>
-                <input class="field-control" [value]="editSrNo() ?? '—'" readonly>
-              </label>
-            }
             <label class="field full" [class.field-invalid]="fieldError('eventType')">
               <span class="field-label">Event Type *</span>
               <input class="field-control" required [disabled]="!canManage()" [ngModel]="form().eventType" (ngModelChange)="updateForm('eventType', $event)" name="eventType">

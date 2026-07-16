@@ -13,7 +13,9 @@ import {
   SCHOOL_BUSINESS_CATEGORY_ID
 } from '../../../core/models/organization.model';
 import { OrganizationService } from '../../../core/services/organization.service';
+import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows } from '../../../core/utils/master-list.util';
 import { mapOrganizationBackendMessage, validateOrganizationForm } from '../../../core/utils/organization-validation.util';
@@ -34,6 +36,7 @@ const MAX_DOC_BYTES = 5 * 1024 * 1024;
 })
 export class OrganizationMasterComponent {
   private readonly organization = inject(OrganizationService);
+  private readonly dashboardService = inject(DashboardService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -52,17 +55,28 @@ export class OrganizationMasterComponent {
   readonly listFilter = signal<OrganizationListFilter>(this.emptyFilter());
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
+  readonly userProfile = signal<UserProfile | null>(null);
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly isEditMode = computed(() => this.formMode() === 'edit');
+  readonly isNewMode = computed(() => this.formMode() === 'new');
   readonly documentsTabEnabled = computed(() => !!this.form().orgID);
   readonly isSchoolCategory = computed(() => this.form().businessCategoryID === SCHOOL_BUSINESS_CATEGORY_ID);
   readonly isSansthaCategory = computed(() => this.form().businessCategoryID === SANSTHA_BUSINESS_CATEGORY_ID);
+  readonly hideBusinessCategoryOnNew = computed(() => this.isNewMode() && this.isSchoolCategory());
+  readonly selectedSansthaName = computed(() => {
+    const underOrgId = this.form().underOrgID;
+    if (!underOrgId) return '—';
+    return this.lookups()?.sansthaOrgs.find((s) => s.orgID === underOrgId)?.organizationName ?? '—';
+  });
   readonly listPageCount = computed(() => pageCount(this.items().length, this.listPageSize()));
   readonly paginatedItems = computed(() => paginateRows(this.items(), this.listPageIndex(), this.listPageSize()));
   readonly listPageStart = computed(() => pageRange(this.items().length, this.listPageIndex(), this.listPageSize()).start);
 
   constructor() {
+    this.dashboardService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((profile) => {
+      this.userProfile.set(profile);
+    });
     this.loadLookups();
     this.loadList();
   }
@@ -97,11 +111,39 @@ export class OrganizationMasterComponent {
     this.fieldErrors.set({});
     const lookups = this.lookups();
     const defaultSchoolCategory = lookups?.schoolCategories.find((s) => s.id > 0)?.id ?? null;
+    const defaultSansthaId = this.resolveDefaultSansthaId(lookups);
+    const ownerBusinessCategory = lookups?.sansthaOrgs.find((s) => s.orgID === defaultSansthaId)?.businessCategoryID
+      ?? SCHOOL_BUSINESS_CATEGORY_ID;
     this.form.set({
       ...this.emptyForm(),
+      businessCategoryID: ownerBusinessCategory === SANSTHA_BUSINESS_CATEGORY_ID
+        ? SCHOOL_BUSINESS_CATEGORY_ID
+        : ownerBusinessCategory,
+      underOrgID: defaultSansthaId,
       schoolCategoryID: defaultSchoolCategory
     });
     this.documentOptions.set([]);
+    if (defaultSansthaId) this.refreshNextSrNo(defaultSansthaId);
+  }
+
+  onUnderSansthaChange(underOrgId: number | null): void {
+    this.updateForm('underOrgID', underOrgId);
+    if (underOrgId && this.isNewMode()) this.refreshNextSrNo(underOrgId);
+  }
+
+  private resolveDefaultSansthaId(lookups: OrganizationLookups | null): number | null {
+    const profile = this.userProfile();
+    if (profile?.orgId) {
+      const sanstha = lookups?.sansthaOrgs.find((s) => s.orgID === profile.orgId);
+      if (sanstha) return sanstha.orgID;
+    }
+    return lookups?.sansthaOrgs[0]?.orgID ?? null;
+  }
+
+  private refreshNextSrNo(underOrgId: number): void {
+    this.organization.getNextSrNo(underOrgId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((srNo) => {
+      if (srNo) this.form.update((f) => ({ ...f, srNo }));
+    });
   }
 
   viewItem(item: OrganizationListItem): void {
@@ -154,9 +196,6 @@ export class OrganizationMasterComponent {
     if (key === 'businessCategoryID' && typeof value === 'number') {
       this.onBusinessCategoryChange(value);
     }
-    if (key === 'underOrgID' && typeof value === 'number' && this.isSchoolCategory()) {
-      this.loadNextSrNo(value);
-    }
   }
 
   private onBusinessCategoryChange(businessCategoryId: number): void {
@@ -172,12 +211,6 @@ export class OrganizationMasterComponent {
       if (resetRows) {
         this.form.update((f) => ({ ...f, documents: [this.emptyDocumentRow()] }));
       }
-    });
-  }
-
-  private loadNextSrNo(underOrgId: number): void {
-    this.organization.getNextSrNo(underOrgId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((srNo) => {
-      if (srNo) this.form.update((f) => ({ ...f, srNo }));
     });
   }
 

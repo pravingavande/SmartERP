@@ -43,7 +43,7 @@ export class ItemGroupMasterComponent {
   readonly formVisible = signal(false);
   readonly listOrgID = signal<number | null>(null);
   readonly searchText = signal('');
-  readonly sortKey = signal<keyof ItemGroupMasterItem>('srNo');
+  readonly sortKey = signal<keyof ItemGroupMasterItem>('itemGroupName');
   readonly sortDir = signal<SortDirection>('asc');
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);

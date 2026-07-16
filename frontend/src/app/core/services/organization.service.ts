@@ -69,7 +69,6 @@ export class OrganizationService {
       orgID: form.orgID ?? 0,
       businessCategoryID: form.businessCategoryID,
       underOrgID: form.underOrgID,
-      srNo: form.srNo,
       schoolCategoryID: form.schoolCategoryID,
       organizationName: form.organizationName,
       address: form.address || null,

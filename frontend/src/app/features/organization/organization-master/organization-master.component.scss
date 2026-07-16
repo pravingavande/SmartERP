@@ -3,9 +3,13 @@
 
 .org-filters {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(12rem, 1fr) minmax(16rem, 2fr);
   gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.field-org-search .field-control {
+  min-width: 100%;
 }
 
 .org-form-panel {
@@ -25,6 +29,15 @@
 
 .org-form {
   padding-top: 0.25rem;
+
+  .field-text-compact {
+    min-height: 2.35rem;
+    max-height: 4.5rem;
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+    resize: vertical;
+    line-height: 1.35;
+  }
 }
 
 .page-header .header-actions {

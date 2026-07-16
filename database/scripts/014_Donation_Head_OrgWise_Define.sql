@@ -50,8 +50,8 @@ BEGIN
         FROM dbo.OrgMaster child
         INNER JOIN dbo.OrgMaster parent ON parent.OrgID = child.UnderOrgID
         WHERE child.OrgID = @LookupOrgID
-          AND child.OrgID <> child.UnderOrgID
-          AND parent.Status = 1;
+          AND child.OrgID <> ISNULL(child.UnderOrgID, 0)
+          AND ISNULL(parent.IsActive, 1) = 1;
 
         IF @@ROWCOUNT = 0
             SET @LookupOrgID = NULL;

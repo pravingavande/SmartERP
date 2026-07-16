@@ -44,16 +44,22 @@
       </div>
 
       <div class="toolbar">
-        <button type="button" class="btn btn-outline" (click)="prevMonth()">‹ Prev</button>
-        <h2>{{ monthLabel() }}</h2>
-        <button type="button" class="btn btn-outline" (click)="nextMonth()">Next ›</button>
-        <button type="button" class="btn btn-text" (click)="goToday()">Today</button>
+        <div class="view-mode-tabs">
+          <button type="button" class="btn btn-text" [class.active]="viewMode() === 'today'" (click)="setViewMode('today')">Today</button>
+          <button type="button" class="btn btn-text" [class.active]="viewMode() === 'week'" (click)="setViewMode('week')">Week</button>
+          <button type="button" class="btn btn-text" [class.active]="viewMode() === 'month'" (click)="setViewMode('month')">Month</button>
+        </div>
+        <button type="button" class="btn btn-outline" (click)="prevPeriod()">‹ Prev</button>
+        <h2>{{ periodLabel() }}</h2>
+        <button type="button" class="btn btn-outline" (click)="nextPeriod()">Next ›</button>
+        <button type="button" class="btn btn-text" (click)="goToday()">Go to Today</button>
       </div>
 
       @if (loading()) {
         <p class="loading">Loading events...</p>
       }
 
+      @if (viewMode() === 'month') {
       <div class="month-grid">
         @for (day of weekDays; track day) {
           <div class="dow">{{ day }}</div>
@@ -67,6 +73,39 @@
           </button>
         }
       </div>
+      } @else if (viewMode() === 'week') {
+      <div class="week-grid">
+        @for (day of weekDaysGrid(); track day.iso) {
+          <div class="week-day-col" [class.today]="isToday(day.iso)">
+            <div class="week-day-head">
+              <span class="dow">{{ day.date.toLocaleDateString('en-IN', { weekday: 'short' }) }}</span>
+              <span class="day-num">{{ day.date.getDate() }}</span>
+            </div>
+            <div class="week-day-events">
+              @for (ev of eventsForDay(day.iso); track ev.eventID) {
+                <button type="button" class="chip event week-event" [style.border-left-color]="eventColor(ev)" (click)="editEvent(ev)">{{ ev.title }}</button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      } @else {
+      <div class="today-view">
+        <h3>{{ periodLabel() }}</h3>
+        <ul class="today-events">
+          @for (ev of eventsForDay(todayIso()); track ev.eventID) {
+            <li>
+              <button type="button" class="entry-btn" (click)="editEvent(ev)">
+                <span class="date">{{ ev.startTime || 'All day' }}</span>
+                <span class="name">{{ ev.title }}</span>
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">No events today</li>
+          }
+        </ul>
+      </div>
+      }
       <p class="hint">Click a date to add an event · Click an event chip to view/edit</p>
     </div>
   </div>
@@ -127,6 +166,10 @@
                       </li>
                     }
                   </ul>
+                  <div class="multiselect-footer">
+                    <button type="button" class="btn btn-primary btn-sm" (click)="closeSchoolPicker($event)">OK</button>
+                    <button type="button" class="btn btn-outline btn-sm" (click)="closeSchoolPicker($event)">Close</button>
+                  </div>
                 </div>
               }
 
@@ -215,13 +258,23 @@
               </label>
               <label>
                 Event Photo Attachment
-                <input type="file" [disabled]="!canEditReporting()" (change)="onPhotoSelected($event)" accept="image/*">
-                @if (form().eventPhotoAttachment) { <small>{{ form().eventPhotoAttachment }}</small> }
+                <input type="file" [disabled]="!canEditReporting()" (change)="onPhotoSelected($event)" accept="image/*,.pdf">
+                @if (form().eventPhotoAttachment) {
+                  <div class="attachment-row">
+                    <button type="button" class="action-btn link" (click)="openAttachment(form().eventPhotoAttachment)">View</button>
+                    <small>{{ form().eventPhotoAttachment }}</small>
+                  </div>
+                }
               </label>
               <label>
                 Event News Attachment
-                <input type="file" [disabled]="!canEditReporting()" (change)="onNewsSelected($event)">
-                @if (form().eventNewsAttachment) { <small>{{ form().eventNewsAttachment }}</small> }
+                <input type="file" [disabled]="!canEditReporting()" (change)="onNewsSelected($event)" accept="image/*,.pdf,.doc,.docx">
+                @if (form().eventNewsAttachment) {
+                  <div class="attachment-row">
+                    <button type="button" class="action-btn link" (click)="openAttachment(form().eventNewsAttachment)">View</button>
+                    <small>{{ form().eventNewsAttachment }}</small>
+                  </div>
+                }
               </label>
             </div>
           }

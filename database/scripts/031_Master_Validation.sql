@@ -225,12 +225,13 @@ CREATE OR ALTER PROCEDURE dbo.sp_AcademicSchedule_Save
     @TMonth INT,
     @ClassID BIGINT,
     @SubjectID BIGINT,
-    @TDate DATE,
     @Title NVARCHAR(500),
     @Description NVARCHAR(MAX) = NULL,
     @WeekID BIGINT,
     @FileAttachment NVARCHAR(500) = NULL,
-    @AyID BIGINT = NULL
+    @AyID BIGINT = NULL,
+    @SrNo INT = NULL,
+    @TDate DATE = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -266,12 +267,6 @@ BEGIN
         RETURN;
     END
 
-    IF @TDate IS NULL
-    BEGIN
-        RAISERROR('Date is required.', 16, 1);
-        RETURN;
-    END
-
     SET @Title = LTRIM(RTRIM(ISNULL(@Title, N'')));
     IF @Title = N''
     BEGIN
@@ -297,6 +292,19 @@ BEGIN
         END
     END
 
+    IF @SrNo IS NULL OR @SrNo <= 0
+    BEGIN
+        SELECT @SrNo = ISNULL(MAX(a.SrNo), 0) + 1
+        FROM dbo.AcademicSchedule a
+        WHERE a.UnderOrgID = @UnderOrgID
+          AND a.TMonth = @TMonth
+          AND a.WeekID = @WeekID
+          AND ISNULL(a.AyID, 0) = ISNULL(@AyID, 0);
+    END
+
+    IF @TDate IS NULL
+        SET @TDate = CAST(GETDATE() AS DATE);
+
     IF @ASID IS NULL OR @ASID = 0
     BEGIN
         INSERT INTO dbo.AcademicSchedule (
@@ -305,6 +313,7 @@ BEGIN
             ClassID,
             SubjectID,
             TDate,
+            SrNo,
             Title,
             Description,
             WeekID,
@@ -317,6 +326,7 @@ BEGIN
             @ClassID,
             @SubjectID,
             @TDate,
+            @SrNo,
             @Title,
             @Description,
             @WeekID,
@@ -334,6 +344,7 @@ BEGIN
             ClassID = @ClassID,
             SubjectID = @SubjectID,
             TDate = @TDate,
+            SrNo = CASE WHEN @SrNo IS NOT NULL AND @SrNo > 0 THEN @SrNo ELSE SrNo END,
             Title = @Title,
             Description = @Description,
             WeekID = @WeekID,

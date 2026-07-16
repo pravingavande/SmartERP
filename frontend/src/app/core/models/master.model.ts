@@ -61,7 +61,7 @@ export interface AcademicScheduleItem {
   tMonth: number;
   classID: number;
   subjectID: number;
-  tDate: string;
+  srNo: number;
   title: string;
   description?: string | null;
   weekID: number;
@@ -80,7 +80,7 @@ export interface AcademicScheduleFormState {
   tMonth: number | null;
   classID: number | null;
   subjectID: number | null;
-  tDate: string;
+  srNo: number | null;
   title: string;
   description: string;
   weekID: number | null;

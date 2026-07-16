@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartEPR.Core.Common;
 using SmartEPR.Core.DTOs.Master;
+using SmartEPR.Core.DTOs.Settings;
 using SmartEPR.Core.Interfaces;
 
 namespace SmartEPR.Api.Controllers;
@@ -19,11 +20,16 @@ public sealed class MasterController : ControllerBase
     };
 
     private readonly IMasterService _masterService;
+    private readonly ISettingsService _settingsService;
     private readonly IWebHostEnvironment _environment;
 
-    public MasterController(IMasterService masterService, IWebHostEnvironment environment)
+    public MasterController(
+        IMasterService masterService,
+        ISettingsService settingsService,
+        IWebHostEnvironment environment)
     {
         _masterService = masterService;
+        _settingsService = settingsService;
         _environment = environment;
     }
 
@@ -272,6 +278,32 @@ public sealed class MasterController : ControllerBase
         return success
             ? Ok(ApiResponse<bool>.Ok(true, "Stock entry deleted."))
             : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete stock entry."));
+    }
+
+    [HttpGet("software-language")]
+    public async Task<IActionResult> GetSoftwareLanguage([FromQuery] long underOrgID, CancellationToken cancellationToken)
+    {
+        if (underOrgID <= 0)
+            return Ok(ApiResponse<SoftwareLanguageDto>.Fail("Under organization is required."));
+
+        var data = await _settingsService.GetLanguageAsync(underOrgID, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<SoftwareLanguageDto>.Ok(data));
+    }
+
+    [HttpPost("software-language")]
+    public async Task<IActionResult> SaveSoftwareLanguage([FromBody] SaveSoftwareLanguageRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _settingsService.SaveLanguageAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<SoftwareLanguageDto>.Fail(error ?? "Unable to save language setting."))
+            : Ok(ApiResponse<SoftwareLanguageDto>.Ok(data, "Language setting saved."));
+    }
+
+    [HttpGet("language-keys")]
+    public async Task<IActionResult> GetLanguageKeys(CancellationToken cancellationToken)
+    {
+        var items = await _settingsService.GetLanguageKeysAsync(cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<LanguageKeyValueDto>>.Ok(items));
     }
 
     private static string GetContentType(string ext) => ext.ToLowerInvariant() switch

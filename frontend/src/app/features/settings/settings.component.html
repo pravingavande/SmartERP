@@ -1,0 +1,36 @@
+<section class="settings-page">
+  <header class="page-header">
+    <div>
+      <h1>Settings</h1>
+      <p>Application-level preferences for your organization</p>
+    </div>
+  </header>
+
+  <div class="settings-card">
+    <h2>Software Language</h2>
+    <p class="hint">Controls field labels on Teacher Master. M = Marathi, E = English.</p>
+
+    @if (loading()) {
+      <p class="loading-hint">Loading setting...</p>
+    } @else {
+      <div class="lang-options" role="radiogroup" aria-label="Software Language">
+        <label class="lang-option" [class.active]="selected() === 'E'">
+          <input type="radio" name="softwareLanguage" [checked]="selected() === 'E'" (change)="onSelect('E')">
+          <span class="code">E</span>
+          <span class="name">English Software</span>
+        </label>
+        <label class="lang-option" [class.active]="selected() === 'M'">
+          <input type="radio" name="softwareLanguage" [checked]="selected() === 'M'" (change)="onSelect('M')">
+          <span class="code">M</span>
+          <span class="name">Marathi Software</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'Saving...' : 'Save' }}
+        </button>
+      </div>
+    }
+  </div>
+</section>

@@ -29,7 +29,14 @@ export class EventCalendarService {
   getLookups(): Observable<EventLookups | null> {
     return this.http.get<ApiResponse<EventLookups>>(`${this.base}/lookups`).pipe(
       map((r) => (r.success && r.data ? this.normalizeLookups(r.data) : null)),
-      switchMap((data) => (data ? of(data) : this.buildLookupsFromAudit())),
+      switchMap((data) => {
+        if (!data) return this.buildLookupsFromAudit();
+        if (data.eventTypes.length) return of(data);
+        const underOrgId = data.sansthaOrgs[0] ?? data.orgs[0]?.underOrgID ?? data.orgs[0]?.orgID ?? null;
+        return this.getEventTypes(underOrgId).pipe(
+          map((eventTypes) => ({ ...data, eventTypes: eventTypes.length ? eventTypes : data.eventTypes }))
+        );
+      }),
       catchError(() => this.buildLookupsFromAudit())
     );
   }
@@ -121,19 +128,30 @@ export class EventCalendarService {
     );
   }
 
+  fileUrl(fileName: string): string {
+    return `${this.base}/file/${encodeURIComponent(fileName)}`;
+  }
+
+  downloadFile(url: string): Observable<Blob> {
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
   private buildLookupsFromAudit(): Observable<EventLookups | null> {
     return this.audit.getLookups().pipe(
-      map((audit) => {
-        if (!audit?.orgs?.length) return null;
+      switchMap((audit) => {
+        if (!audit?.orgs?.length) return of(null);
         const orgs = audit.orgs.map((o) => this.normalizeOrg(o));
         const sansthaOrgs = this.deriveSansthaOrgIds(orgs, audit.sansthaOrgs);
-        return {
-          eventTypes: [],
-          orgs,
-          sansthaOrgs,
-          canManageEvents: this.defaultCanManageEvents(),
-          isSansthaUser: orgs.length > 1
-        } satisfies EventLookups;
+        const underOrgId = sansthaOrgs[0] ?? orgs[0]?.underOrgID ?? orgs[0]?.orgID ?? null;
+        return this.getEventTypes(underOrgId).pipe(
+          map((eventTypes) => ({
+            eventTypes,
+            orgs,
+            sansthaOrgs,
+            canManageEvents: this.defaultCanManageEvents(),
+            isSansthaUser: orgs.length > 1
+          } satisfies EventLookups))
+        );
       }),
       catchError(() => of(null))
     );

@@ -16,10 +16,12 @@ import { UserProfile } from '../../../core/models/dashboard.model';
 import { OrgOption } from '../../../core/models/audit.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { LanguageService } from '../../../core/services/language.service';
 import { TeacherService } from '../../../core/services/teacher.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { todayIsoDate } from '../../../core/utils/date.util';
 import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
 import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
@@ -58,7 +60,11 @@ export class TeacherEntryComponent {
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly auth = inject(AuthService);
+  private readonly languageService = inject(LanguageService);
   private readonly destroyRef = inject(DestroyRef);
+
+  /** Label from LanguageKeyValueMaster (M/E per Settings). */
+  readonly lbl = (key: string, fallback?: string) => this.languageService.label(key, fallback);
   private readonly listReload$ = new Subject<void>();
   private readonly searchChanges$ = new Subject<string>();
   private searchDebounceSubscribed = false;
@@ -83,6 +89,7 @@ export class TeacherEntryComponent {
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
   readonly resetPasswordValue = signal('');
+  readonly userProfile = signal<UserProfile | null>(null);
 
   readonly masterLookups = computed(() => this.lookups()?.lookups);
   readonly paginatedTeachers = computed(() => {
@@ -147,13 +154,16 @@ export class TeacherEntryComponent {
     this.lookupsLoading.set(true);
     this.errorMessage.set(null);
     this.ensureSearchDebounce();
+    const underOrgID = this.auth.currentUser()?.sansthaId ?? 0;
     forkJoin({
       lookups: this.teacherService.getLookups(),
-      profile: this.dashboardService.getProfile()
+      profile: this.dashboardService.getProfile(),
+      language: this.languageService.load(underOrgID)
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ lookups: data, profile }) => {
         this.lookupsLoading.set(false);
+        this.userProfile.set(profile);
         if (!data) {
           this.errorMessage.set('Unable to load teacher masters. Please refresh or contact admin.');
           this.loadList();
@@ -206,7 +216,7 @@ export class TeacherEntryComponent {
   }
 
   newTeacher(): void {
-    const orgId = this.listFilter().orgId ?? this.resolveDefaultOrgId(this.lookups()?.orgs ?? [], null);
+    const orgId = this.listFilter().orgId ?? this.resolveDefaultOrgId(this.lookups()?.orgs ?? [], this.userProfile());
     if (!orgId && this.isSansthaUser()) {
       this.errorMessage.set('Select a school on the list page before adding a new teacher.');
       return;
@@ -577,7 +587,7 @@ export class TeacherEntryComponent {
       designationCode: null,
       teachClass: '',
       teachSubject: '',
-      schoolJoiningDate: '',
+      schoolJoiningDate: todayIsoDate(),
       schoolLeaveDate: '',
       sansthaTransferOrderNoAndDate: '',
       zpTransferOrderNoAndDate: ''
@@ -602,7 +612,7 @@ export class TeacherEntryComponent {
       photoPath: '',
       photoPreviewUrl: null,
       genderCode: null,
-      dob: '',
+      dob: todayIsoDate(),
       adharCardNo: '',
       shalarthID: '',
       scaleOfPay: '',
@@ -625,10 +635,10 @@ export class TeacherEntryComponent {
       zpOrderNoAndDate: '',
       sansthaServiceOrderNoAndDate: '',
       zpServiceOrderNoAndDate: '',
-      dateOfWorkingStart: '',
+      dateOfWorkingStart: todayIsoDate(),
       jtCategoryID: null,
-      paymentGradeDate: '',
-      nivadGradeDate: '',
+      paymentGradeDate: todayIsoDate(),
+      nivadGradeDate: todayIsoDate(),
       retirementYear: null,
       serviceOutDate: '',
       shiftID: null,

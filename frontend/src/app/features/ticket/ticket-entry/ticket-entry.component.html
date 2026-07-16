@@ -263,7 +263,10 @@
                   <div class="file-row">
                     <input class="field-control file-input" type="file" (change)="onFileSelected($event)" name="attachmentFile">
                     @if (selectedFileName() || form().attachment) {
-                      <span class="file-name">{{ selectedFileName() || form().attachment }}</span>
+                      <div class="file-current">
+                        <button type="button" class="action-btn link" (click)="openAttachment(form().attachment)">View</button>
+                        <span class="file-name">{{ selectedFileName() || form().attachment }}</span>
+                      </div>
                     }
                   </div>
                 </label>
