@@ -1,0 +1,110 @@
+<section class="sa-page">
+  <header class="page-header">
+    <div>
+      <h1>Sanstha Onboarding</h1>
+      <p>App Super Admin — create a Sanstha and its Owner (UserRole = Owner). Owner can later add schools and employees.</p>
+    </div>
+    <div class="header-actions">
+      @if (!formVisible()) {
+        <button type="button" class="btn btn-primary" (click)="newSanstha()">+ Add Sanstha + Owner</button>
+      } @else {
+        <button type="button" class="btn btn-outline" (click)="cancel()">← Back to List</button>
+      }
+    </div>
+  </header>
+
+  @if (!formVisible()) {
+    <div class="list-card">
+      @if (listLoading()) {
+        <p class="hint">Loading Sanstha owners...</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>Sanstha</th>
+                <th>Owner Name</th>
+                <th>Owner Login</th>
+                <th>Mobile</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of items(); track row.ownerUserID) {
+                <tr>
+                  <td class="name">{{ row.sansthaName }}</td>
+                  <td>{{ row.ownerDisplayName || (row.ownerFirstName + ' ' + row.ownerLastName) }}</td>
+                  <td>{{ row.ownerUserName }}</td>
+                  <td>{{ row.ownerMobile || '—' }}</td>
+                  <td>{{ row.ownerIsActive ? 'Active' : 'Inactive' }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty">No Sanstha + Owner records yet</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else {
+    <form class="form-card" (ngSubmit)="save()">
+      <h2>New Sanstha + Owner</h2>
+      <p class="hint">Owner login username will be the mobile number. Role will be Owner (1).</p>
+
+      <div class="form-grid">
+        <label class="field full" [class.field-invalid]="fieldError('sansthaName')">
+          <span class="field-label">Sanstha Name<span class="req">*</span></span>
+          <input class="field-control" [ngModel]="form().sansthaName" (ngModelChange)="updateForm('sansthaName', $event)" name="sansthaName">
+          @if (fieldError('sansthaName')) { <span class="field-error">{{ fieldError('sansthaName') }}</span> }
+        </label>
+
+        <label class="field" [class.field-invalid]="fieldError('schoolCategoryID')">
+          <span class="field-label">School Category<span class="req">*</span></span>
+          <select class="field-control" [ngModel]="form().schoolCategoryID" (ngModelChange)="updateForm('schoolCategoryID', $event ? +$event : null)" name="schoolCategoryID">
+            <option [ngValue]="null">-- Select --</option>
+            @for (c of categories(); track c.schoolCategoryID) {
+              <option [ngValue]="c.schoolCategoryID">{{ c.schoolCategoryName }}</option>
+            }
+          </select>
+          @if (fieldError('schoolCategoryID')) { <span class="field-error">{{ fieldError('schoolCategoryID') }}</span> }
+        </label>
+
+        <label class="field" [class.field-invalid]="fieldError('ownerFirstName')">
+          <span class="field-label">Owner First Name<span class="req">*</span></span>
+          <input class="field-control" [ngModel]="form().ownerFirstName" (ngModelChange)="updateForm('ownerFirstName', $event)" name="ownerFirstName">
+          @if (fieldError('ownerFirstName')) { <span class="field-error">{{ fieldError('ownerFirstName') }}</span> }
+        </label>
+
+        <label class="field">
+          <span class="field-label">Owner Middle Name</span>
+          <input class="field-control" [ngModel]="form().ownerMiddleName" (ngModelChange)="updateForm('ownerMiddleName', $event)" name="ownerMiddleName">
+        </label>
+
+        <label class="field" [class.field-invalid]="fieldError('ownerLastName')">
+          <span class="field-label">Owner Last Name<span class="req">*</span></span>
+          <input class="field-control" [ngModel]="form().ownerLastName" (ngModelChange)="updateForm('ownerLastName', $event)" name="ownerLastName">
+          @if (fieldError('ownerLastName')) { <span class="field-error">{{ fieldError('ownerLastName') }}</span> }
+        </label>
+
+        <label class="field" [class.field-invalid]="fieldError('ownerMobile')">
+          <span class="field-label">Owner Mobile / Login<span class="req">*</span></span>
+          <input class="field-control" appMarathiNumber mode="int" [maxLength]="10" inputmode="numeric" [ngModel]="form().ownerMobile" (ngModelChange)="updateForm('ownerMobile', $event)" name="ownerMobile" placeholder="10 digits">
+          @if (fieldError('ownerMobile')) { <span class="field-error">{{ fieldError('ownerMobile') }}</span> }
+        </label>
+
+        <label class="field" [class.field-invalid]="fieldError('ownerPassword')">
+          <span class="field-label">Owner Password<span class="req">*</span></span>
+          <input class="field-control" type="password" [ngModel]="form().ownerPassword" (ngModelChange)="updateForm('ownerPassword', $event)" name="ownerPassword">
+          @if (fieldError('ownerPassword')) { <span class="field-error">{{ fieldError('ownerPassword') }}</span> }
+        </label>
+      </div>
+
+      <footer class="form-footer">
+        <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="loading()">{{ loading() ? 'Saving...' : 'Create Sanstha + Owner' }}</button>
+      </footer>
+    </form>
+  }
+</section>

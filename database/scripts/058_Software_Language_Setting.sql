@@ -52,15 +52,9 @@ BEGIN
     END
     ELSE
     BEGIN
-        DECLARE @NextSrNo BIGINT =
-        (
-            SELECT ISNULL(MAX(SrNo), 0) + 1
-            FROM dbo.SoftwareSetting
-        );
-
-        INSERT INTO dbo.SoftwareSetting (SrNo, UnderOrgID, Title, [Condition], Description, ModifyBy)
+        -- SrNo is IDENTITY — do not insert explicitly
+        INSERT INTO dbo.SoftwareSetting (UnderOrgID, Title, [Condition], Description, ModifyBy)
         VALUES (
-            @NextSrNo,
             @UnderOrgID,
             N'Software Language',
             @Condition,

@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { fromEvent } from 'rxjs';
@@ -8,6 +8,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { TicketNotificationService } from '../../core/services/ticket-notification.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { NavSection } from '../../core/models/nav.model';
+import { isAppSuperAdmin } from '../../core/utils/super-admin-access.util';
 import { TicketPendingModalComponent } from '../../shared/components/ticket-pending-modal/ticket-pending-modal.component';
 
 @Component({
@@ -55,7 +56,7 @@ export class MainLayoutComponent {
     });
   }
 
-  readonly navSections: NavSection[] = [
+  private readonly baseNavSections: NavSection[] = [
     {
       title: 'Main',
       items: [
@@ -102,6 +103,22 @@ export class MainLayoutComponent {
       ]
     }
   ];
+
+  readonly navSections = computed<NavSection[]>(() => {
+    if (!isAppSuperAdmin(this.auth.currentUser()?.userRoleId)) {
+      return this.baseNavSections;
+    }
+
+    return [
+      {
+        title: 'App Super Admin',
+        items: [
+          { label: 'Sanstha Onboarding', icon: 'users', route: '/super-admin/sanstha-onboarding' }
+        ]
+      },
+      ...this.baseNavSections
+    ];
+  });
 
   toggleSidebar(): void {
     this.sidebarCollapsed.update((v) => !v);

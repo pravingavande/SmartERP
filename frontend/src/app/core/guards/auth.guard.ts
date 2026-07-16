@@ -3,6 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 import { canAccessAdminMasters } from '../utils/master-access.util';
+import { isAppSuperAdmin } from '../utils/super-admin-access.util';
 
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
@@ -41,4 +42,18 @@ export const adminMasterGuard: CanActivateFn = (route) => {
   const routePath = route.routeConfig?.path ?? '';
   const fallback = routePath.startsWith('stock/') ? '/stock/dashboard' : '/audit/masters';
   return router.createUrlTree([fallback]);
+};
+
+/** Restricts App Super Admin screens to UserRoleID 5. */
+export const superAdminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const toast = inject(ToastService);
+
+  if (isAppSuperAdmin(auth.currentUser()?.userRoleId)) {
+    return true;
+  }
+
+  toast.showError('Only App Super Admin can access this screen.', 'Access Denied');
+  return router.createUrlTree(['/dashboard']);
 };
