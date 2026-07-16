@@ -1,4 +1,5 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,7 +8,6 @@ import { forkJoin } from 'rxjs';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { UserProfile } from '../../../core/models/dashboard.model';
 import {
   ReplyFormState,
   TicketDetail,
@@ -18,12 +18,13 @@ import {
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapEventTicketBackendMessage, validateTicketForm, validateTicketReply } from '../../../core/utils/event-ticket-validation.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-ticket-entry',
-  imports: [FormsModule, DatePipe, ListActionBtnComponent],
+  imports: [FormsModule, DatePipe, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './ticket-entry.component.html',
   styleUrl: './ticket-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -107,25 +108,13 @@ export class TicketEntryComponent {
           return;
         }
 
-        const orgId = this.resolveDefaultOrgId(data, profile);
-        this.listOrgID.set(data.isSansthaUser ? null : orgId);
-        if (!data.isSansthaUser && orgId) {
+        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
+        this.listOrgID.set(orgId);
+        if (orgId) {
           this.selectedOrgIds.set([orgId]);
         }
         this.loadList();
       });
-  }
-
-  private resolveDefaultOrgId(data: TicketLookups, profile: UserProfile | null): number | null {
-    if (profile?.schoolCode) {
-      const match = data.orgs.find((o) => o.schoolCode === profile.schoolCode);
-      if (match) return match.orgID;
-    }
-    if (profile?.orgId) {
-      const match = data.orgs.find((o) => o.orgID === profile.orgId);
-      if (match) return match.orgID;
-    }
-    return data.orgs.length === 1 ? data.orgs[0].orgID : data.orgs[0]?.orgID ?? null;
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -174,8 +163,13 @@ export class TicketEntryComponent {
   }
 
   loadList(): void {
+    const orgId = this.listOrgID();
+    if (!orgId) {
+      this.tickets.set([]);
+      return;
+    }
     this.ticketService
-      .getList(this.listOrgID())
+      .getList(orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((list) => this.tickets.set(list));
   }

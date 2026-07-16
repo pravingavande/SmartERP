@@ -8,15 +8,12 @@
   </header>
 
   <div class="list-filters">
-    <label class="field">
-      <span class="field-label">Org / School</span>
-      <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
-        <option [ngValue]="null">-- Select School --</option>
-        @for (o of lookups()?.orgs ?? []; track o.orgID) {
-          <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-        }
-      </select>
-    </label>
+    <app-org-school-select
+      name="listOrgID"
+      [orgs]="lookups()?.orgs ?? []"
+      [value]="listOrgID()"
+      (valueChange)="onListOrgChange($event)"
+    />
     <label class="field">
       <span class="field-label">Search</span>
       <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search item group name">
@@ -73,6 +70,15 @@
         <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
           <div class="form-grid">
+            <app-org-school-select
+              name="formOrgID"
+              [orgs]="lookups()?.orgs ?? []"
+              [value]="form().orgID ?? null"
+              [required]="true"
+              [invalid]="!!fieldError('orgID')"
+              [error]="fieldError('orgID')"
+              (valueChange)="onFormOrgChange($event)"
+            />
             <label class="field full" [class.field-invalid]="fieldError('itemGroupName')">
               <span class="field-label">Item Group Name *</span>
               <input class="field-control" required [ngModel]="form().itemGroupName" (ngModelChange)="updateForm('itemGroupName', $event)" name="itemGroupName">

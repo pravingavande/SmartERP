@@ -44,8 +44,12 @@ export class TeacherService {
   }
 
   getList(filter: TeacherListFilter): Observable<TeacherListItem[]> {
-    let params = new HttpParams();
-    if (filter.orgId) params = params.set('orgID', filter.orgId.toString());
+    // Require OrgID so we never return teachers across schools.
+    if (!filter.orgId) {
+      return of([]);
+    }
+
+    let params = new HttpParams().set('orgID', filter.orgId.toString());
     if (filter.search?.trim()) params = params.set('search', filter.search.trim());
     if (filter.shalarthID?.trim()) params = params.set('shalarthID', filter.shalarthID.trim());
     if (filter.mobileNo?.trim()) params = params.set('mobileNo', filter.mobileNo.trim());

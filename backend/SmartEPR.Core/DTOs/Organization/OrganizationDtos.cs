@@ -1,3 +1,5 @@
+using SmartEPR.Core.DTOs.Audit;
+
 namespace SmartEPR.Core.DTOs.Organization;
 
 public sealed class OrganizationListFilterDto
@@ -82,6 +84,9 @@ public sealed class OrganizationLookupsDto
 {
     public IReadOnlyList<IdNameOptionDto> BusinessCategories { get; init; } = Array.Empty<IdNameOptionDto>();
     public IReadOnlyList<LongIdNameOptionDto> SchoolCategories { get; init; } = Array.Empty<LongIdNameOptionDto>();
+    /// <summary>School orgs — same source as Teacher Master (sp_Audit_GetUserOrgs).</summary>
+    public IReadOnlyList<OrgOptionDto> Orgs { get; init; } = Array.Empty<OrgOptionDto>();
+    /// <summary>Legacy parent sanstha list — kept for older clients; prefer Orgs.</summary>
     public IReadOnlyList<SansthaOrgOptionDto> SansthaOrgs { get; init; } = Array.Empty<SansthaOrgOptionDto>();
 }
 

@@ -15,7 +15,7 @@ public interface IOrganizationRepository
 
 public interface IOrganizationService
 {
-    Task<OrganizationLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default);
+    Task<OrganizationLookupsDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<OrganizationDocumentOptionDto>> GetDocumentsByBusinessCategoryAsync(int businessCategoryId, CancellationToken cancellationToken = default);
     Task<long?> GetNextSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<OrganizationListItemDto>> GetListAsync(OrganizationListFilterDto filter, CancellationToken cancellationToken = default);

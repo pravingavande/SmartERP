@@ -1,0 +1,23 @@
+<label class="field" [ngClass]="fieldClass()" [class.field-invalid]="invalid()">
+  <span class="field-label">
+    {{ label() }}
+    @if (required()) {
+      <span class="req">*</span>
+    }
+  </span>
+  <select
+    class="field-control"
+    [ngModel]="value()"
+    (ngModelChange)="onChange($event)"
+    [name]="name()"
+    [disabled]="disabled()"
+  >
+    <option [ngValue]="null">{{ nullLabel() }}</option>
+    @for (o of orgs(); track o.orgID) {
+      <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+    }
+  </select>
+  @if (error()) {
+    <span class="field-error">{{ error() }}</span>
+  }
+</label>

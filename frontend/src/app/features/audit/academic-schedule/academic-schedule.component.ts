@@ -1,4 +1,5 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -11,12 +12,15 @@ import {
   MONTH_OPTIONS,
   monthLabel
 } from '../../../core/models/master.model';
+import { UserProfile } from '../../../core/models/dashboard.model';
+import { DashboardService } from '../../../core/services/dashboard.service';
 import { MasterService } from '../../../core/services/master.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateAcademicScheduleForm } from '../../../core/utils/master-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit' | 'view';
@@ -25,7 +29,7 @@ const ALLOWED_FILE_EXT = new Set(['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']);
 
 @Component({
   selector: 'app-academic-schedule',
-  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './academic-schedule.component.html',
   styleUrl: './academic-schedule.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -33,15 +37,17 @@ const ALLOWED_FILE_EXT = new Set(['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']);
 export class AcademicScheduleComponent {
   private readonly master = inject(MasterService);
   private readonly toast = inject(ToastService);
+  private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly monthOptions = MONTH_OPTIONS;
   readonly monthLabel = monthLabel;
 
   readonly loading = signal(false);
-  readonly listLoading = signal(true);
+  readonly listLoading = signal(false);
   readonly lookupsLoading = signal(true);
   readonly fileUploading = signal(false);
+  readonly errorMessage = signal<string | null>(null);
   readonly saveError = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly lookups = signal<AcademicScheduleLookups | null>(null);
@@ -49,8 +55,10 @@ export class AcademicScheduleComponent {
   readonly form = signal<AcademicScheduleFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
+  readonly userProfile = signal<UserProfile | null>(null);
 
-  readonly listUnderOrgId = signal<number | null>(null);
+  /** Same as Teacher Master — selected school for list filter. */
+  readonly listOrgID = signal<number | null>(null);
   readonly listClassId = signal<number | null>(null);
   readonly listSubjectId = signal<number | null>(null);
   readonly listTMonth = signal<number | null>(null);
@@ -66,6 +74,8 @@ export class AcademicScheduleComponent {
   readonly listPageIndex = signal(0);
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
+  /** Same as Teacher Master — orgs already filtered in MasterService via auth.filterSchoolOrgs. */
+  readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   readonly sortedItems = computed(() => sortRows(this.items(), this.sortKey(), this.sortDir()));
   readonly listPageCount = computed(() => pageCount(this.sortedItems().length, this.listPageSize()));
   readonly paginatedItems = computed(() => paginateRows(this.sortedItems(), this.listPageIndex(), this.listPageSize()));
@@ -78,16 +88,29 @@ export class AcademicScheduleComponent {
 
   loadLookups(): void {
     this.lookupsLoading.set(true);
-    this.master
-      .getAcademicScheduleLookups()
+    this.errorMessage.set(null);
+    forkJoin({
+      lookups: this.master.getAcademicScheduleLookups(),
+      profile: this.dashboardService.getProfile()
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((data) => {
+      .subscribe(({ lookups: data, profile }) => {
         this.lookupsLoading.set(false);
+        this.userProfile.set(profile);
         this.lookups.set(data);
-        if (data?.sansthaOrgs?.length) {
-          this.listUnderOrgId.set(data.sansthaOrgs[0].orgID);
+        if (!data) {
+          this.errorMessage.set('Unable to load academic schedule masters. Please refresh or contact admin.');
+          this.items.set([]);
+          return;
         }
-        if (data?.ayList?.length) {
+        if (!data.orgs?.length) {
+          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
+          this.items.set([]);
+          return;
+        }
+        // Same default selection as Teacher Master
+        this.listOrgID.set(resolveDefaultSchoolOrgId(data.orgs, profile));
+        if (data.ayList?.length) {
           this.listAyId.set(data.ayList[0].ayID);
         }
         this.loadList();
@@ -95,9 +118,17 @@ export class AcademicScheduleComponent {
   }
 
   loadList(): void {
+    const orgId = this.listOrgID();
+    // Same as Teacher Master — only load for selected school
+    if (!orgId) {
+      this.listLoading.set(false);
+      this.items.set([]);
+      this.listPageIndex.set(0);
+      return;
+    }
     this.listLoading.set(true);
     const filter: AcademicScheduleFilter = {
-      underOrgId: this.listUnderOrgId(),
+      underOrgId: orgId,
       classId: this.listClassId(),
       subjectId: this.listSubjectId(),
       tMonth: this.listTMonth(),
@@ -117,8 +148,16 @@ export class AcademicScheduleComponent {
       });
   }
 
+  onListOrgChange(orgId: number | null): void {
+    this.listOrgID.set(orgId);
+    this.listPageIndex.set(0);
+    this.closeForm();
+    this.loadList();
+  }
+
   onFilterChange(): void {
     this.listPageIndex.set(0);
+    this.closeForm();
     this.loadList();
   }
 
@@ -146,12 +185,19 @@ export class AcademicScheduleComponent {
   }
 
   newItem(): void {
+    const orgId =
+      this.listOrgID() ?? resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
+    if (!orgId) {
+      this.errorMessage.set('Select a school on the list page before adding a new schedule.');
+      return;
+    }
+    this.errorMessage.set(null);
     this.formMode.set('new');
     this.formVisible.set(true);
     this.fieldErrors.set({});
     this.saveError.set(null);
     const base = this.emptyForm();
-    base.underOrgID = this.listUnderOrgId();
+    base.underOrgID = orgId;
     this.form.set(base);
     this.master
       .getCurrentAyId()
@@ -185,7 +231,12 @@ export class AcademicScheduleComponent {
   }
 
   cancel(): void {
+    this.closeForm();
+  }
+
+  closeForm(): void {
     this.formVisible.set(false);
+    this.formMode.set('new');
     this.fieldErrors.set({});
     this.saveError.set(null);
   }
@@ -193,6 +244,10 @@ export class AcademicScheduleComponent {
   updateForm<K extends keyof AcademicScheduleFormState>(key: K, value: AcademicScheduleFormState[K]): void {
     this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((f) => ({ ...f, [key]: value }));
+  }
+
+  onFormOrgChange(orgId: number | null): void {
+    this.updateForm('underOrgID', orgId);
   }
 
   onFileSelected(event: Event): void {
@@ -270,7 +325,7 @@ export class AcademicScheduleComponent {
           return;
         }
         toastOnSave(this.toast, true, { entity: 'Academic schedule', mode: this.formMode() });
-        this.formVisible.set(false);
+        this.closeForm();
         this.loadList();
       });
   }

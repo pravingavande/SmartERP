@@ -174,8 +174,7 @@ export const routes: Routes = [
       {
         path: 'schools',
         loadComponent: () =>
-          import('./features/organization/organization-master/organization-master.component').then((m) => m.OrganizationMasterComponent),
-        canActivate: [adminMasterGuard]
+          import('./features/organization/organization-master/organization-master.component').then((m) => m.OrganizationMasterComponent)
       },
       {
         path: 'students',

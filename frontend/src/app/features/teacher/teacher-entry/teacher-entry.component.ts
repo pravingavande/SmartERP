@@ -1,8 +1,9 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, Subject, switchMap, debounceTime, distinctUntilChanged } from 'rxjs';
+import { forkJoin, of, Subject, switchMap, debounceTime, distinctUntilChanged } from 'rxjs';
 import {
   TeacherDocumentLine,
   TeacherFormState,
@@ -13,7 +14,6 @@ import {
   TEACHER_STAFF_TYPE_ID
 } from '../../../core/models/teacher.model';
 import { UserProfile } from '../../../core/models/dashboard.model';
-import { OrgOption } from '../../../core/models/audit.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { LanguageService } from '../../../core/services/language.service';
@@ -22,7 +22,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
-import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import {
@@ -52,7 +52,7 @@ const SECTION_ORDER: FormSection[] = ['basic', 'documents', 'schools'];
 
 @Component({
   selector: 'app-teacher-entry',
-  imports: [FormsModule, MarathiNumberInputDirective, ListActionBtnComponent],
+  imports: [FormsModule, MarathiNumberInputDirective, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './teacher-entry.component.html',
   styleUrl: './teacher-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -118,7 +118,6 @@ export class TeacherEntryComponent {
     if (!total) return 0;
     return Math.min(total, (this.listPageIndex() + 1) * this.listPageSize());
   });
-  readonly isSansthaUser = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly isWizardFlow = computed(() => this.wizardActive() && !this.isViewMode());
@@ -141,6 +140,14 @@ export class TeacherEntryComponent {
     this.listReload$
       .pipe(
         switchMap(() => {
+          const orgId = this.listFilter().orgId;
+          // Only load teachers for the selected school — never pull all-org data.
+          if (!orgId) {
+            this.listLoading.set(false);
+            this.teachers.set([]);
+            this.listPageIndex.set(0);
+            return of([] as TeacherListItem[]);
+          }
           this.listLoading.set(true);
           return this.teacherService.getList(this.listFilter());
         }),
@@ -176,28 +183,20 @@ export class TeacherEntryComponent {
         this.userProfile.set(profile);
         if (!data) {
           this.errorMessage.set('Unable to load teacher masters. Please refresh or contact admin.');
-          this.loadList();
+          this.teachers.set([]);
           return;
         }
         this.lookups.set(data);
         if (!data.orgs?.length) {
-          this.errorMessage.set('No schools found for your login.');
+          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
+          this.teachers.set([]);
+          return;
         }
+
+        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
+        this.listFilter.update((f) => ({ ...f, orgId }));
         this.loadList();
       });
-  }
-
-  private resolveDefaultOrgId(orgs: OrgOption[], profile: UserProfile | null): number | null {
-    if (this.isSansthaUser()) return null;
-    if (profile?.schoolCode) {
-      const match = orgs.find((o) => o.schoolCode === profile.schoolCode);
-      if (match) return match.orgID;
-    }
-    if (profile?.orgId) {
-      const match = orgs.find((o) => o.orgID === profile.orgId);
-      if (match) return match.orgID;
-    }
-    return orgs.length === 1 ? orgs[0].orgID : null;
   }
 
   private ensureSearchDebounce(): void {
@@ -226,8 +225,10 @@ export class TeacherEntryComponent {
   }
 
   newTeacher(): void {
-    const orgId = this.listFilter().orgId ?? this.resolveDefaultOrgId(this.lookups()?.orgs ?? [], this.userProfile());
-    if (!orgId && this.isSansthaUser()) {
+    const orgs = this.lookups()?.orgs ?? [];
+    const orgId =
+      this.listFilter().orgId ?? resolveDefaultSchoolOrgId(orgs, this.userProfile());
+    if (!orgId) {
       this.errorMessage.set('Select a school on the list page before adding a new teacher.');
       return;
     }

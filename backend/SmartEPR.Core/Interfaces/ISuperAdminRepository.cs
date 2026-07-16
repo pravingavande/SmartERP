@@ -4,14 +4,14 @@ namespace SmartEPR.Core.Interfaces;
 
 public interface ISuperAdminRepository
 {
-    Task<IReadOnlyList<SuperAdminSchoolCategoryDto>> GetSchoolCategoriesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SuperAdminBusinessCategoryDto>> GetBusinessCategoriesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<SansthaOwnerListItemDto>> GetSansthaOwnerListAsync(CancellationToken cancellationToken = default);
     Task<SansthaOwnerCreatedDto?> CreateSansthaWithOwnerAsync(CreateSansthaWithOwnerRequestDto request, long? createdByUserId, CancellationToken cancellationToken = default);
 }
 
 public interface ISuperAdminService
 {
-    Task<IReadOnlyList<SuperAdminSchoolCategoryDto>> GetSchoolCategoriesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SuperAdminBusinessCategoryDto>> GetBusinessCategoriesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<SansthaOwnerListItemDto>> GetSansthaOwnerListAsync(CancellationToken cancellationToken = default);
     Task<(SansthaOwnerCreatedDto? Data, string? Error)> CreateSansthaWithOwnerAsync(CreateSansthaWithOwnerRequestDto request, long? createdByUserId, CancellationToken cancellationToken = default);
 }

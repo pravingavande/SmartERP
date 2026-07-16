@@ -60,15 +60,15 @@
           @if (fieldError('sansthaName')) { <span class="field-error">{{ fieldError('sansthaName') }}</span> }
         </label>
 
-        <label class="field" [class.field-invalid]="fieldError('schoolCategoryID')">
-          <span class="field-label">School Category<span class="req">*</span></span>
-          <select class="field-control" [ngModel]="form().schoolCategoryID" (ngModelChange)="updateForm('schoolCategoryID', $event ? +$event : null)" name="schoolCategoryID">
+        <label class="field" [class.field-invalid]="fieldError('businessCategoryID')">
+          <span class="field-label">Business Category<span class="req">*</span></span>
+          <select class="field-control" [ngModel]="form().businessCategoryID" (ngModelChange)="updateForm('businessCategoryID', $event ? +$event : null)" name="businessCategoryID">
             <option [ngValue]="null">-- Select --</option>
-            @for (c of categories(); track c.schoolCategoryID) {
-              <option [ngValue]="c.schoolCategoryID">{{ c.schoolCategoryName }}</option>
+            @for (c of categories(); track c.businessCategoryID) {
+              <option [ngValue]="c.businessCategoryID">{{ c.businessCategoryName }}</option>
             }
           </select>
-          @if (fieldError('schoolCategoryID')) { <span class="field-error">{{ fieldError('schoolCategoryID') }}</span> }
+          @if (fieldError('businessCategoryID')) { <span class="field-error">{{ fieldError('businessCategoryID') }}</span> }
         </label>
 
         <label class="field" [class.field-invalid]="fieldError('ownerFirstName')">

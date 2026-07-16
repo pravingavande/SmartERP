@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import {
   CreateSansthaWithOwnerRequest,
   SansthaOwnerListItem,
-  SuperAdminSchoolCategory,
+  SuperAdminBusinessCategory,
   SuperAdminService
 } from '../../../core/services/super-admin.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -25,7 +25,7 @@ export class SansthaOnboardingComponent {
 
   readonly loading = signal(false);
   readonly listLoading = signal(true);
-  readonly categories = signal<SuperAdminSchoolCategory[]>([]);
+  readonly categories = signal<SuperAdminBusinessCategory[]>([]);
   readonly items = signal<SansthaOwnerListItem[]>([]);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly formVisible = signal(false);
@@ -38,12 +38,12 @@ export class SansthaOnboardingComponent {
   reload(): void {
     this.listLoading.set(true);
     this.superAdmin
-      .getSchoolCategories()
+      .getBusinessCategories()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((cats) => {
         this.categories.set(cats);
-        if (!this.form().schoolCategoryID && cats.length) {
-          this.form.update((f) => ({ ...f, schoolCategoryID: cats[0].schoolCategoryID }));
+        if (!this.form().businessCategoryID && cats.length) {
+          this.form.update((f) => ({ ...f, businessCategoryID: this.defaultBusinessCategoryId(cats) }));
         }
       });
 
@@ -57,8 +57,10 @@ export class SansthaOnboardingComponent {
   }
 
   newSanstha(): void {
-    const firstCat = this.categories()[0]?.schoolCategoryID ?? null;
-    this.form.set({ ...this.emptyForm(), schoolCategoryID: firstCat });
+    this.form.set({
+      ...this.emptyForm(),
+      businessCategoryID: this.defaultBusinessCategoryId(this.categories())
+    });
     this.fieldErrors.set({});
     this.formVisible.set(true);
   }
@@ -84,7 +86,7 @@ export class SansthaOnboardingComponent {
     if (!f.ownerLastName.trim()) errors['ownerLastName'] = 'Owner last name is required.';
     if (!/^\d{10}$/.test(f.ownerMobile.trim())) errors['ownerMobile'] = 'Owner mobile must be exactly 10 digits.';
     if (!f.ownerPassword.trim()) errors['ownerPassword'] = 'Owner password is required.';
-    if (!f.schoolCategoryID) errors['schoolCategoryID'] = 'School category is required.';
+    if (!f.businessCategoryID) errors['businessCategoryID'] = 'Business category is required.';
 
     if (hasFieldErrors(errors)) {
       this.fieldErrors.set(errors);
@@ -119,10 +121,15 @@ export class SansthaOnboardingComponent {
       });
   }
 
+  private defaultBusinessCategoryId(cats: SuperAdminBusinessCategory[]): number | null {
+    const sansthaSchool = cats.find((c) => c.businessCategoryID === 2);
+    return sansthaSchool?.businessCategoryID ?? cats[0]?.businessCategoryID ?? null;
+  }
+
   private emptyForm(): CreateSansthaWithOwnerRequest {
     return {
       sansthaName: '',
-      schoolCategoryID: null,
+      businessCategoryID: null,
       ownerFirstName: '',
       ownerMiddleName: '',
       ownerLastName: '',

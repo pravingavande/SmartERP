@@ -15,15 +15,13 @@
 
   @if (!formVisible()) {
     <div class="list-filters">
-      <label class="field field-org-wide">
-        <span class="field-label">Organization</span>
-        <select class="field-control" [ngModel]="listFilter().orgId" (ngModelChange)="updateListFilter('orgId', $event ? +$event : null)" name="filterOrg">
-          <option [ngValue]="null">-- All --</option>
-          @for (o of schoolOrgs(); track o.orgID) {
-            <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-          }
-        </select>
-      </label>
+      <app-org-school-select
+        fieldClass="field-org-wide"
+        name="filterOrg"
+        [orgs]="schoolOrgs()"
+        [value]="listFilter().orgId ?? null"
+        (valueChange)="updateListFilter('orgId', $event)"
+      />
       <label class="field field-search">
         <span class="field-label">Teacher Name</span>
         <input class="field-control" type="search" [ngModel]="listFilter().search" (ngModelChange)="onSearchChange($event)" name="filterSearch" placeholder="Name">
@@ -180,16 +178,16 @@
                       <span class="field-label">User ID</span>
                       <input class="field-control" readonly [value]="form().userID ?? 'Auto'" name="userID">
                     </label>
-                    <label class="field" [class.field-invalid]="fieldError('orgID')">
-                      <span class="field-label">{{ lbl('OrganizationName', 'Organization') }}<span class="req">*</span></span>
-                      <select class="field-control" [ngModel]="form().orgID" (ngModelChange)="onOrgChange($event ? +$event : null)" name="orgID">
-                        <option [ngValue]="null">-- Select --</option>
-                        @for (o of schoolOrgs(); track o.orgID) {
-                          <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-                        }
-                      </select>
-                      @if (fieldError('orgID')) { <span class="field-error">{{ fieldError('orgID') }}</span> }
-                    </label>
+                    <app-org-school-select
+                      name="orgID"
+                      [orgs]="schoolOrgs()"
+                      [value]="form().orgID ?? null"
+                      [required]="true"
+                      [invalid]="!!fieldError('orgID')"
+                      [error]="fieldError('orgID')"
+                      [disabled]="isViewMode()"
+                      (valueChange)="onOrgChange($event)"
+                    />
                     <label class="field">
                       <span class="field-label">{{ lbl('SrNo', 'Sr No') }}</span>
                       <input class="field-control" type="number" min="0" step="1" [ngModel]="form().srNo" (ngModelChange)="updateForm('srNo', $event === '' || $event == null ? null : +$event)" name="srNo" placeholder="Auto">

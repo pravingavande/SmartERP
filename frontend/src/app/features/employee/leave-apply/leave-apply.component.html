@@ -15,15 +15,13 @@
 
   @if (!formVisible()) {
     <div class="list-filters">
-      <label class="field">
-        <span class="field-label">Org / School</span>
-        <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
-          <option [ngValue]="null">-- All --</option>
-          @for (o of schoolOrgs(); track o.orgID) {
-            <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-          }
-        </select>
-      </label>
+      <app-org-school-select
+        fieldClass="field-org-wide"
+        name="listOrgID"
+        [orgs]="schoolOrgs()"
+        [value]="listOrgID()"
+        (valueChange)="onListOrgChange($event)"
+      />
       <label class="field">
         <span class="field-label">Academic Year (Ay)</span>
         <select class="field-control" [ngModel]="listAyID()" (ngModelChange)="onListAyChange($event ? +$event : null)" name="listAyID">
@@ -118,16 +116,16 @@
           <fieldset [disabled]="isViewMode()">
             <div class="form-section">
               <div class="form-grid">
-                <label class="field" [class.field-invalid]="fieldError('orgID')">
-                  <span class="field-label">Org / School *</span>
-                  <select class="field-control" [ngModel]="form().orgID" (ngModelChange)="onFormOrgChange($event ? +$event : null)" name="orgID">
-                    <option [ngValue]="null">-- Select --</option>
-                    @for (o of schoolOrgs(); track o.orgID) {
-                      <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-                    }
-                  </select>
-                  @if (fieldError('orgID')) { <span class="field-error">{{ fieldError('orgID') }}</span> }
-                </label>
+                <app-org-school-select
+                  name="orgID"
+                  [orgs]="schoolOrgs()"
+                  [value]="form().orgID ?? null"
+                  [required]="true"
+                  [invalid]="!!fieldError('orgID')"
+                  [error]="fieldError('orgID')"
+                  [disabled]="isViewMode()"
+                  (valueChange)="onFormOrgChange($event)"
+                />
                 <label class="field">
                   <span class="field-label">Record No</span>
                   <input class="field-control" readonly [ngModel]="form().recordNo" name="recordNo">

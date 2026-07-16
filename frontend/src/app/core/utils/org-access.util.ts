@@ -4,6 +4,19 @@ export interface SchoolOrgOption {
   orgID: number;
 }
 
+/** Org option shape used by Org / School dropdown + default selection. */
+export interface SchoolOrgSelectOption extends SchoolOrgOption {
+  organizationName: string;
+  schoolCode?: number | null;
+}
+
+export interface SchoolOrgProfileHint {
+  schoolCode?: number | null;
+  orgId?: number | null;
+  SchoolCode?: number | null;
+  orgID?: number | null;
+}
+
 /** UserRoleID 1 or 2 = sanstha-scoped admin (all schools in OrgGroupID from API). */
 export function isSansthaAdminUser(userRoleId?: number | null): boolean {
   return userRoleId === 1 || userRoleId === 2;
@@ -33,4 +46,29 @@ export function filterSchoolOrgs<T extends SchoolOrgOption>(orgs: T[], user: Aut
   }
 
   return orgs;
+}
+
+/**
+ * Default Org / School selection — same rules as Receipt/Payment Voucher:
+ * 1) profile schoolCode  2) profile orgId  3) first available org.
+ */
+export function resolveDefaultSchoolOrgId(
+  orgs: SchoolOrgSelectOption[],
+  profile?: SchoolOrgProfileHint | null
+): number | null {
+  if (!orgs.length) return null;
+
+  const schoolCode = profile?.schoolCode ?? profile?.SchoolCode ?? null;
+  if (schoolCode) {
+    const match = orgs.find((o) => o.schoolCode === schoolCode);
+    if (match) return match.orgID;
+  }
+
+  const profileOrgId = profile?.orgId ?? profile?.orgID ?? null;
+  if (profileOrgId) {
+    const match = orgs.find((o) => o.orgID === profileOrgId);
+    if (match) return match.orgID;
+  }
+
+  return orgs[0]?.orgID ?? null;
 }

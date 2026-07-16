@@ -25,12 +25,16 @@ import {
 import { OrgOption } from '../models/audit.model';
 import { apiData, apiMessage, apiSuccess } from '../utils/api-response.util';
 import { trimText } from '../utils/master-validation.util';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class MasterService {
   private readonly base = `${environment.apiBaseUrl}/master`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly auth: AuthService
+  ) {}
 
   getClasses(search?: string | null): Observable<ClassMasterItem[]> {
     let params = new HttpParams();
@@ -323,8 +327,11 @@ export class MasterService {
 
   private normalizeAcademicLookups(raw: unknown): AcademicScheduleLookups {
     const data = raw as Record<string, unknown>;
+    // Prefer orgs (Teacher Master); fall back to legacy sansthaOrgs key until API is updated
+    const rawOrgs =
+      ((data['orgs'] ?? data['Orgs'] ?? data['sansthaOrgs'] ?? data['SansthaOrgs']) as OrgOption[] | undefined) ?? [];
     return {
-      sansthaOrgs: ((data['sansthaOrgs'] ?? data['SansthaOrgs']) as OrgOption[] | undefined)?.map((o) => this.normalizeOrg(o)) ?? [],
+      orgs: this.auth.filterSchoolOrgs(rawOrgs.map((o) => this.normalizeOrg(o))),
       classes: ((data['classes'] ?? data['Classes']) as { id?: number; Id?: number; name?: string; Name?: string }[] | undefined)?.map((c) => ({
         id: Number(c.id ?? c.Id ?? 0),
         name: String(c.name ?? c.Name ?? '')

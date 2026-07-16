@@ -1,4 +1,5 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -10,17 +11,17 @@ import { coerceEnglishIntegerString } from '../../../core/utils/marathi-numerals
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { UserProfile } from '../../../core/models/dashboard.model';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapBackendMessageToFieldErrors, validatePartyForm } from '../../../core/utils/master-validation.util';
 import { pageCount, paginateRows } from '../../../core/utils/master-list.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-party-master',
-  imports: [FormsModule, MarathiNumberInputDirective, MasterListPaginationComponent, ListActionBtnComponent],
+  imports: [FormsModule, MarathiNumberInputDirective, MasterListPaginationComponent, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './party-master.component.html',
   styleUrl: './party-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -66,22 +67,10 @@ export class PartyMasterComponent {
           this.errorMessage.set('No schools found for your login.');
           return;
         }
-        const orgId = this.resolveDefaultOrgId(data, profile);
+        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
         this.listOrgID.set(orgId);
         if (orgId) this.loadList();
       });
-  }
-
-  private resolveDefaultOrgId(data: AuditLookups, profile: UserProfile | null): number | null {
-    if (profile?.schoolCode) {
-      const match = data.orgs.find((o) => o.schoolCode === profile.schoolCode);
-      if (match) return match.orgID;
-    }
-    if (profile?.orgId) {
-      const match = data.orgs.find((o) => o.orgID === profile.orgId);
-      if (match) return match.orgID;
-    }
-    return data.orgs.length === 1 ? data.orgs[0].orgID : data.orgs[0]?.orgID ?? null;
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -181,6 +170,12 @@ export class PartyMasterComponent {
         this.closeForm();
         this.loadList();
       });
+  }
+
+  onFormOrgChange(orgId: number | null): void {
+    this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
+    this.form.update((f) => ({ ...f, orgID: orgId }));
+    this.listOrgID.set(orgId);
   }
 
   fieldError(key: string): string | null {

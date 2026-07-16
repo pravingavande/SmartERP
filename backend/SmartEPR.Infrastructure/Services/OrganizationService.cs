@@ -13,14 +13,27 @@ public sealed class OrganizationService : IOrganizationService
     private static readonly Regex YearRegex = new(@"^\d{4}$", RegexOptions.Compiled);
 
     private readonly IOrganizationRepository _repository;
+    private readonly IAuditVoucherRepository _auditRepository;
 
-    public OrganizationService(IOrganizationRepository repository)
+    public OrganizationService(IOrganizationRepository repository, IAuditVoucherRepository auditRepository)
     {
         _repository = repository;
+        _auditRepository = auditRepository;
     }
 
-    public Task<OrganizationLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default)
-        => _repository.GetLookupsAsync(cancellationToken);
+    public async Task<OrganizationLookupsDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        var lookups = await _repository.GetLookupsAsync(cancellationToken).ConfigureAwait(false);
+        // Same school org source as Teacher Master
+        var orgs = await _auditRepository.GetUserOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
+        return new OrganizationLookupsDto
+        {
+            BusinessCategories = lookups.BusinessCategories,
+            SchoolCategories = lookups.SchoolCategories,
+            Orgs = orgs,
+            SansthaOrgs = lookups.SansthaOrgs
+        };
+    }
 
     public Task<IReadOnlyList<OrganizationDocumentOptionDto>> GetDocumentsByBusinessCategoryAsync(int businessCategoryId, CancellationToken cancellationToken = default)
         => _repository.GetDocumentsByBusinessCategoryAsync(businessCategoryId, cancellationToken);

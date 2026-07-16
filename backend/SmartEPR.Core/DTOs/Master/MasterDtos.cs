@@ -78,7 +78,8 @@ public sealed class AyMasterOptionDto
 
 public sealed class AcademicScheduleLookupsDto
 {
-    public IReadOnlyList<OrgOptionDto> SansthaOrgs { get; init; } = [];
+    /// <summary>School orgs — same source as Teacher Master (sp_Audit_GetUserOrgs).</summary>
+    public IReadOnlyList<OrgOptionDto> Orgs { get; init; } = [];
     public IReadOnlyList<MasterOptionDto> Classes { get; init; } = [];
     public IReadOnlyList<MasterOptionDto> Subjects { get; init; } = [];
     public IReadOnlyList<WeekOptionDto> Weeks { get; init; } = [];

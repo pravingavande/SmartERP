@@ -48,7 +48,8 @@ export interface AyOption {
 }
 
 export interface AcademicScheduleLookups {
-  sansthaOrgs: OrgOption[];
+  /** School orgs — same as Teacher Master (filtered via auth.filterSchoolOrgs). */
+  orgs: OrgOption[];
   classes: MasterOption[];
   subjects: MasterOption[];
   weeks: WeekOption[];

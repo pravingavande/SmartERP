@@ -23,7 +23,7 @@ export function validateOrganizationForm(form: OrganizationFormState): FieldErro
   }
 
   if (form.businessCategoryID === SCHOOL_BUSINESS_CATEGORY_ID && (!form.underOrgID || form.underOrgID <= 0)) {
-    errors['underOrgID'] = 'Under Sanstha is required.';
+    errors['underOrgID'] = 'Org / School is required.';
   }
 
   if (form.emailID?.trim() && !emailRegex.test(form.emailID.trim())) {

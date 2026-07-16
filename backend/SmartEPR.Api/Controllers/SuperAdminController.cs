@@ -25,14 +25,14 @@ public sealed class SuperAdminController : ControllerBase
         _userRepository = userRepository;
     }
 
-    [HttpGet("school-categories")]
-    public async Task<IActionResult> GetSchoolCategories(CancellationToken cancellationToken)
+    [HttpGet("business-categories")]
+    public async Task<IActionResult> GetBusinessCategories(CancellationToken cancellationToken)
     {
         if (!await IsSuperAdminAsync(cancellationToken).ConfigureAwait(false))
             return Ok(ApiResponse<object>.Fail("Only App Super Admin can access this."));
 
-        var items = await _superAdminService.GetSchoolCategoriesAsync(cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<IReadOnlyList<SuperAdminSchoolCategoryDto>>.Ok(items));
+        var items = await _superAdminService.GetBusinessCategoriesAsync(cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<SuperAdminBusinessCategoryDto>>.Ok(items));
     }
 
     [HttpGet("sanstha-owners")]

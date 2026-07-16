@@ -2,10 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace SmartEPR.Core.DTOs.SuperAdmin;
 
-public sealed class SuperAdminSchoolCategoryDto
+public sealed class SuperAdminBusinessCategoryDto
 {
-    public long SchoolCategoryID { get; init; }
-    public string SchoolCategoryName { get; init; } = string.Empty;
+    public int BusinessCategoryID { get; init; }
+    public string BusinessCategoryName { get; init; } = string.Empty;
 }
 
 public sealed class CreateSansthaWithOwnerRequestDto
@@ -13,8 +13,8 @@ public sealed class CreateSansthaWithOwnerRequestDto
     [JsonPropertyName("sansthaName")]
     public string SansthaName { get; set; } = string.Empty;
 
-    [JsonPropertyName("schoolCategoryID")]
-    public long? SchoolCategoryID { get; set; }
+    [JsonPropertyName("businessCategoryID")]
+    public int? BusinessCategoryID { get; set; }
 
     [JsonPropertyName("ownerFirstName")]
     public string OwnerFirstName { get; set; } = string.Empty;

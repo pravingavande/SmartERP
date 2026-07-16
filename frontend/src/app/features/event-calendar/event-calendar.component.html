@@ -125,7 +125,7 @@
       <form class="modal-form" (ngSubmit)="saveEvent()">
         <fieldset [disabled]="isViewMode()">
           <div class="school-multiselect" [class.field-invalid]="fieldError('orgIDs')" [class.open]="schoolPickerOpen()" (click)="$event.stopPropagation()">
-            <span class="field-label">School(s) *</span>
+            <span class="field-label">Org / School(s) *</span>
 
             @if (isSingleSchoolUser() || isViewMode()) {
               <input

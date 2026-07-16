@@ -1,26 +1,24 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { LeaveApplyFormState, LeaveApplyListItem, LeaveApplyLookupsBundle, EmployeeOption } from '../../../core/models/leave.model';
-import { UserProfile } from '../../../core/models/dashboard.model';
-import { OrgOption } from '../../../core/models/audit.model';
-import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { LeaveService } from '../../../core/services/leave.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
-import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-leave-apply',
-  imports: [FormsModule, DatePipe, ListActionBtnComponent],
+  imports: [FormsModule, DatePipe, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './leave-apply.component.html',
   styleUrl: './leave-apply.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -29,7 +27,6 @@ export class LeaveApplyComponent {
   private readonly leaveService = inject(LeaveService);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
-  private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
@@ -50,13 +47,8 @@ export class LeaveApplyComponent {
   readonly listPageIndex = signal(0);
 
   readonly masterLookups = computed(() => this.lookups()?.lookups);
-  readonly schoolOrgs = computed(() => {
-    const orgs = this.lookups()?.orgs ?? [];
-    const sansthaId = this.auth.currentUser()?.sansthaId;
-    if (!sansthaId) return orgs;
-    return orgs.filter((o) => o.orgID !== sansthaId);
-  });
-  readonly isSansthaUser = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
+  /** Same as Teacher Master — orgs already filtered in LeaveService via auth.filterSchoolOrgs. */
+  readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly paginatedItems = computed(() => {
     const list = this.items();
@@ -92,30 +84,20 @@ export class LeaveApplyComponent {
         this.lookups.set(data);
         if (!data) {
           this.errorMessage.set('Unable to load leave masters. Please refresh or contact admin.');
+          this.items.set([]);
           return;
         }
         if (!data.orgs?.length) {
-          this.errorMessage.set('No schools found for your login.');
+          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
+          this.items.set([]);
           return;
         }
         const ayId = data.lookups.ayList[0]?.ayID ?? null;
         this.listAyID.set(ayId);
-        this.listOrgID.set(this.resolveDefaultOrgId(data.orgs, profile));
+        // Same default selection as Teacher Master
+        this.listOrgID.set(resolveDefaultSchoolOrgId(data.orgs, profile));
         this.loadList();
       });
-  }
-
-  private resolveDefaultOrgId(orgs: OrgOption[], profile: UserProfile | null): number | null {
-    if (this.isSansthaUser()) return null;
-    if (profile?.schoolCode) {
-      const match = orgs.find((o) => o.schoolCode === profile.schoolCode);
-      if (match) return match.orgID;
-    }
-    if (profile?.orgId) {
-      const match = orgs.find((o) => o.orgID === profile.orgId);
-      if (match) return match.orgID;
-    }
-    return orgs.length === 1 ? orgs[0].orgID : null;
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -143,9 +125,17 @@ export class LeaveApplyComponent {
   }
 
   loadList(): void {
+    const orgId = this.listOrgID();
+    // Same as Teacher Master — only load for selected school
+    if (!orgId) {
+      this.listLoading.set(false);
+      this.items.set([]);
+      this.listPageIndex.set(0);
+      return;
+    }
     this.listLoading.set(true);
     this.leaveService
-      .getList(this.listOrgID(), this.listAyID())
+      .getList(orgId, this.listAyID())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((list) => {
         this.listLoading.set(false);
@@ -156,10 +146,11 @@ export class LeaveApplyComponent {
   }
 
   newEntry(): void {
-    const orgId = this.listOrgID();
+    const orgId =
+      this.listOrgID() ?? resolveDefaultSchoolOrgId(this.schoolOrgs(), null);
     const ayId = this.listAyID();
     if (!orgId) {
-      this.errorMessage.set('Select Org / School on the list page before adding new.');
+      this.errorMessage.set('Select a school on the list page before adding a new leave.');
       return;
     }
     if (!ayId) {

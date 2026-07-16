@@ -96,7 +96,7 @@ export function validateStockForm(form: StockFormState): FieldErrors {
 
 export function validateAcademicScheduleForm(form: AcademicScheduleFormState): FieldErrors {
   return {
-    ...requireId(form.underOrgID, 'underOrgID', 'Under organization'),
+    ...requireId(form.underOrgID, 'underOrgID', 'Org / School'),
     ...requireId(form.tMonth, 'tMonth', 'Month'),
     ...requireId(form.classID, 'classID', 'Class'),
     ...requireId(form.subjectID, 'subjectID', 'Subject'),

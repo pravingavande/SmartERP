@@ -10,24 +10,14 @@
   </header>
 
   @if (!formVisible()) {
-    @if (lookups()?.isSansthaUser) {
-      <div class="list-filters">
-        <label class="field">
-          <span class="field-label">Filter by School</span>
-          <select
-            class="field-control"
-            [ngModel]="listOrgID()"
-            (ngModelChange)="onListOrgChange($event ? +$event : null)"
-            name="listOrgID"
-          >
-            <option [ngValue]="null">-- All Schools --</option>
-            @for (o of lookups()?.orgs ?? []; track o.orgID) {
-              <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-            }
-          </select>
-        </label>
-      </div>
-    }
+    <div class="list-filters">
+      <app-org-school-select
+        name="listOrgID"
+        [orgs]="lookups()?.orgs ?? []"
+        [value]="listOrgID()"
+        (valueChange)="onListOrgChange($event)"
+      />
+    </div>
 
     @if (errorMessage()) {
       <p class="error list-error">{{ errorMessage() }}</p>
@@ -115,17 +105,17 @@
               <div class="form-grid">
                 @if (!canRaiseTicket()) {
                   <label class="field full">
-                    <span class="field-label">School(s)</span>
+                    <span class="field-label">Org / School(s)</span>
                     <input class="field-control" [value]="detail()?.ticket?.schoolNames || '—'" readonly>
                   </label>
                 } @else if (isSingleSchoolUser() || isViewMode()) {
                   <div class="field full school-multiselect">
-                    <span class="field-label">School(s) *</span>
+                    <span class="field-label">Org / School(s) *</span>
                     <input class="field-control school-readonly" type="text" readonly [value]="schoolDisplayValue()">
                   </div>
                 } @else {
                   <div class="field full school-multiselect" [class.field-invalid]="fieldError('orgIDs')" [class.open]="schoolPickerOpen()" (click)="$event.stopPropagation()">
-                    <span class="field-label">School(s) *</span>
+                    <span class="field-label">Org / School(s) *</span>
                     <button
                       type="button"
                       class="multiselect-trigger"

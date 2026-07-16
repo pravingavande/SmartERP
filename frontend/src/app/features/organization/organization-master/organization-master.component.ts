@@ -1,7 +1,9 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import {
   OrganizationDocumentLine,
   OrganizationDocumentOption,
@@ -14,11 +16,13 @@ import {
 } from '../../../core/models/organization.model';
 import { OrganizationService } from '../../../core/services/organization.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows } from '../../../core/utils/master-list.util';
 import { mapOrganizationBackendMessage, validateOrganizationForm } from '../../../core/utils/organization-validation.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 
@@ -30,7 +34,7 @@ const MAX_DOC_BYTES = 5 * 1024 * 1024;
 
 @Component({
   selector: 'app-organization-master',
-  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent, MarathiNumberInputDirective],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent, MarathiNumberInputDirective, OrgSchoolSelectComponent],
   templateUrl: './organization-master.component.html',
   styleUrl: './organization-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -38,12 +42,14 @@ const MAX_DOC_BYTES = 5 * 1024 * 1024;
 export class OrganizationMasterComponent {
   private readonly organization = inject(OrganizationService);
   private readonly dashboardService = inject(DashboardService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
   readonly listLoading = signal(false);
   readonly lookupsLoading = signal(true);
+  readonly errorMessage = signal<string | null>(null);
   readonly saveError = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly lookups = signal<OrganizationLookups | null>(null);
@@ -64,33 +70,61 @@ export class OrganizationMasterComponent {
   readonly documentsTabEnabled = computed(() => !!this.form().orgID);
   readonly isSchoolCategory = computed(() => this.form().businessCategoryID === SCHOOL_BUSINESS_CATEGORY_ID);
   readonly isSansthaCategory = computed(() => this.form().businessCategoryID === SANSTHA_BUSINESS_CATEGORY_ID);
-  readonly hideBusinessCategoryOnNew = computed(() => this.isNewMode() && this.isSchoolCategory());
-  readonly selectedSansthaName = computed(() => {
-    const underOrgId = this.form().underOrgID;
-    if (!underOrgId) return '—';
-    return this.lookups()?.sansthaOrgs.find((s) => s.orgID === underOrgId)?.organizationName ?? '—';
+  /** UserRoleID 3 (Employee) — view/edit only; cannot add or delete. */
+  readonly canManageOrganizations = computed(() => this.auth.currentUser()?.userRoleId !== 3);
+  /** Same as Teacher Master — orgs already filtered in OrganizationService via auth.filterSchoolOrgs. */
+  readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
+  /** Form Org / School select value: school itself on edit, list selection context on new. */
+  readonly formOrgSelectValue = computed(() => {
+    if (this.isNewMode()) return this.listFilter().orgId ?? this.form().underOrgID ?? null;
+    return this.form().orgID ?? this.form().underOrgID ?? null;
   });
   readonly listPageCount = computed(() => pageCount(this.items().length, this.listPageSize()));
   readonly paginatedItems = computed(() => paginateRows(this.items(), this.listPageIndex(), this.listPageSize()));
   readonly listPageStart = computed(() => pageRange(this.items().length, this.listPageIndex(), this.listPageSize()).start);
 
   constructor() {
-    this.dashboardService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((profile) => {
-      this.userProfile.set(profile);
-    });
     this.loadLookups();
-    this.loadList();
   }
 
   loadLookups(): void {
     this.lookupsLoading.set(true);
-    this.organization.getLookups().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
-      this.lookupsLoading.set(false);
-      this.lookups.set(data);
-    });
+    this.errorMessage.set(null);
+    forkJoin({
+      lookups: this.organization.getLookups(),
+      profile: this.dashboardService.getProfile()
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ lookups: data, profile }) => {
+        this.lookupsLoading.set(false);
+        this.userProfile.set(profile);
+        this.lookups.set(data);
+        if (!data) {
+          this.errorMessage.set('Unable to load organization masters. Please refresh or contact admin.');
+          this.items.set([]);
+          return;
+        }
+        if (!data.orgs?.length) {
+          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
+          this.items.set([]);
+          return;
+        }
+        // Same default selection as Teacher Master
+        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
+        this.listFilter.update((f) => ({ ...f, orgId }));
+        this.loadList();
+      });
   }
 
   loadList(): void {
+    const orgId = this.listFilter().orgId;
+    // Same as Teacher Master — only load for selected school
+    if (!orgId) {
+      this.listLoading.set(false);
+      this.items.set([]);
+      this.listPageIndex.set(0);
+      return;
+    }
     this.listLoading.set(true);
     this.organization.getList(this.listFilter()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((rows) => {
       this.listLoading.set(false);
@@ -101,44 +135,56 @@ export class OrganizationMasterComponent {
 
   onFilterChange<K extends keyof OrganizationListFilter>(key: K, value: OrganizationListFilter[K]): void {
     this.listFilter.update((f) => ({ ...f, [key]: value }));
+    this.listPageIndex.set(0);
+    this.closeForm();
     this.loadList();
   }
 
   newItem(): void {
+    if (!this.canManageOrganizations()) {
+      this.toast.showError('Employees cannot add organizations.', 'Access Denied');
+      return;
+    }
+    const lookups = this.lookups();
+    const orgId =
+      this.listFilter().orgId ?? resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
+    if (!orgId) {
+      this.errorMessage.set('Select a school on the list page before adding a new organization.');
+      return;
+    }
+    this.errorMessage.set(null);
     this.formMode.set('new');
     this.formVisible.set(true);
     this.activeTab.set('basic');
     this.saveError.set(null);
     this.fieldErrors.set({});
-    const lookups = this.lookups();
+    const selected = this.schoolOrgs().find((s) => s.orgID === orgId);
+    const parentId = this.resolveParentOrgId(orgId, selected?.underOrgID);
     const defaultSchoolCategory = lookups?.schoolCategories.find((s) => s.id > 0)?.id ?? null;
-    const defaultSansthaId = this.resolveDefaultSansthaId(lookups);
-    const ownerBusinessCategory = lookups?.sansthaOrgs.find((s) => s.orgID === defaultSansthaId)?.businessCategoryID
-      ?? SCHOOL_BUSINESS_CATEGORY_ID;
+    const ownerBusinessCategory = selected?.businessCategoryID ?? SCHOOL_BUSINESS_CATEGORY_ID;
     this.form.set({
       ...this.emptyForm(),
       businessCategoryID: ownerBusinessCategory === SANSTHA_BUSINESS_CATEGORY_ID
         ? SCHOOL_BUSINESS_CATEGORY_ID
-        : ownerBusinessCategory,
-      underOrgID: defaultSansthaId,
+        : (ownerBusinessCategory || SCHOOL_BUSINESS_CATEGORY_ID),
+      underOrgID: parentId,
       schoolCategoryID: defaultSchoolCategory
     });
     this.documentOptions.set([]);
-    if (defaultSansthaId) this.refreshNextSrNo(defaultSansthaId);
+    if (parentId) this.refreshNextSrNo(parentId);
   }
 
-  onUnderSansthaChange(underOrgId: number | null): void {
-    this.updateForm('underOrgID', underOrgId);
-    if (underOrgId && this.isNewMode()) this.refreshNextSrNo(underOrgId);
+  onFormOrgChange(orgId: number | null): void {
+    const selected = this.schoolOrgs().find((s) => s.orgID === orgId);
+    const parentId = orgId ? this.resolveParentOrgId(orgId, selected?.underOrgID) : null;
+    this.updateForm('underOrgID', parentId);
+    if (parentId && this.isNewMode()) this.refreshNextSrNo(parentId);
   }
 
-  private resolveDefaultSansthaId(lookups: OrganizationLookups | null): number | null {
-    const profile = this.userProfile();
-    if (profile?.orgId) {
-      const sanstha = lookups?.sansthaOrgs.find((s) => s.orgID === profile.orgId);
-      if (sanstha) return sanstha.orgID;
-    }
-    return lookups?.sansthaOrgs[0]?.orgID ?? null;
+  /** Parent sanstha for a school; if selection is already a sanstha, use itself. */
+  private resolveParentOrgId(orgId: number, underOrgId?: number | null): number {
+    if (underOrgId && underOrgId > 0 && underOrgId !== orgId) return underOrgId;
+    return orgId;
   }
 
   private refreshNextSrNo(underOrgId: number): void {
@@ -174,6 +220,10 @@ export class OrganizationMasterComponent {
   }
 
   deleteItem(item: OrganizationListItem): void {
+    if (!this.canManageOrganizations()) {
+      this.toast.showError('Employees cannot delete organizations.', 'Access Denied');
+      return;
+    }
     if (!confirm(`Deactivate organization "${item.organizationName}"?`)) return;
     this.organization.delete(item.orgID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((r) => {
       if (!r.success) {
@@ -382,7 +432,7 @@ export class OrganizationMasterComponent {
       search: '',
       businessCategoryID: null,
       schoolCategoryID: null,
-      underOrgID: null,
+      orgId: null,
       cityName: '',
       isActive: null
     };

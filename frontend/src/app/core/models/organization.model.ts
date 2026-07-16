@@ -30,14 +30,16 @@ export interface OrganizationDocumentOption {
 export interface OrganizationLookups {
   businessCategories: IdNameOption[];
   schoolCategories: LongIdNameOption[];
-  sansthaOrgs: SansthaOrgOption[];
+  /** School orgs — same as Teacher Master (filtered via auth.filterSchoolOrgs). */
+  orgs: SansthaOrgOption[];
 }
 
 export interface OrganizationListFilter {
   search: string;
   businessCategoryID: number | null;
   schoolCategoryID: number | null;
-  underOrgID: number | null;
+  /** Selected Org / School (same meaning as Teacher Master list orgId). */
+  orgId: number | null;
   cityName: string;
   isActive: boolean | null;
 }

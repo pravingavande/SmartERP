@@ -6,7 +6,13 @@
     </div>
     <div class="header-actions">
       @if (!formVisible()) {
-        <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Organization</button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="!canManageOrganizations()"
+          [attr.title]="canManageOrganizations() ? null : 'Employees cannot add organizations'"
+          (click)="newItem()"
+        >+ Add Organization</button>
       } @else {
         <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
       }
@@ -17,21 +23,22 @@
     @if (!formVisible()) {
     <aside class="list-panel">
       <div class="list-filters org-filters">
-        <label class="field">
-          <span class="field-label">Under Sanstha</span>
-          <select class="field-control" [ngModel]="listFilter().underOrgID" (ngModelChange)="onFilterChange('underOrgID', $event ? +$event : null)" name="filterUnderOrg">
-            <option [ngValue]="null">All</option>
-            @for (s of lookups()?.sansthaOrgs ?? []; track s.orgID) {
-              <option [ngValue]="s.orgID">{{ s.organizationName }}</option>
-            }
-          </select>
-        </label>
+        <app-org-school-select
+          name="filterOrg"
+          fieldClass="field-org-filter"
+          [orgs]="schoolOrgs()"
+          [value]="listFilter().orgId ?? null"
+          (valueChange)="onFilterChange('orgId', $event)"
+        />
         <label class="field field-org-search">
           <span class="field-label">Organization Name</span>
           <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" placeholder="Search organization name">
         </label>
       </div>
 
+      @if (errorMessage()) {
+        <p class="error list-error">{{ errorMessage() }}</p>
+      }
       @if (listLoading()) { <p class="loading-hint">Loading organizations...</p> }
 
       <div class="records-table-wrap">
@@ -57,7 +64,11 @@
                     <app-list-action-btn action="view" (clicked)="viewItem(item)" />
                     <app-list-action-btn action="edit" (clicked)="editItem(item)" />
                     @if (item.isActive) {
-                      <app-list-action-btn action="delete" (clicked)="deleteItem(item)" />
+                      <app-list-action-btn
+                        action="delete"
+                        [disabled]="!canManageOrganizations()"
+                        (clicked)="deleteItem(item)"
+                      />
                     }
                   </div>
                 </td>
@@ -105,40 +116,23 @@
           <form class="voucher-form org-form" (ngSubmit)="saveBasic()">
             <fieldset [disabled]="isViewMode()">
               <div class="form-grid">
-                @if (!hideBusinessCategoryOnNew()) {
-                <label class="field" [class.field-invalid]="fieldError('businessCategoryID')">
-                  <span class="field-label">Business Category<span class="req">*</span></span>
-                  <select class="field-control" required [ngModel]="form().businessCategoryID" (ngModelChange)="updateForm('businessCategoryID', $event ? +$event : null)" name="businessCategoryID">
-                    <option [ngValue]="null">-- Select --</option>
-                    @for (bc of lookups()?.businessCategories ?? []; track bc.id) {
-                      <option [ngValue]="bc.id">{{ bc.name }}</option>
-                    }
-                  </select>
-                  @if (fieldError('businessCategoryID')) { <span class="field-error">{{ fieldError('businessCategoryID') }}</span> }
-                </label>
-                }
-
                 @if (isSchoolCategory()) {
+                  <app-org-school-select
+                    name="orgID"
+                    [orgs]="schoolOrgs()"
+                    [value]="formOrgSelectValue()"
+                    [required]="true"
+                    [invalid]="!!fieldError('underOrgID')"
+                    [error]="fieldError('underOrgID')"
+                    [disabled]="isViewMode()"
+                    (valueChange)="onFormOrgChange($event)"
+                  />
                   @if (isNewMode()) {
-                    <label class="field">
-                      <span class="field-label">Sanstha Name</span>
-                      <input class="field-control" readonly [value]="selectedSansthaName()" name="sansthaNameDisplay">
-                    </label>
                     <label class="field">
                       <span class="field-label">Sr No</span>
                       <input class="field-control" readonly [value]="form().srNo ?? 'Auto'" name="srNoDisplay">
                     </label>
                   }
-                  <label class="field" [class.field-invalid]="fieldError('underOrgID')">
-                    <span class="field-label">Under Sanstha<span class="req">*</span></span>
-                    <select class="field-control" required [ngModel]="form().underOrgID" (ngModelChange)="onUnderSansthaChange($event ? +$event : null)" name="underOrgID">
-                      <option [ngValue]="null">-- Select --</option>
-                      @for (s of lookups()?.sansthaOrgs ?? []; track s.orgID) {
-                        <option [ngValue]="s.orgID">{{ s.organizationName }}</option>
-                      }
-                    </select>
-                    @if (fieldError('underOrgID')) { <span class="field-error">{{ fieldError('underOrgID') }}</span> }
-                  </label>
                 }
 
                 <label class="field" [class.field-invalid]="fieldError('schoolCategoryID')">

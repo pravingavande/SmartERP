@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class ReportPrintService {
+  /** Open PDF in a new tab for viewing — user prints manually when ready. */
   openPdf(blob: Blob, _title: string): void {
     const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank');
@@ -10,20 +11,13 @@ export class ReportPrintService {
       return;
     }
 
-    const timer = window.setTimeout(() => {
-      if (!win.closed) {
-        win.focus();
-        win.print();
-      }
-    }, 600);
-
     win.addEventListener(
       'beforeunload',
-      () => {
-        window.clearTimeout(timer);
-        URL.revokeObjectURL(url);
-      },
+      () => URL.revokeObjectURL(url),
       { once: true }
     );
+
+    // Fallback revoke if tab stays open a long time
+    window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
   }
 }

@@ -15,15 +15,12 @@
 
   @if (!formVisible()) {
   <div class="list-filters">
-    <label class="field">
-      <span class="field-label">Org / School</span>
-      <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="onListOrgChange($event ? +$event : null)" name="listOrgID">
-        <option [ngValue]="null">-- Select School --</option>
-        @for (o of lookups()?.orgs ?? []; track o.orgID) {
-          <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-        }
-      </select>
-    </label>
+    <app-org-school-select
+      name="listOrgID"
+      [orgs]="lookups()?.orgs ?? []"
+      [value]="listOrgID()"
+      (valueChange)="onListOrgChange($event)"
+    />
     <label class="field">
       <span class="field-label">Account Register</span>
       <select class="field-control" [disabled]="lookupsLoading() || !listOrgID()" [ngModel]="listAccountRegisterID()" (ngModelChange)="onListAccountRegisterChange($event ? +$event : null)" name="listAccountRegisterID">

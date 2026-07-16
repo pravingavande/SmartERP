@@ -83,6 +83,9 @@ public sealed class MasterRepository : IMasterRepository
 
     public async Task<AcademicScheduleLookupsDto> GetAcademicScheduleLookupsAsync(long userId, CancellationToken cancellationToken = default)
     {
+        // Same school org source as Teacher Master (authoritative)
+        var orgs = await GetUserOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
+
         await using var connection = _connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
@@ -93,7 +96,8 @@ public sealed class MasterRepository : IMasterRepository
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken)).ConfigureAwait(false);
 
-        var sansthaOrgs = (await multi.ReadAsync<OrgOptionDto>().ConfigureAwait(false)).AsList();
+        // Discard SP org result set (legacy sanstha-only or updated GetUserOrgs) — we use GetUserOrgs above
+        _ = (await multi.ReadAsync<OrgOptionDto>().ConfigureAwait(false)).AsList();
         var classes = (await multi.ReadAsync<ClassLookupRow>().ConfigureAwait(false)).AsList();
         var subjects = (await multi.ReadAsync<SubjectLookupRow>().ConfigureAwait(false)).AsList();
         var weeks = (await multi.ReadAsync<WeekOptionDto>().ConfigureAwait(false)).AsList();
@@ -101,7 +105,7 @@ public sealed class MasterRepository : IMasterRepository
 
         return new AcademicScheduleLookupsDto
         {
-            SansthaOrgs = sansthaOrgs,
+            Orgs = orgs,
             Classes = classes.Select(x => new MasterOptionDto { Id = x.ClassID, Name = x.ClassName ?? string.Empty }).ToList(),
             Subjects = subjects.Select(x => new MasterOptionDto { Id = x.SubjectID, Name = x.SubjectName ?? string.Empty }).ToList(),
             Weeks = weeks,

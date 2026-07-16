@@ -106,7 +106,7 @@ public sealed class MasterService : IMasterService
         request.Description = string.IsNullOrWhiteSpace(request.Description) ? null : MasterValidators.Trim(request.Description);
 
         var error = MasterValidators.FirstError(
-            MasterValidators.RequirePositiveId(request.UnderOrgID, "Under organization"),
+            MasterValidators.RequirePositiveId(request.UnderOrgID, "Org / School"),
             MasterValidators.RequireMonth(request.TMonth),
             MasterValidators.RequirePositiveId(request.ClassID, "Class"),
             MasterValidators.RequirePositiveId(request.SubjectID, "Subject"),

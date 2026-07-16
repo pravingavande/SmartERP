@@ -41,7 +41,7 @@ describe('validateOrganizationForm', () => {
 
   it('rejects school without under sanstha', () => {
     const errors = validateOrganizationForm(baseForm({ underOrgID: null }));
-    expect(errors['underOrgID']).toContain('Under Sanstha');
+    expect(errors['underOrgID']).toContain('Org / School');
   });
 
   it('rejects invalid email', () => {

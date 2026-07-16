@@ -1,10 +1,10 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { InventoryLookups, ItemGroupFormState, ItemGroupMasterItem } from '../../../core/models/master.model';
-import { UserProfile } from '../../../core/models/dashboard.model';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { MasterService } from '../../../core/services/master.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -12,13 +12,14 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateItemGroupForm } from '../../../core/utils/master-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-item-group-master',
-  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './item-group-master.component.html',
   styleUrl: './item-group-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -77,22 +78,10 @@ export class ItemGroupMasterComponent {
           this.errorMessage.set('No schools found for your login.');
           return;
         }
-        const orgId = this.resolveDefaultOrgId(data, profile);
+        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
         this.listOrgID.set(orgId);
         if (orgId) this.loadList();
       });
-  }
-
-  private resolveDefaultOrgId(data: InventoryLookups, profile: UserProfile | null): number | null {
-    if (profile?.schoolCode) {
-      const match = data.orgs.find((o) => o.schoolCode === profile.schoolCode);
-      if (match) return match.orgID;
-    }
-    if (profile?.orgId) {
-      const match = data.orgs.find((o) => o.orgID === profile.orgId);
-      if (match) return match.orgID;
-    }
-    return data.orgs.length === 1 ? data.orgs[0].orgID : data.orgs[0]?.orgID ?? null;
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -192,6 +181,12 @@ export class ItemGroupMasterComponent {
     this.formMode.set('new');
     this.fieldErrors.set({});
     this.saveError.set(null);
+  }
+
+  onFormOrgChange(orgId: number | null): void {
+    this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
+    this.form.update((f) => ({ ...f, orgID: orgId }));
+    this.listOrgID.set(orgId);
   }
 
   updateForm<K extends keyof ItemGroupFormState>(key: K, value: ItemGroupFormState[K]): void {

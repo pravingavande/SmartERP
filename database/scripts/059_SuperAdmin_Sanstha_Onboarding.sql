@@ -119,7 +119,7 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_SuperAdmin_CreateSansthaWithOwner
     @SansthaName NVARCHAR(255),
-    @SchoolCategoryID BIGINT = NULL,
+    @BusinessCategoryID INT = NULL,
     @OwnerFirstName NVARCHAR(100),
     @OwnerMiddleName NVARCHAR(100) = NULL,
     @OwnerLastName NVARCHAR(100),
@@ -149,17 +149,16 @@ BEGIN
     IF EXISTS (SELECT 1 FROM dbo.UserMaster WHERE AppUserName = LTRIM(RTRIM(@OwnerMobile)))
         THROW 52006, 'Owner mobile/username already exists.', 1;
 
-    IF @SchoolCategoryID IS NULL OR @SchoolCategoryID <= 0
-    BEGIN
-        SELECT TOP (1) @SchoolCategoryID = sc.SchoolCategoryID
-        FROM dbo.SchoolCategoryMaster sc
-        WHERE ISNULL(sc.IsActive, 1) = 1
-          AND sc.SchoolCategoryID > 0
-        ORDER BY sc.SchoolCategoryID;
-    END
+    IF @BusinessCategoryID IS NULL OR @BusinessCategoryID <= 0
+        THROW 52007, 'Business category is required.', 1;
 
-    IF @SchoolCategoryID IS NULL OR @SchoolCategoryID <= 0
-        THROW 52007, 'School category is required.', 1;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM dbo.BusinessCategoryMaster bc
+        WHERE bc.BusinessCategoryID = @BusinessCategoryID
+          AND ISNULL(bc.Status, 1) = 1
+    )
+        THROW 52008, 'Business category is invalid.', 1;
 
     BEGIN TRANSACTION;
 
@@ -174,13 +173,13 @@ BEGIN
             )
         ));
 
-    -- App Sanstha = BusinessCategoryID 3, self-parented (UnderOrgID = OrgID)
+    -- Top-level org (Sanstha / group): self-parented UnderOrgID = OrgID
     INSERT INTO dbo.OrgMaster (
         BusinessCategoryID, UnderOrgID, SrNo, SchoolCategoryID,
         OrganizationName, IsActive
     )
     VALUES (
-        3, 0, 0, @SchoolCategoryID,
+        @BusinessCategoryID, 0, 0, NULL,
         LTRIM(RTRIM(@SansthaName)), 1
     );
 
@@ -269,16 +268,16 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE dbo.sp_SuperAdmin_GetSchoolCategories
+CREATE OR ALTER PROCEDURE dbo.sp_SuperAdmin_GetBusinessCategories
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT sc.SchoolCategoryID, sc.SchoolCategoryName
-    FROM dbo.SchoolCategoryMaster sc
-    WHERE ISNULL(sc.IsActive, 1) = 1
-      AND sc.SchoolCategoryID > 0
-    ORDER BY sc.SchoolCategoryID;
+    SELECT bc.BusinessCategoryID, bc.CategoryName AS BusinessCategoryName
+    FROM dbo.BusinessCategoryMaster bc
+    WHERE ISNULL(bc.Status, 1) = 1
+      AND bc.BusinessCategoryID > 0
+    ORDER BY bc.BusinessCategoryID;
 END
 GO
 

@@ -8,14 +8,19 @@ import {
   OrganizationFormState,
   OrganizationListFilter,
   OrganizationListItem,
-  OrganizationLookups
+  OrganizationLookups,
+  SansthaOrgOption
 } from '../models/organization.model';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class OrganizationService {
   private readonly base = `${environment.apiBaseUrl}/organization`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly auth: AuthService
+  ) {}
 
   getLookups(): Observable<OrganizationLookups | null> {
     return this.http.get<ApiResponse<OrganizationLookups>>(`${this.base}/lookups`).pipe(
@@ -45,7 +50,8 @@ export class OrganizationService {
     if (filter.search?.trim()) params = params.set('search', filter.search.trim());
     if (filter.businessCategoryID) params = params.set('businessCategoryID', filter.businessCategoryID.toString());
     if (filter.schoolCategoryID) params = params.set('schoolCategoryID', filter.schoolCategoryID.toString());
-    if (filter.underOrgID) params = params.set('underOrgID', filter.underOrgID.toString());
+    // API param underOrgID = selected Org / School scope (OrgID or children under it)
+    if (filter.orgId) params = params.set('underOrgID', filter.orgId.toString());
     if (filter.cityName?.trim()) params = params.set('cityName', filter.cityName.trim());
     if (filter.isActive !== null && filter.isActive !== undefined) {
       params = params.set('isActive', filter.isActive.toString());
@@ -131,7 +137,10 @@ export class OrganizationService {
   private normalizeLookups(raw: Record<string, unknown>): OrganizationLookups {
     const businessCategories = (raw['businessCategories'] ?? raw['BusinessCategories'] ?? []) as Array<Record<string, unknown>>;
     const schoolCategories = (raw['schoolCategories'] ?? raw['SchoolCategories'] ?? []) as Array<Record<string, unknown>>;
-    const sansthaOrgs = (raw['sansthaOrgs'] ?? raw['SansthaOrgs'] ?? []) as Array<Record<string, unknown>>;
+    // Prefer orgs (Teacher Master); fall back to legacy sansthaOrgs until API is updated
+    const rawOrgs =
+      ((raw['orgs'] ?? raw['Orgs'] ?? raw['sansthaOrgs'] ?? raw['SansthaOrgs']) as Array<Record<string, unknown>>) ?? [];
+    const mapped = rawOrgs.map((x) => this.normalizeOrg(x));
     return {
       businessCategories: businessCategories.map((x) => ({
         id: Number(x['id'] ?? x['Id'] ?? 0),
@@ -141,12 +150,16 @@ export class OrganizationService {
         id: Number(x['id'] ?? x['Id'] ?? 0),
         name: String(x['name'] ?? x['Name'] ?? '')
       })),
-      sansthaOrgs: sansthaOrgs.map((x) => ({
-        orgID: Number(x['orgID'] ?? x['OrgID'] ?? 0),
-        organizationName: String(x['organizationName'] ?? x['OrganizationName'] ?? ''),
-        businessCategoryID: (x['businessCategoryID'] ?? x['BusinessCategoryID'] ?? null) as number | null,
-        underOrgID: (x['underOrgID'] ?? x['UnderOrgID'] ?? null) as number | null
-      }))
+      orgs: this.auth.filterSchoolOrgs(mapped)
+    };
+  }
+
+  private normalizeOrg(raw: Record<string, unknown>): SansthaOrgOption {
+    return {
+      orgID: Number(raw['orgID'] ?? raw['OrgID'] ?? 0),
+      organizationName: String(raw['organizationName'] ?? raw['OrganizationName'] ?? ''),
+      businessCategoryID: (raw['businessCategoryID'] ?? raw['BusinessCategoryID'] ?? null) as number | null,
+      underOrgID: (raw['underOrgID'] ?? raw['UnderOrgID'] ?? null) as number | null
     };
   }
 
@@ -190,7 +203,7 @@ export class OrganizationService {
   private mapToForm(raw: Record<string, unknown>): OrganizationFormState {
     const docs = (raw['documents'] ?? raw['Documents'] ?? []) as Array<Record<string, unknown>>;
     return {
-      orgID: Number(raw['orgID'] ?? raw['OrgID'] ?? 0) || null,
+      orgID: (raw['orgID'] ?? raw['OrgID'] ?? null) as number | null,
       businessCategoryID: (raw['businessCategoryID'] ?? raw['BusinessCategoryID'] ?? null) as number | null,
       underOrgID: (raw['underOrgID'] ?? raw['UnderOrgID'] ?? null) as number | null,
       srNo: (raw['srNo'] ?? raw['SrNo'] ?? null) as number | null,
@@ -211,12 +224,23 @@ export class OrganizationService {
       permission80G: String(raw['permission80G'] ?? raw['Permission80G'] ?? ''),
       remark: String(raw['remark'] ?? raw['Remark'] ?? ''),
       isActive: Boolean(raw['isActive'] ?? raw['IsActive'] ?? true),
-      documents: docs.map((d, index) => ({
-        rowId: `doc-${index}-${d['documentID'] ?? d['DocumentID'] ?? index}`,
-        documentID: Number(d['documentID'] ?? d['DocumentID'] ?? 0) || null,
-        documentPath: (d['documentPath'] ?? d['DocumentPath'] ?? null) as string | null,
-        selectedFileName: (d['documentPath'] ?? d['DocumentPath'] ?? null) as string | null
-      }))
+      documents: docs.length
+        ? docs.map((d) => ({
+            rowId: `doc-${d['documentID'] ?? d['DocumentID'] ?? Math.random().toString(36).slice(2)}`,
+            documentID: (d['documentID'] ?? d['DocumentID'] ?? null) as number | null,
+            documentPath: (d['documentPath'] ?? d['DocumentPath'] ?? null) as string | null,
+            selectedFileName: null,
+            pendingFile: null
+          }))
+        : [
+            {
+              rowId: `doc-${Date.now()}`,
+              documentID: null,
+              documentPath: null,
+              selectedFileName: null,
+              pendingFile: null
+            }
+          ]
     };
   }
 }

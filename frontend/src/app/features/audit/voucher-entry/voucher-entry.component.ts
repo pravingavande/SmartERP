@@ -1,4 +1,5 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -9,7 +10,6 @@ import { AuditPrintService } from '../../../core/services/audit-print.service';
 import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { UserProfile } from '../../../core/models/dashboard.model';
 import {
   AccountRegisterOption,
   AuditLookups,
@@ -31,12 +31,13 @@ import { MarathiNumberInputDirective } from '../../../core/directives/marathi-nu
 import { coerceEnglishIntegerString, coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-voucher-entry',
-  imports: [FormsModule, DatePipe, CurrencyPipe, RouterLink, MarathiNumberInputDirective, ListActionBtnComponent],
+  imports: [FormsModule, DatePipe, CurrencyPipe, RouterLink, MarathiNumberInputDirective, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './voucher-entry.component.html',
   styleUrl: './voucher-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -168,7 +169,7 @@ export class VoucherEntryComponent {
         }
 
         const activeFy = data.fyList[0] ?? null;
-        const orgId = this.resolveDefaultOrgId(data, profile);
+        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
         const fyId = activeFy?.fyID ?? null;
 
         this.listOrgID.set(orgId);
@@ -179,20 +180,6 @@ export class VoucherEntryComponent {
           this.loadOrgDependents(orgId, false);
         }
       });
-  }
-
-  private resolveDefaultOrgId(data: AuditLookups, profile: UserProfile | null): number | null {
-    const schoolCode = profile?.schoolCode ?? (profile as { SchoolCode?: number } | null)?.SchoolCode;
-    const profileOrgId = profile?.orgId ?? (profile as { orgID?: number } | null)?.orgID;
-    if (schoolCode) {
-      const match = data.orgs.find((o) => o.schoolCode === schoolCode);
-      if (match) return match.orgID;
-    }
-    if (profileOrgId) {
-      const match = data.orgs.find((o) => o.orgID === profileOrgId);
-      if (match) return match.orgID;
-    }
-    return data.orgs.length === 1 ? data.orgs[0].orgID : data.orgs[0]?.orgID ?? null;
   }
 
   private resolveDefaultAccountRegisterId(registers: AccountRegisterOption[]): number | null {

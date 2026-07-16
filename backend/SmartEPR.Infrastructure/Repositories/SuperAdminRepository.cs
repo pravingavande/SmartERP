@@ -14,8 +14,8 @@ public sealed class SuperAdminRepository : ISuperAdminRepository
         _executor = executor;
     }
 
-    public Task<IReadOnlyList<SuperAdminSchoolCategoryDto>> GetSchoolCategoriesAsync(CancellationToken cancellationToken = default)
-        => _executor.QueryListAsync<SuperAdminSchoolCategoryDto>("dbo.sp_SuperAdmin_GetSchoolCategories", null, cancellationToken);
+    public Task<IReadOnlyList<SuperAdminBusinessCategoryDto>> GetBusinessCategoriesAsync(CancellationToken cancellationToken = default)
+        => _executor.QueryListAsync<SuperAdminBusinessCategoryDto>("dbo.sp_SuperAdmin_GetBusinessCategories", null, cancellationToken);
 
     public Task<IReadOnlyList<SansthaOwnerListItemDto>> GetSansthaOwnerListAsync(CancellationToken cancellationToken = default)
         => _executor.QueryListAsync<SansthaOwnerListItemDto>("dbo.sp_SuperAdmin_GetSansthaOwnerList", null, cancellationToken);
@@ -27,7 +27,7 @@ public sealed class SuperAdminRepository : ISuperAdminRepository
     {
         var p = new DynamicParameters();
         p.Add("@SansthaName", request.SansthaName);
-        p.Add("@SchoolCategoryID", request.SchoolCategoryID);
+        p.Add("@BusinessCategoryID", request.BusinessCategoryID);
         p.Add("@OwnerFirstName", request.OwnerFirstName);
         p.Add("@OwnerMiddleName", request.OwnerMiddleName);
         p.Add("@OwnerLastName", request.OwnerLastName);

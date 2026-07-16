@@ -16,8 +16,8 @@ public sealed class SuperAdminService : ISuperAdminService
         _repository = repository;
     }
 
-    public Task<IReadOnlyList<SuperAdminSchoolCategoryDto>> GetSchoolCategoriesAsync(CancellationToken cancellationToken = default)
-        => _repository.GetSchoolCategoriesAsync(cancellationToken);
+    public Task<IReadOnlyList<SuperAdminBusinessCategoryDto>> GetBusinessCategoriesAsync(CancellationToken cancellationToken = default)
+        => _repository.GetBusinessCategoriesAsync(cancellationToken);
 
     public Task<IReadOnlyList<SansthaOwnerListItemDto>> GetSansthaOwnerListAsync(CancellationToken cancellationToken = default)
         => _repository.GetSansthaOwnerListAsync(cancellationToken);
@@ -44,6 +44,8 @@ public sealed class SuperAdminService : ISuperAdminService
             return (null, "Owner mobile must be exactly 10 digits (used as login username).");
         if (string.IsNullOrWhiteSpace(request.OwnerPassword))
             return (null, "Owner password is required.");
+        if (request.BusinessCategoryID is null or <= 0)
+            return (null, "Business category is required.");
 
         try
         {

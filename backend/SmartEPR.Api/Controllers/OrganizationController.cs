@@ -32,7 +32,10 @@ public sealed class OrganizationController : ControllerBase
     [HttpGet("lookups")]
     public async Task<IActionResult> GetLookups(CancellationToken cancellationToken)
     {
-        var lookups = await _organizationService.GetLookupsAsync(cancellationToken).ConfigureAwait(false);
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(ApiResponse<OrganizationLookupsDto>.Fail("Invalid token."));
+
+        var lookups = await _organizationService.GetLookupsAsync(userId, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<OrganizationLookupsDto>.Ok(lookups));
     }
 

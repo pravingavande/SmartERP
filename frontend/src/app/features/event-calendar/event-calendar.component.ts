@@ -3,10 +3,12 @@ import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed,
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Subject, debounceTime, switchMap } from 'rxjs';
+import { Subject, debounceTime, forkJoin, switchMap } from 'rxjs';
+import { DashboardService } from '../../core/services/dashboard.service';
 import { EventCalendarService } from '../../core/services/event-calendar.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CalendarEvent, EventLookups, LocationOption, SaveEventRequest } from '../../core/models/calendar.model';
+import { resolveDefaultSchoolOrgId } from '../../core/utils/org-access.util';
 import {
   buildMonthGrid,
   buildWeekDays,
@@ -33,6 +35,7 @@ import { mapEventTicketBackendMessage, validateEventForm } from '../../core/util
 })
 export class EventCalendarComponent {
   private readonly calendarService = inject(EventCalendarService);
+  private readonly dashboardService = inject(DashboardService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
@@ -104,12 +107,19 @@ export class EventCalendarComponent {
   readonly canEditReporting = computed(() => this.canManage() && !this.isViewMode() && (this.showReportingSection() || this.isLocked()));
 
   constructor() {
-    this.calendarService.getLookups().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
-      this.lookups.set(data);
-      if (data && !data.isSansthaUser && data.orgs.length === 1) {
-        this.selectedOrgIds.set([data.orgs[0].orgID]);
-      }
-    });
+    forkJoin({
+      lookups: this.calendarService.getLookups(),
+      profile: this.dashboardService.getProfile()
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ lookups: data, profile }) => {
+        this.lookups.set(data);
+        if (!data?.orgs?.length) return;
+        const defaultOrgId = resolveDefaultSchoolOrgId(data.orgs, profile);
+        if (defaultOrgId) {
+          this.selectedOrgIds.set([defaultOrgId]);
+        }
+      });
 
     this.monthReload$
       .pipe(
@@ -179,7 +189,12 @@ export class EventCalendarComponent {
     if (!this.canManage()) return;
     this.resetModalState(false);
     const lookups = this.lookups();
-    const orgIds = this.selectedOrgIds().length ? this.selectedOrgIds() : lookups?.orgs.slice(0, 1).map((o) => o.orgID) ?? [];
+    const fallbackOrgId = resolveDefaultSchoolOrgId(lookups?.orgs ?? [], null);
+    const orgIds = this.selectedOrgIds().length
+      ? this.selectedOrgIds()
+      : fallbackOrgId
+        ? [fallbackOrgId]
+        : [];
     this.selectedOrgIds.set(orgIds);
     this.form.set({
       ...this.emptyForm(),

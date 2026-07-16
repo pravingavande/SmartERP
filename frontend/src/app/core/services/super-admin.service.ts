@@ -5,14 +5,14 @@ import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/auth.model';
 import { apiData, apiMessage, apiSuccess } from '../utils/api-response.util';
 
-export interface SuperAdminSchoolCategory {
-  schoolCategoryID: number;
-  schoolCategoryName: string;
+export interface SuperAdminBusinessCategory {
+  businessCategoryID: number;
+  businessCategoryName: string;
 }
 
 export interface CreateSansthaWithOwnerRequest {
   sansthaName: string;
-  schoolCategoryID: number | null;
+  businessCategoryID: number | null;
   ownerFirstName: string;
   ownerMiddleName: string;
   ownerLastName: string;
@@ -50,8 +50,8 @@ export class SuperAdminService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiBaseUrl}/super-admin`;
 
-  getSchoolCategories(): Observable<SuperAdminSchoolCategory[]> {
-    return this.http.get<ApiResponse<SuperAdminSchoolCategory[]>>(`${this.base}/school-categories`).pipe(
+  getBusinessCategories(): Observable<SuperAdminBusinessCategory[]> {
+    return this.http.get<ApiResponse<SuperAdminBusinessCategory[]>>(`${this.base}/business-categories`).pipe(
       map((r) => (apiSuccess(r) && apiData(r) ? apiData(r)! : [])),
       catchError(() => of([]))
     );
