@@ -128,7 +128,23 @@ describe('teacher-validation.util', () => {
     it('rejects invalid aadhar', () => {
       const form = validForm();
       form.adharCardNo = '1234';
-      expect(validateTeacherForm(form)['adharCardNo']).toContain('12 digits');
+      expect(validateTeacherForm(form)['adharCardNo']).toContain('exactly 12 digits');
+    });
+
+    it('rejects future date of birth', () => {
+      const form = validForm();
+      const future = new Date();
+      future.setFullYear(future.getFullYear() + 1);
+      form.dob = future.toISOString().slice(0, 10);
+      expect(validateTeacherForm(form)['dob']).toContain('Future date');
+    });
+
+    it('rejects under-age date of birth', () => {
+      const form = validForm();
+      const young = new Date();
+      young.setFullYear(young.getFullYear() - 10);
+      form.dob = young.toISOString().slice(0, 10);
+      expect(validateTeacherForm(form)['dob']).toContain('between');
     });
 
     it('rejects invalid PAN', () => {

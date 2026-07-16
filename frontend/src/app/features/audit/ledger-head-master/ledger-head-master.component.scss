@@ -4,3 +4,21 @@
 .master-modal-wide {
   width: min(100%, 620px);
 }
+
+/* Keep View/Edit/Delete on one row */
+.audit-page .records-table {
+  thead th.actions-col,
+  td.actions {
+    min-width: 11.5rem;
+    max-width: none;
+    width: 1%;
+    overflow: visible;
+    white-space: nowrap;
+  }
+
+  td.actions .action-group {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+}

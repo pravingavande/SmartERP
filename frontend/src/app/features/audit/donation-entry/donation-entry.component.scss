@@ -188,14 +188,22 @@
   thead th:last-child,
   td.actions {
     width: 1%;
-    max-width: 7.25rem;
+    min-width: 11.5rem;
+    max-width: none;
     white-space: nowrap;
     padding-left: 0.25rem;
     padding-right: 0.25rem;
     text-align: center;
+    overflow: visible;
   }
 
   .actions { white-space: nowrap; }
+
+  td.actions .action-group {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0.35rem;
+  }
 }
 
 .donation-list-table {
@@ -246,8 +254,9 @@
 
 .action-group {
   display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .action-btn {

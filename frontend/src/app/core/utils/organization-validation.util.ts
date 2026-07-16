@@ -31,7 +31,7 @@ export function validateOrganizationForm(form: OrganizationFormState): FieldErro
   }
 
   if (form.mobileNo?.trim() && !mobileRegex.test(form.mobileNo.trim())) {
-    errors['mobileNo'] = 'Mobile number must be 10 digits.';
+    errors['mobileNo'] = 'Mobile number must be exactly 10 digits.';
   }
 
   if (form.phoneNo?.trim() && !phoneRegex.test(form.phoneNo.trim())) {
@@ -42,8 +42,19 @@ export function validateOrganizationForm(form: OrganizationFormState): FieldErro
     errors['panNo'] = 'Enter a valid PAN number.';
   }
 
-  if (form.establishmentYear?.trim() && !yearRegex.test(form.establishmentYear.trim())) {
-    errors['establishmentYear'] = 'Establishment year must be 4 digits.';
+  if (form.establishmentYear?.trim()) {
+    const yearText = form.establishmentYear.trim();
+    if (!yearRegex.test(yearText)) {
+      errors['establishmentYear'] = 'Establishment year must be 4 digits.';
+    } else {
+      const year = Number(yearText);
+      const currentYear = new Date().getFullYear();
+      if (year > currentYear) {
+        errors['establishmentYear'] = `Establishment year cannot be greater than ${currentYear}.`;
+      } else if (year < 1800) {
+        errors['establishmentYear'] = 'Establishment year is invalid.';
+      }
+    }
   }
 
   if (form.webSite?.trim()) {

@@ -20,6 +20,7 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { pageCount, pageRange, paginateRows } from '../../../core/utils/master-list.util';
 import { mapOrganizationBackendMessage, validateOrganizationForm } from '../../../core/utils/organization-validation.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
+import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 
 type FormMode = 'new' | 'edit' | 'view';
 type FormTab = 'basic' | 'documents';
@@ -29,7 +30,7 @@ const MAX_DOC_BYTES = 5 * 1024 * 1024;
 
 @Component({
   selector: 'app-organization-master',
-  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent, MarathiNumberInputDirective],
   templateUrl: './organization-master.component.html',
   styleUrl: './organization-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -221,10 +222,10 @@ export class OrganizationMasterComponent {
 
   removeDocumentRow(index: number): void {
     if (this.isViewMode()) return;
-    this.form.update((f) => ({
-      ...f,
-      documents: f.documents.length > 1 ? f.documents.filter((_, i) => i !== index) : f.documents
-    }));
+    this.form.update((f) => {
+      const documents = f.documents.filter((_, i) => i !== index);
+      return { ...f, documents: documents.length ? documents : [this.emptyDocumentRow()] };
+    });
   }
 
   updateDocument(index: number, patch: Partial<OrganizationDocumentLine>): void {
@@ -271,6 +272,14 @@ export class OrganizationMasterComponent {
         this.updateDocument(index, { documentPath: path, selectedFileName: file.name, pendingFile: null });
         this.toast.showSuccess('Document uploaded.', 'Uploaded');
       });
+  }
+
+  documentDisplayName(row: OrganizationDocumentLine): string {
+    if (row.selectedFileName?.trim()) return row.selectedFileName.trim();
+    const path = row.documentPath?.trim();
+    if (!path) return 'No file chosen';
+    const parts = path.split(/[/\\]/);
+    return parts[parts.length - 1] || path;
   }
 
   openDocument(path: string | null | undefined): void {
@@ -326,6 +335,7 @@ export class OrganizationMasterComponent {
       this.formMode.set('edit');
       this.toast.showSuccess('Organization saved.', 'Saved');
       this.loadList();
+      this.closeForm();
     });
   }
 

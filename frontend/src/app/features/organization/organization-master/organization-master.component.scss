@@ -97,19 +97,81 @@
 }
 
 .doc-table td.actions {
-  min-width: 9rem;
+  min-width: 11rem;
+}
+
+.file-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.file-pick-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #c5d0de;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: var(--epr-navy);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .file-name {
   display: block;
-  margin-top: 0.35rem;
   font-size: var(--epr-font-size-hint);
   color: #475569;
   word-break: break-all;
+  font-weight: 600;
+}
+
+/* Compact grid + keep View/Edit/Delete on one row */
+.org-master-page .records-table {
+  thead th.actions-col,
+  td.actions {
+    min-width: 11.5rem;
+    max-width: none;
+    width: 1%;
+    overflow: visible;
+    white-space: nowrap;
+  }
+
+  td.actions .action-group {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.35rem;
+  }
+
+  td,
+  th {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
 }
 
 .inactive-row {
   opacity: 0.82;
+}
+
+.req {
+  color: #d32f2f;
+  font-weight: 700;
+  margin-left: 0.15rem;
 }
 
 @media (max-width: 900px) {

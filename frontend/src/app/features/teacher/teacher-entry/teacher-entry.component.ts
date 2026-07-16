@@ -26,6 +26,8 @@ import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
 import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import {
+  TEACHER_MAX_AGE,
+  TEACHER_MIN_AGE,
   mapTeacherBackendMessageToFieldErrors,
   validateTeacherForm,
   validateTeacherPhoto
@@ -65,6 +67,14 @@ export class TeacherEntryComponent {
 
   /** Label from LanguageKeyValueMaster (M/E per Settings). */
   readonly lbl = (key: string, fallback?: string) => this.languageService.label(key, fallback);
+  readonly dobMax = todayIsoDate();
+  readonly dobMin = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - TEACHER_MAX_AGE);
+    return d.toISOString().slice(0, 10);
+  })();
+  readonly teacherMinAge = TEACHER_MIN_AGE;
+  readonly teacherMaxAge = TEACHER_MAX_AGE;
   private readonly listReload$ = new Subject<void>();
   private readonly searchChanges$ = new Subject<string>();
   private searchDebounceSubscribed = false;
@@ -237,9 +247,17 @@ export class TeacherEntryComponent {
   }
 
   editTeacher(item: TeacherListItem): void {
+    this.openTeacher(item.userID, 'edit');
+  }
+
+  viewTeacher(item: TeacherListItem): void {
+    this.openTeacher(item.userID, 'view');
+  }
+
+  private openTeacher(userId: number, mode: FormMode): void {
     this.loading.set(true);
     this.teacherService
-      .getById(item.userID)
+      .getById(userId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => {
         this.loading.set(false);
@@ -247,7 +265,7 @@ export class TeacherEntryComponent {
           this.errorMessage.set('Unable to load teacher.');
           return;
         }
-        this.formMode.set('edit');
+        this.formMode.set(mode);
         this.formVisible.set(true);
         this.activeSection.set('basic');
         this.wizardActive.set(false);
@@ -256,12 +274,8 @@ export class TeacherEntryComponent {
         this.saveError.set(null);
         this.resetPasswordValue.set('');
         this.form.set(this.ensureChildRows(data));
+        this.refreshPhotoPreview(data.photoPath);
       });
-  }
-
-  viewTeacher(item: TeacherListItem): void {
-    this.editTeacher(item);
-    this.formMode.set('view');
   }
 
   cancel(): void {
@@ -346,11 +360,13 @@ export class TeacherEntryComponent {
   }
 
   onPhotoSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
     const photoError = validateTeacherPhoto(file);
     if (photoError) {
       this.toast.showError(photoError);
+      input.value = '';
       return;
     }
     this.photoUploading.set(true);
@@ -359,15 +375,36 @@ export class TeacherEntryComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((storedName) => {
         this.photoUploading.set(false);
+        input.value = '';
         if (!storedName) {
           this.toast.showError('Unable to upload photo.');
           return;
         }
-        this.form.update((f) => ({
-          ...f,
-          photoPath: storedName,
-          photoPreviewUrl: this.teacherService.photoUrl(storedName)
-        }));
+        this.form.update((f) => ({ ...f, photoPath: storedName }));
+        this.refreshPhotoPreview(storedName, file);
+      });
+  }
+
+  private refreshPhotoPreview(photoPath: string | null | undefined, localFile?: File): void {
+    if (localFile) {
+      const objectUrl = URL.createObjectURL(localFile);
+      this.form.update((f) => ({ ...f, photoPreviewUrl: objectUrl }));
+      return;
+    }
+    const url = this.teacherService.photoUrl(photoPath);
+    if (!url) {
+      this.form.update((f) => ({ ...f, photoPreviewUrl: null }));
+      return;
+    }
+    this.teacherService
+      .downloadFile(url)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const objectUrl = URL.createObjectURL(blob);
+          this.form.update((f) => ({ ...f, photoPreviewUrl: objectUrl }));
+        },
+        error: () => this.form.update((f) => ({ ...f, photoPreviewUrl: null }))
       });
   }
 
@@ -394,9 +431,52 @@ export class TeacherEntryComponent {
   }
 
   onDocumentFileSelected(index: number, event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
-    this.updateDocument(index, { empDocumentPath: file.name, selectedFileName: file.name });
+    const ext = '.' + (file.name.split('.').pop() ?? '').toLowerCase();
+    if (!['.pdf', '.jpg', '.jpeg', '.png'].includes(ext)) {
+      this.toast.showError('Only PDF, JPG, JPEG, and PNG files are allowed.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.toast.showError('Document must be 5 MB or smaller.');
+      input.value = '';
+      return;
+    }
+    this.teacherService
+      .uploadDocument(file)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((storedName) => {
+        input.value = '';
+        if (!storedName) {
+          this.toast.showError('Unable to upload document.');
+          return;
+        }
+        this.updateDocument(index, { empDocumentPath: storedName, selectedFileName: file.name });
+        this.toast.showSuccess('Document uploaded.');
+      });
+  }
+
+  openDocument(path: string | null | undefined): void {
+    const url = this.teacherService.documentUrl(path);
+    if (!url) return;
+    this.teacherService
+      .downloadFile(url)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const objectUrl = URL.createObjectURL(blob);
+          window.open(objectUrl, '_blank');
+          setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        },
+        error: () => this.toast.showError('Unable to open document.')
+      });
+  }
+
+  documentDisplayName(row: TeacherDocumentLine): string {
+    return row.selectedFileName || (row.empDocumentPath ? row.empDocumentPath.split(/[/\\]/).pop() || row.empDocumentPath : '') || 'No file chosen';
   }
 
   addSchoolRow(): void {
@@ -612,7 +692,7 @@ export class TeacherEntryComponent {
       photoPath: '',
       photoPreviewUrl: null,
       genderCode: null,
-      dob: todayIsoDate(),
+      dob: '',
       adharCardNo: '',
       shalarthID: '',
       scaleOfPay: '',

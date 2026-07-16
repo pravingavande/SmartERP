@@ -42,7 +42,7 @@
               <th>Organization Name</th>
               <th>UDISE No.</th>
               <th>School Category</th>
-              <th>Actions</th>
+              <th class="actions-col">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -107,7 +107,7 @@
               <div class="form-grid">
                 @if (!hideBusinessCategoryOnNew()) {
                 <label class="field" [class.field-invalid]="fieldError('businessCategoryID')">
-                  <span class="field-label">Business Category *</span>
+                  <span class="field-label">Business Category<span class="req">*</span></span>
                   <select class="field-control" required [ngModel]="form().businessCategoryID" (ngModelChange)="updateForm('businessCategoryID', $event ? +$event : null)" name="businessCategoryID">
                     <option [ngValue]="null">-- Select --</option>
                     @for (bc of lookups()?.businessCategories ?? []; track bc.id) {
@@ -130,7 +130,7 @@
                     </label>
                   }
                   <label class="field" [class.field-invalid]="fieldError('underOrgID')">
-                    <span class="field-label">Under Sanstha *</span>
+                    <span class="field-label">Under Sanstha<span class="req">*</span></span>
                     <select class="field-control" required [ngModel]="form().underOrgID" (ngModelChange)="onUnderSansthaChange($event ? +$event : null)" name="underOrgID">
                       <option [ngValue]="null">-- Select --</option>
                       @for (s of lookups()?.sansthaOrgs ?? []; track s.orgID) {
@@ -142,7 +142,7 @@
                 }
 
                 <label class="field" [class.field-invalid]="fieldError('schoolCategoryID')">
-                  <span class="field-label">School Category *</span>
+                  <span class="field-label">School Category<span class="req">*</span></span>
                   <select class="field-control" required [ngModel]="form().schoolCategoryID" (ngModelChange)="updateForm('schoolCategoryID', $event ? +$event : null)" name="schoolCategoryID">
                     <option [ngValue]="null">-- Select --</option>
                     @for (sc of lookups()?.schoolCategories ?? []; track sc.id) {
@@ -153,7 +153,7 @@
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('organizationName')">
-                  <span class="field-label">Organization Name *</span>
+                  <span class="field-label">Organization Name<span class="req">*</span></span>
                   <input class="field-control" required [ngModel]="form().organizationName" (ngModelChange)="updateForm('organizationName', $event)" name="organizationName">
                   @if (fieldError('organizationName')) { <span class="field-error">{{ fieldError('organizationName') }}</span> }
                 </label>
@@ -203,7 +203,7 @@
 
                 <label class="field" [class.field-invalid]="fieldError('mobileNo')">
                   <span class="field-label">Mobile No</span>
-                  <input class="field-control" [ngModel]="form().mobileNo" (ngModelChange)="updateForm('mobileNo', $event)" name="mobileNo">
+                  <input class="field-control" appMarathiNumber mode="int" [maxLength]="10" inputmode="numeric" [ngModel]="form().mobileNo" (ngModelChange)="updateForm('mobileNo', $event)" name="mobileNo" placeholder="10 digits">
                   @if (fieldError('mobileNo')) { <span class="field-error">{{ fieldError('mobileNo') }}</span> }
                 </label>
 
@@ -215,7 +215,7 @@
 
                 <label class="field" [class.field-invalid]="fieldError('establishmentYear')">
                   <span class="field-label">Establishment Year</span>
-                  <input class="field-control" [ngModel]="form().establishmentYear" (ngModelChange)="updateForm('establishmentYear', $event)" name="establishmentYear">
+                  <input class="field-control" appMarathiNumber mode="int" [maxLength]="4" inputmode="numeric" [ngModel]="form().establishmentYear" (ngModelChange)="updateForm('establishmentYear', $event)" name="establishmentYear" placeholder="YYYY">
                   @if (fieldError('establishmentYear')) { <span class="field-error">{{ fieldError('establishmentYear') }}</span> }
                 </label>
 
@@ -280,12 +280,15 @@
                         </select>
                       </td>
                       <td>
-                        @if (!isViewMode()) {
-                          <input class="field-control file-input" type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onDocumentFileSelected(i, $event)" [name]="'docFile' + i">
-                        }
-                        @if (row.selectedFileName || row.documentPath) {
-                          <span class="file-name">{{ row.selectedFileName || row.documentPath }}</span>
-                        }
+                        <div class="file-row">
+                          @if (!isViewMode()) {
+                            <label class="file-pick-btn">
+                              Choose File
+                              <input class="file-input-hidden" type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onDocumentFileSelected(i, $event)" [name]="'docFile' + i">
+                            </label>
+                          }
+                          <span class="file-name">{{ documentDisplayName(row) }}</span>
+                        </div>
                       </td>
                       <td class="actions">
                         <div class="action-group">
@@ -293,7 +296,7 @@
                             <app-list-action-btn action="view" (clicked)="openDocument(row.documentPath)" />
                             <button type="button" class="btn btn-outline btn-sm" (click)="downloadDocument(row.documentPath)">Download</button>
                           }
-                          @if (!isViewMode() && form().documents.length > 1) {
+                          @if (!isViewMode()) {
                             <app-list-action-btn action="delete" (clicked)="removeDocumentRow(i)" />
                           }
                         </div>

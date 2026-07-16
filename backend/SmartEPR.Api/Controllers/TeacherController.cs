@@ -18,7 +18,13 @@ public sealed class TeacherController : ControllerBase
         ".jpg", ".jpeg", ".png"
     };
 
+    private static readonly HashSet<string> DocumentExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf", ".jpg", ".jpeg", ".png"
+    };
+
     private const long MaxPhotoBytes = 2 * 1024 * 1024;
+    private const long MaxDocumentBytes = 5 * 1024 * 1024;
 
     private readonly ITeacherService _teacherService;
     private readonly IWebHostEnvironment _environment;
@@ -137,6 +143,53 @@ public sealed class TeacherController : ControllerBase
             _ => "application/octet-stream"
         };
         return PhysicalFile(fullPath, contentType);
+    }
+
+    [HttpPost("upload-document")]
+    [RequestSizeLimit(MaxDocumentBytes)]
+    public async Task<IActionResult> UploadDocument(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+            return Ok(ApiResponse<string>.Fail("No file uploaded."));
+
+        if (file.Length > MaxDocumentBytes)
+            return Ok(ApiResponse<string>.Fail("Document must be 5 MB or smaller."));
+
+        var ext = Path.GetExtension(file.FileName);
+        if (!DocumentExtensions.Contains(ext))
+            return Ok(ApiResponse<string>.Fail("Only PDF, JPG, JPEG, and PNG files are allowed."));
+
+        var storedName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
+        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "TeacherDocuments");
+        Directory.CreateDirectory(uploadDir);
+        var fullPath = Path.Combine(uploadDir, storedName);
+        await using (var stream = System.IO.File.Create(fullPath))
+        {
+            await file.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+        }
+
+        return Ok(ApiResponse<string>.Ok(storedName, "Document uploaded."));
+    }
+
+    [HttpGet("document/{fileName}")]
+    public IActionResult GetDocument(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains("..", StringComparison.Ordinal))
+            return NotFound();
+
+        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "TeacherDocuments");
+        var fullPath = Path.Combine(uploadDir, fileName);
+        if (!System.IO.File.Exists(fullPath))
+            return NotFound();
+
+        var contentType = Path.GetExtension(fileName).ToLowerInvariant() switch
+        {
+            ".pdf" => "application/pdf",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            _ => "application/octet-stream"
+        };
+        return PhysicalFile(fullPath, contentType, fileName, enableRangeProcessing: true);
     }
 
     private bool TryGetUserId(out long userId)

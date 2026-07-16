@@ -167,9 +167,27 @@ export class TeacherService {
     );
   }
 
+  uploadDocument(file: File): Observable<string | null> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<string>>(`${this.base}/upload-document`, formData).pipe(
+      map((r) => (r.success && r.data ? r.data : null)),
+      catchError(() => of(null))
+    );
+  }
+
   photoUrl(fileName: string | null | undefined): string | null {
     if (!fileName?.trim()) return null;
     return `${this.base}/photo/${encodeURIComponent(fileName.trim())}`;
+  }
+
+  documentUrl(fileName: string | null | undefined): string | null {
+    if (!fileName?.trim()) return null;
+    return `${this.base}/document/${encodeURIComponent(fileName.trim())}`;
+  }
+
+  downloadFile(url: string): Observable<Blob> {
+    return this.http.get(url, { responseType: 'blob' });
   }
 
   private normalizeLookupsBundle(raw: TeacherLookupsBundle & { Lookups?: TeacherLookups; Orgs?: OrgOption[] }): TeacherLookupsBundle {
@@ -340,6 +358,10 @@ export class TeacherService {
     };
   }
 
+  private fileBaseName(path: string): string {
+    return path.split(/[/\\]/).pop() || path;
+  }
+
   private mapDocumentLine(raw: unknown, index: number): TeacherDocumentLine {
     const d = raw as Record<string, unknown>;
     const path = String(d['empDocumentPath'] ?? d['EmpDocumentPath'] ?? '');
@@ -347,7 +369,7 @@ export class TeacherService {
       rowId: `doc-${index}`,
       empDocumentCode: (d['empDocumentCode'] ?? d['EmpDocumentCode'] ?? null) as number | null,
       empDocumentPath: path,
-      selectedFileName: path || null
+      selectedFileName: path ? this.fileBaseName(path) : null
     };
   }
 
