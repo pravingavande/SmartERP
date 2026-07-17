@@ -13,13 +13,15 @@ namespace SmartEPR.Api.Controllers;
 [Route("api/[controller]")]
 public sealed class EventCalendarController : ControllerBase
 {
-    private readonly IEventCalendarService _service;
-    private readonly IWebHostEnvironment _environment;
+    private const string FeatureFolder = "Events";
 
-    public EventCalendarController(IEventCalendarService service, IWebHostEnvironment environment)
+    private readonly IEventCalendarService _service;
+    private readonly ILocalFileStorage _fileStorage;
+
+    public EventCalendarController(IEventCalendarService service, ILocalFileStorage fileStorage)
     {
         _service = service;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet("lookups")]
@@ -168,35 +170,30 @@ public sealed class EventCalendarController : ControllerBase
 
     [HttpPost("upload")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> UploadFile(IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] long orgId, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
             return Ok(ApiResponse<string>.Fail("File is required."));
 
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "Events");
-        Directory.CreateDirectory(uploadDir);
-        var storedName = $"{Guid.NewGuid():N}_{Path.GetFileName(file.FileName)}";
-        var fullPath = Path.Combine(uploadDir, storedName);
-        await using (var stream = System.IO.File.Create(fullPath))
-        {
-            await file.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-        }
+        if (orgId <= 0)
+            return Ok(ApiResponse<string>.Fail("Organization is required for file upload."));
 
-        return Ok(ApiResponse<string>.Ok(storedName, "File uploaded."));
+        await using var stream = file.OpenReadStream();
+        var relativePath = await _fileStorage
+            .SaveAsync(FeatureFolder, orgId, stream, file.FileName, cancellationToken)
+            .ConfigureAwait(false);
+
+        return Ok(ApiResponse<string>.Ok(relativePath, "File uploaded."));
     }
 
-    [HttpGet("file/{fileName}")]
-    public IActionResult DownloadFile(string fileName)
+    [HttpGet("file/{*relativePath}")]
+    public IActionResult DownloadFile(string relativePath)
     {
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains("..", StringComparison.Ordinal))
-            return BadRequest(ApiResponse<bool>.Fail("Invalid file name."));
-
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "Events");
-        var fullPath = Path.Combine(uploadDir, fileName);
-        if (!System.IO.File.Exists(fullPath))
+        var fullPath = _fileStorage.ResolvePhysicalPath(FeatureFolder, relativePath);
+        if (fullPath is null)
             return NotFound(ApiResponse<bool>.Fail("File not found."));
 
-        return PhysicalFile(fullPath, "application/octet-stream", fileName);
+        return PhysicalFile(fullPath, "application/octet-stream", Path.GetFileName(fullPath));
     }
 
     [HttpDelete("events/{eventId:int}")]

@@ -13,6 +13,7 @@ import {
   TicketStatusOption
 } from '../models/ticket.model';
 import { AuthService } from './auth.service';
+import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 
 const FALLBACK_STATUSES: TicketStatusOption[] = [
   { ticketStatusID: 1, statusName: 'Open', statusNameMr: 'खुले', sortOrder: 1 },
@@ -131,17 +132,18 @@ export class TicketService {
     );
   }
 
-  uploadFile(file: File): Observable<string | null> {
+  uploadFile(file: File, orgId: number): Observable<string | null> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ApiResponse<string>>(`${this.ticketBase}/upload`, formData).pipe(
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.post<ApiResponse<string>>(`${this.ticketBase}/upload`, formData, { params }).pipe(
       map((r) => (r.success && r.data ? r.data : null)),
       catchError(() => of(null))
     );
   }
 
   fileUrl(fileName: string): string {
-    return `${this.ticketBase}/file/${encodeURIComponent(fileName)}`;
+    return `${this.ticketBase}/file/${encodeRelativeStoragePath(fileName)}`;
   }
 
   downloadFile(url: string): Observable<Blob> {

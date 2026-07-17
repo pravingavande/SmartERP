@@ -265,7 +265,13 @@ export class TicketEntryComponent {
     const file = input.files?.[0];
     if (!file) return;
 
-    this.ticketService.uploadFile(file).subscribe((stored) => {
+    const orgId = this.selectedOrgIds()[0] ?? this.listOrgID();
+    if (!orgId) {
+      this.toast.showError('Please select at least one school before uploading a file.');
+      return;
+    }
+
+    this.ticketService.uploadFile(file, orgId).subscribe((stored) => {
       if (!stored) {
         this.toast.showError('File upload failed.');
         return;

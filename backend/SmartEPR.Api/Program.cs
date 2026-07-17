@@ -9,6 +9,12 @@ using SmartEPR.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure();
+builder.Services.AddSingleton<ILocalFileStorage>(sp =>
+{
+    var env = sp.GetRequiredService<IWebHostEnvironment>();
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new SmartEPR.Infrastructure.Storage.LocalFileStorage(env.ContentRootPath, config);
+});
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ITicketNotificationService, TicketNotificationService>();
 

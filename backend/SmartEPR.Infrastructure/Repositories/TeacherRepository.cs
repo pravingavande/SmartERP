@@ -36,7 +36,7 @@ public sealed class TeacherRepository : ITeacherRepository
 
         var staffTypes = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();
         var userRoles = (await multi.ReadAsync<UserRoleRow>().ConfigureAwait(false)).AsList();
-        var designations = (await multi.ReadAsync<CodeNameRow>().ConfigureAwait(false)).AsList();
+        var designations = (await multi.ReadAsync<DesignationRow>().ConfigureAwait(false)).AsList();
         var genders = (await multi.ReadAsync<CodeNameRow>().ConfigureAwait(false)).AsList();
         var religions = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();
         var categories = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();
@@ -48,7 +48,15 @@ public sealed class TeacherRepository : ITeacherRepository
         {
             StaffTypes = MapIdName(staffTypes, x => x.StaffTypeID, x => x.StaffTypeName),
             UserRoles = userRoles.Select(x => new UserRoleOptionDto { UserRoleID = x.UserRoleID, UserRoleName = x.UserRoleName ?? string.Empty }).ToList(),
-            Designations = MapCodeName(designations, x => x.DesignationCode, x => x.DesignationName),
+            Designations = designations
+                .Where(x => x.DesignationCode.HasValue)
+                .Select(x => new DesignationOptionDto
+                {
+                    Code = x.DesignationCode!.Value,
+                    Name = x.DesignationName ?? string.Empty,
+                    LeaveYear = x.LeaveYear
+                })
+                .ToList(),
             Genders = MapCodeName(genders, x => x.GenderCode, x => x.GenderName),
             Religions = MapIdName(religions, x => x.ReligionID, x => x.ReligionName),
             Categories = MapIdName(categories, x => x.CategoryID, x => x.CategoryName),
@@ -252,6 +260,13 @@ public sealed class TeacherRepository : ITeacherRepository
     {
         public int UserRoleID { get; init; }
         public string? UserRoleName { get; init; }
+    }
+
+    private sealed class DesignationRow
+    {
+        public long? DesignationCode { get; init; }
+        public string? DesignationName { get; init; }
+        public int? LeaveYear { get; init; }
     }
 
     private sealed class CodeNameRow

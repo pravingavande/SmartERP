@@ -82,7 +82,7 @@ describe('teacher-validation.util', () => {
       expect(Object.keys(validateTeacherForm(validForm())).length).toBe(0);
     });
 
-    it('requires organization, names, designation, user type, gender, mobile', () => {
+    it('requires organization, names, designation, user type, gender, dropdowns, mobile', () => {
       const form = validForm();
       form.orgID = null;
       form.firstname = '';
@@ -90,6 +90,12 @@ describe('teacher-validation.util', () => {
       form.designationCode = null;
       form.staffTypeID = null;
       form.genderCode = null;
+      form.religionID = null;
+      form.categoryID = null;
+      form.bloodGroupID = null;
+      form.jtCategoryID = null;
+      form.shiftID = null;
+      form.userRoleID = null;
       form.mobileNo1 = '';
       const errors = validateTeacherForm(form);
       expect(errors['orgID']).toBeTruthy();
@@ -98,6 +104,12 @@ describe('teacher-validation.util', () => {
       expect(errors['designationCode']).toBeTruthy();
       expect(errors['staffTypeID']).toBeTruthy();
       expect(errors['genderCode']).toBeTruthy();
+      expect(errors['religionID']).toBeTruthy();
+      expect(errors['categoryID']).toBeTruthy();
+      expect(errors['bloodGroupID']).toBeTruthy();
+      expect(errors['jtCategoryID']).toBeTruthy();
+      expect(errors['shiftID']).toBeTruthy();
+      expect(errors['userRoleID']).toBeTruthy();
       expect(errors['mobileNo1']).toBeTruthy();
     });
 
@@ -131,20 +143,17 @@ describe('teacher-validation.util', () => {
       expect(validateTeacherForm(form)['adharCardNo']).toContain('exactly 12 digits');
     });
 
-    it('rejects future date of birth', () => {
+    it('does not reject future or under-age date of birth', () => {
       const form = validForm();
       const future = new Date();
       future.setFullYear(future.getFullYear() + 1);
       form.dob = future.toISOString().slice(0, 10);
-      expect(validateTeacherForm(form)['dob']).toContain('Future date');
-    });
+      expect(validateTeacherForm(form)['dob']).toBeUndefined();
 
-    it('rejects under-age date of birth', () => {
-      const form = validForm();
       const young = new Date();
       young.setFullYear(young.getFullYear() - 10);
       form.dob = young.toISOString().slice(0, 10);
-      expect(validateTeacherForm(form)['dob']).toContain('between');
+      expect(validateTeacherForm(form)['dob']).toBeUndefined();
     });
 
     it('rejects invalid PAN', () => {

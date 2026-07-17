@@ -2,7 +2,7 @@
   <header class="page-header">
     <div>
       <h1>Account Register Define</h1>
-      <p>Map account registers to each school / org</p>
+      <p>Map account registers to each Org / Sanstha (same as Ledger Head Master)</p>
     </div>
   </header>
 
@@ -19,10 +19,10 @@
       <div class="form-section">
         <div class="form-grid">
           <label class="field" [class.field-invalid]="fieldError('orgID')">
-            <span class="field-label">Under Org / School *</span>
+            <span class="field-label">Org / Sanstha<span class="req">*</span></span>
             <select class="field-control" required [ngModel]="selectedOrgID()" (ngModelChange)="onOrgChange($event ? +$event : null)" name="orgID">
-              <option [ngValue]="null">-- Select School --</option>
-              @for (o of lookups()?.orgs ?? []; track o.orgID) {
+              <option [ngValue]="null">-- Select Sanstha --</option>
+              @for (o of sansthaOrgs(); track o.orgID) {
                 <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
               }
             </select>

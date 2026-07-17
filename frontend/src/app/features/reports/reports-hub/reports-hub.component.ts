@@ -1,16 +1,13 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DonationService } from '../../../core/services/donation.service';
 import { DonationReportService } from '../../../core/services/donation-report.service';
 import { ReportPrintService } from '../../../core/services/report-print.service';
 import { ToastService } from '../../../core/services/toast.service';
-import {
-  DONATION_REPORTS,
-  DonationReportDefinition,
-  DonationReportFilter
-} from '../../../core/models/donation-report.model';
+import { HUB_REPORTS, HubReportDefinition } from '../../../core/models/hub-report.model';
 import { DonationLookups } from '../../../core/models/donation.model';
+import { DonationReportFilter } from '../../../core/models/donation-report.model';
 
 @Component({
   selector: 'app-reports-hub',
@@ -26,11 +23,13 @@ export class ReportsHubComponent {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly reports = DONATION_REPORTS;
+  readonly reports = HUB_REPORTS;
+  readonly donationReports = computed(() => this.reports.filter((r) => r.category === 'donation'));
+  readonly accountReports = computed(() => this.reports.filter((r) => r.category === 'accounts'));
   readonly lookupsLoading = signal(true);
   readonly generating = signal(false);
   readonly lookups = signal<DonationLookups | null>(null);
-  readonly activeReport = signal<DonationReportDefinition>(DONATION_REPORTS[0]);
+  readonly activeReport = signal<HubReportDefinition>(HUB_REPORTS[0]);
   readonly filter = signal<DonationReportFilter>(this.emptyFilter());
 
   constructor() {
@@ -40,7 +39,7 @@ export class ReportsHubComponent {
     });
   }
 
-  selectReport(report: DonationReportDefinition): void {
+  selectReport(report: HubReportDefinition): void {
     this.activeReport.set(report);
   }
 
@@ -51,6 +50,10 @@ export class ReportsHubComponent {
   generatePdf(): void {
     const report = this.activeReport();
     const current = this.filter();
+    if (report.requireSchool && !current.orgId) {
+      this.toast.showError('School / Organization is required.', 'Report');
+      return;
+    }
     if (!current.fromDate || !current.toDate) {
       this.toast.showError('From Date and To Date are required.', 'Report');
       return;

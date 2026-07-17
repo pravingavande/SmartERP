@@ -12,10 +12,44 @@ namespace SmartEPR.Api.Controllers;
 public sealed class ReportsController : ControllerBase
 {
     private readonly IDonationReportService _donationReportService;
+    private readonly ICashBookReportService _cashBookReportService;
 
-    public ReportsController(IDonationReportService donationReportService)
+    public ReportsController(
+        IDonationReportService donationReportService,
+        ICashBookReportService cashBookReportService)
     {
         _donationReportService = donationReportService;
+        _cashBookReportService = cashBookReportService;
+    }
+
+    /// <summary>Cash Book Report / मुख्य किर्द रिपोर्ट — filters: School, From Date, To Date.</summary>
+    [HttpGet("cash-book/pdf")]
+    public async Task<IActionResult> GetCashBookPdf(
+        [FromQuery] long? orgId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromQuery] long? accountRegisterId,
+        CancellationToken cancellationToken)
+    {
+        if (orgId is null or <= 0)
+            return BadRequest(ApiResponse<bool>.Fail("School / Organization is required."));
+        if (fromDate is null || toDate is null)
+            return BadRequest(ApiResponse<bool>.Fail("From Date and To Date are required."));
+
+        var pdf = await _cashBookReportService.RenderCashBookPdfAsync(
+            new CashBookReportFilterDto
+            {
+                OrgID = orgId.Value,
+                FromDate = fromDate,
+                ToDate = toDate,
+                AccountRegisterID = accountRegisterId is > 0 ? accountRegisterId.Value : 1
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        if (pdf is null || pdf.Length == 0)
+            return NotFound(ApiResponse<bool>.Fail("No cash book records found for the selected filters."));
+
+        return new FileContentResult(pdf, "application/pdf") { FileDownloadName = "CashBookReport.pdf" };
     }
 
     [HttpGet("donation/detail/pdf")]

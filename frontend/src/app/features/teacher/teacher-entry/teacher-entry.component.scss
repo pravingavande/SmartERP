@@ -52,7 +52,7 @@
 
 .basic-with-photo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 108px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
   gap: 1rem;
   align-items: start;
 }
@@ -64,14 +64,15 @@
 .photo-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  align-self: start;
+  gap: 0.65rem;
+  align-self: stretch;
   margin-top: 0.25rem;
+  position: sticky;
+  top: 0.75rem;
 }
 
 .photo-preview-box {
-  width: 100%;
-  max-width: 108px;
+  width: 108px;
   height: 132px;
   border: 1px solid #c5d0de;
   border-radius: var(--epr-radius);
@@ -80,6 +81,7 @@
   align-items: center;
   justify-content: center;
   background: #f8fafc;
+  flex-shrink: 0;
 
   img {
     width: 100%;
@@ -97,7 +99,7 @@
 
 .photo-upload {
   width: 100%;
-  max-width: 108px;
+  max-width: 100%;
 
   .field-label {
     font-size: 0.72rem;
@@ -108,6 +110,36 @@
     font-size: 0.7rem;
     max-width: 100%;
   }
+}
+
+.photo-side-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+  background: #f8fafc;
+  flex: 1 1 auto;
+
+  .teacher-field-section-title {
+    margin-bottom: 0.15rem;
+  }
+
+  .field {
+    margin: 0;
+  }
+
+  .field-check {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+}
+
+.photo-side-reset-btn {
+  width: 100%;
 }
 
 .pan-address-row {
@@ -156,6 +188,39 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
+
+  &.disabled,
+  &:has(input:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.muted {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.teacher-field-section {
+  grid-column: 1 / -1;
+  margin-top: 0.35rem;
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.teacher-field-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--epr-navy, #1e3a5f);
+}
+
+.teacher-field-section .form-grid {
+  margin: 0;
 }
 
 .file-input-hidden {
@@ -190,15 +255,12 @@
   }
 
   .photo-panel {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    position: static;
     max-width: 100%;
   }
 
-  .photo-preview-box,
-  .photo-upload {
-    max-width: 108px;
+  .photo-side-fields {
+    width: 100%;
   }
 
   .pan-address-row {

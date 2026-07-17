@@ -17,7 +17,7 @@
     <section class="schedule-filters list-filters" aria-label="Filter academic schedules">
       <div class="schedule-filters-grid">
         <app-org-school-select
-          fieldClass="field-org-wide"
+          fieldClass="field-org-filter"
           name="listOrgID"
           [orgs]="schoolOrgs()"
           [value]="listOrgID()"
@@ -50,7 +50,7 @@
             }
           </select>
         </label>
-        <label class="field">
+        <label class="field field-month">
           <span class="field-label">Month</span>
           <select class="field-control" [ngModel]="listTMonth()" (ngModelChange)="listTMonth.set($event ? +$event : null); onFilterChange()" name="listTMonth">
             <option [ngValue]="null">-- All --</option>
@@ -59,7 +59,7 @@
             }
           </select>
         </label>
-        <label class="field">
+        <label class="field field-week">
           <span class="field-label">Week</span>
           <select class="field-control" [ngModel]="listWeekId()" (ngModelChange)="listWeekId.set($event ? +$event : null); onFilterChange()" name="listWeekId">
             <option [ngValue]="null">-- All --</option>
@@ -69,10 +69,6 @@
           </select>
         </label>
       </div>
-      <label class="field schedule-search">
-        <span class="field-label">Search</span>
-        <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search title or description">
-      </label>
     </section>
 
     @if (errorMessage()) {

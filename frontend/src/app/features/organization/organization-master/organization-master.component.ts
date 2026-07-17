@@ -17,6 +17,7 @@ import {
 import { OrganizationService } from '../../../core/services/organization.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { LanguageService } from '../../../core/services/language.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
@@ -43,8 +44,12 @@ export class OrganizationMasterComponent {
   private readonly organization = inject(OrganizationService);
   private readonly dashboardService = inject(DashboardService);
   private readonly auth = inject(AuthService);
+  private readonly languageService = inject(LanguageService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+
+  /** Label from LanguageKeyValueMaster (M/E per Settings) — same as Teacher Master. */
+  readonly lbl = (key: string, fallback?: string) => this.languageService.label(key, fallback);
 
   readonly loading = signal(false);
   readonly listLoading = signal(false);
@@ -90,9 +95,11 @@ export class OrganizationMasterComponent {
   loadLookups(): void {
     this.lookupsLoading.set(true);
     this.errorMessage.set(null);
+    const underOrgID = this.auth.currentUser()?.sansthaId ?? 0;
     forkJoin({
       lookups: this.organization.getLookups(),
-      profile: this.dashboardService.getProfile()
+      profile: this.dashboardService.getProfile(),
+      language: this.languageService.load(underOrgID)
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ lookups: data, profile }) => {

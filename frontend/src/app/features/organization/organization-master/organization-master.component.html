@@ -1,8 +1,8 @@
 <section class="audit-page master-page org-master-page">
   <header class="page-header">
     <div>
-      <h1>Organization Master</h1>
-      <p>Maintain organizations, sansthas, schools and related documents</p>
+      <h1>{{ lbl('OrganizationMaster', 'Organization Master') }}</h1>
+      <p>{{ lbl('OrganizationMasterHint', 'Maintain organizations, sansthas, schools and related documents') }}</p>
     </div>
     <div class="header-actions">
       @if (!formVisible()) {
@@ -12,9 +12,9 @@
           [disabled]="!canManageOrganizations()"
           [attr.title]="canManageOrganizations() ? null : 'Employees cannot add organizations'"
           (click)="newItem()"
-        >+ Add Organization</button>
+        >+ {{ lbl('AddOrganization', 'Add Organization') }}</button>
       } @else {
-        <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
+        <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← {{ lbl('BackToList', 'Back to List') }}</button>
       }
     </div>
   </header>
@@ -31,8 +31,8 @@
           (valueChange)="onFilterChange('orgId', $event)"
         />
         <label class="field field-org-search">
-          <span class="field-label">Organization Name</span>
-          <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" placeholder="Search organization name">
+          <span class="field-label">{{ lbl('OrganizationName', 'Organization Name') }}</span>
+          <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" [placeholder]="lbl('SearchOrganizationName', 'Search organization name')">
         </label>
       </div>
 
@@ -45,11 +45,11 @@
         <table class="records-table">
           <thead>
             <tr>
-              <th>Sr No</th>
-              <th>Organization Name</th>
-              <th>UDISE No.</th>
-              <th>School Category</th>
-              <th class="actions-col">Actions</th>
+              <th>{{ lbl('SrNo', 'Sr No') }}</th>
+              <th>{{ lbl('OrganizationName', 'Organization Name') }}</th>
+              <th>{{ lbl('UdiesNo', 'UDISE No.') }}</th>
+              <th>{{ lbl('SchoolCategoryName', 'School Category') }}</th>
+              <th class="actions-col">{{ lbl('Actions', 'Actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -94,20 +94,24 @@
       <div class="form-panel org-form-panel">
         <header class="org-form-head">
           <h2>
-            @if (isViewMode()) { View Organization }
-            @else if (isEditMode()) { Edit Organization }
-            @else { New Organization }
+            @if (isViewMode()) {
+              {{ lbl('ViewOrganization', 'View Organization') }}
+            } @else if (isEditMode()) {
+              {{ lbl('EditOrganization', 'Edit Organization') }}
+            } @else {
+              {{ lbl('NewOrganization', 'New Organization') }}
+            }
           </h2>
         </header>
 
         <nav class="org-tabs" aria-label="Organization tabs">
-          <button type="button" class="org-tab" [class.active]="activeTab() === 'basic'" (click)="setTab('basic')">Basic Details</button>
+          <button type="button" class="org-tab" [class.active]="activeTab() === 'basic'" (click)="setTab('basic')">{{ lbl('BasicDetails', 'Basic Details') }}</button>
           <button type="button" class="org-tab" [class.active]="activeTab() === 'documents'" [class.disabled]="!documentsTabEnabled()" [disabled]="!documentsTabEnabled()" (click)="setTab('documents')">
-            Organization Documents
+            {{ lbl('OrganizationDocuments', 'Organization Documents') }}
           </button>
         </nav>
         @if (!documentsTabEnabled()) {
-          <p class="tab-hint">Save basic details first to enable Organization Documents.</p>
+          <p class="tab-hint">{{ lbl('SaveBasicDetailsFirst', 'Save basic details first to enable Organization Documents.') }}</p>
         }
 
         @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
@@ -116,7 +120,7 @@
           <form class="voucher-form org-form" (ngSubmit)="saveBasic()">
             <fieldset [disabled]="isViewMode()">
               <div class="form-grid">
-                @if (isSchoolCategory()) {
+                @if (isSchoolCategory() && isNewMode()) {
                   <app-org-school-select
                     name="orgID"
                     [orgs]="schoolOrgs()"
@@ -124,19 +128,16 @@
                     [required]="true"
                     [invalid]="!!fieldError('underOrgID')"
                     [error]="fieldError('underOrgID')"
-                    [disabled]="isViewMode()"
                     (valueChange)="onFormOrgChange($event)"
                   />
-                  @if (isNewMode()) {
-                    <label class="field">
-                      <span class="field-label">Sr No</span>
-                      <input class="field-control" readonly [value]="form().srNo ?? 'Auto'" name="srNoDisplay">
-                    </label>
-                  }
+                  <label class="field">
+                    <span class="field-label">{{ lbl('SrNo', 'Sr No') }}</span>
+                    <input class="field-control" readonly [value]="form().srNo ?? 'Auto'" name="srNoDisplay">
+                  </label>
                 }
 
                 <label class="field" [class.field-invalid]="fieldError('schoolCategoryID')">
-                  <span class="field-label">School Category<span class="req">*</span></span>
+                  <span class="field-label">{{ lbl('SchoolCategoryName', 'School Category') }}<span class="req">*</span></span>
                   <select class="field-control" required [ngModel]="form().schoolCategoryID" (ngModelChange)="updateForm('schoolCategoryID', $event ? +$event : null)" name="schoolCategoryID">
                     <option [ngValue]="null">-- Select --</option>
                     @for (sc of lookups()?.schoolCategories ?? []; track sc.id) {
@@ -147,99 +148,99 @@
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('organizationName')">
-                  <span class="field-label">Organization Name<span class="req">*</span></span>
+                  <span class="field-label">{{ lbl('OrganizationName', 'Organization Name') }}<span class="req">*</span></span>
                   <input class="field-control" required [ngModel]="form().organizationName" (ngModelChange)="updateForm('organizationName', $event)" name="organizationName">
                   @if (fieldError('organizationName')) { <span class="field-error">{{ fieldError('organizationName') }}</span> }
                 </label>
 
                 <label class="field">
-                  <span class="field-label">Address</span>
+                  <span class="field-label">{{ lbl('Address', 'Address') }}</span>
                   <textarea class="field-control field-text-compact" rows="1" [ngModel]="form().address" (ngModelChange)="updateForm('address', $event)" name="address"></textarea>
                 </label>
 
                 <label class="field">
-                  <span class="field-label">City Name</span>
+                  <span class="field-label">{{ lbl('CityName', 'City Name') }}</span>
                   <input class="field-control" [ngModel]="form().cityName" (ngModelChange)="updateForm('cityName', $event)" name="cityName">
                 </label>
 
                 <label class="field">
-                  <span class="field-label">UDISE No</span>
+                  <span class="field-label">{{ lbl('UdiesNo', 'UDISE No') }}</span>
                   <input class="field-control" [ngModel]="form().udiesNo" (ngModelChange)="updateForm('udiesNo', $event)" name="udiesNo">
                 </label>
 
                 <label class="field">
-                  <span class="field-label">School TIN No</span>
+                  <span class="field-label">{{ lbl('SchoolTinNo', 'School TIN No') }}</span>
                   <input class="field-control" [ngModel]="form().schoolTinNo" (ngModelChange)="updateForm('schoolTinNo', $event)" name="schoolTinNo">
                 </label>
 
                 <label class="field">
-                  <span class="field-label">Shalarth ID</span>
+                  <span class="field-label">{{ lbl('ShalarthID', 'Shalarth ID') }}</span>
                   <input class="field-control" [ngModel]="form().sharlarthID" (ngModelChange)="updateForm('sharlarthID', $event)" name="sharlarthID">
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('panNo')">
-                  <span class="field-label">PAN No</span>
+                  <span class="field-label">{{ lbl('PanNo', 'PAN No') }}</span>
                   <input class="field-control" [ngModel]="form().panNo" (ngModelChange)="updateForm('panNo', $event)" name="panNo">
                   @if (fieldError('panNo')) { <span class="field-error">{{ fieldError('panNo') }}</span> }
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('emailID')">
-                  <span class="field-label">Email ID</span>
+                  <span class="field-label">{{ lbl('EmailID', 'Email ID') }}</span>
                   <input class="field-control" type="email" [ngModel]="form().emailID" (ngModelChange)="updateForm('emailID', $event)" name="emailID">
                   @if (fieldError('emailID')) { <span class="field-error">{{ fieldError('emailID') }}</span> }
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('phoneNo')">
-                  <span class="field-label">Phone No</span>
+                  <span class="field-label">{{ lbl('PhoneNo', 'Phone No') }}</span>
                   <input class="field-control" [ngModel]="form().phoneNo" (ngModelChange)="updateForm('phoneNo', $event)" name="phoneNo">
                   @if (fieldError('phoneNo')) { <span class="field-error">{{ fieldError('phoneNo') }}</span> }
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('mobileNo')">
-                  <span class="field-label">Mobile No</span>
+                  <span class="field-label">{{ lbl('MobileNo', 'Mobile No') }}</span>
                   <input class="field-control" appMarathiNumber mode="int" [maxLength]="10" inputmode="numeric" [ngModel]="form().mobileNo" (ngModelChange)="updateForm('mobileNo', $event)" name="mobileNo" placeholder="10 digits">
                   @if (fieldError('mobileNo')) { <span class="field-error">{{ fieldError('mobileNo') }}</span> }
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('webSite')">
-                  <span class="field-label">Website</span>
+                  <span class="field-label">{{ lbl('WebSite', 'Website') }}</span>
                   <input class="field-control" [ngModel]="form().webSite" (ngModelChange)="updateForm('webSite', $event)" name="webSite">
                   @if (fieldError('webSite')) { <span class="field-error">{{ fieldError('webSite') }}</span> }
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('establishmentYear')">
-                  <span class="field-label">Establishment Year</span>
+                  <span class="field-label">{{ lbl('EstablishmentYear', 'Establishment Year') }}</span>
                   <input class="field-control" appMarathiNumber mode="int" [maxLength]="4" inputmode="numeric" [ngModel]="form().establishmentYear" (ngModelChange)="updateForm('establishmentYear', $event)" name="establishmentYear" placeholder="YYYY">
                   @if (fieldError('establishmentYear')) { <span class="field-error">{{ fieldError('establishmentYear') }}</span> }
                 </label>
 
                 <label class="field">
-                  <span class="field-label">Registration No</span>
+                  <span class="field-label">{{ lbl('RegNo', 'Registration No') }}</span>
                   <input class="field-control" [ngModel]="form().regNo" (ngModelChange)="updateForm('regNo', $event)" name="regNo">
                 </label>
 
                 <label class="field">
-                  <span class="field-label">80G Permission</span>
+                  <span class="field-label">{{ lbl('Permission80G', '80G Permission') }}</span>
                   <input class="field-control" [ngModel]="form().permission80G" (ngModelChange)="updateForm('permission80G', $event)" name="permission80G">
                 </label>
 
                 <label class="field">
-                  <span class="field-label">Remark</span>
+                  <span class="field-label">{{ lbl('Remark', 'Remark') }}</span>
                   <textarea class="field-control field-text-compact" rows="1" [ngModel]="form().remark" (ngModelChange)="updateForm('remark', $event)" name="remark"></textarea>
                 </label>
 
                 @if (isEditMode()) {
                   <label class="field field-check master-active-field">
                     <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
-                    <span>Is Active</span>
+                    <span>{{ lbl('IsActive', 'Is Active') }}</span>
                   </label>
                 }
               </div>
             </fieldset>
             @if (!isViewMode()) {
               <footer class="form-footer">
-                <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
-                <button type="submit" class="btn btn-primary" [disabled]="loading()">Save Basic Details</button>
+                <button type="button" class="btn btn-outline" (click)="cancel()">{{ lbl('Cancel', 'Cancel') }}</button>
+                <button type="submit" class="btn btn-primary" [disabled]="loading()">{{ lbl('SaveBasicDetails', 'Save Basic Details') }}</button>
               </footer>
             }
           </form>
@@ -248,18 +249,18 @@
         @if (activeTab() === 'documents') {
           <div class="documents-tab org-form">
             <div class="doc-toolbar">
-              <h3>Organization Documents</h3>
+              <h3>{{ lbl('OrganizationDocuments', 'Organization Documents') }}</h3>
               @if (!isViewMode()) {
-                <button type="button" class="btn btn-outline btn-sm" (click)="addDocumentRow()">+ Add Document</button>
+                <button type="button" class="btn btn-outline btn-sm" (click)="addDocumentRow()">+ {{ lbl('AddDocument', 'Add Document') }}</button>
               }
             </div>
             <div class="records-table-wrap">
               <table class="records-table doc-table">
                 <thead>
                   <tr>
-                    <th>Document Name</th>
-                    <th>Upload</th>
-                    <th>Actions</th>
+                    <th>{{ lbl('DocumentName', 'Document Name') }}</th>
+                    <th>{{ lbl('Upload', 'Upload') }}</th>
+                    <th>{{ lbl('Actions', 'Actions') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -302,8 +303,8 @@
             </div>
             @if (!isViewMode()) {
               <footer class="form-footer">
-                <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
-                <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="saveDocuments()">Save Documents</button>
+                <button type="button" class="btn btn-outline" (click)="cancel()">{{ lbl('Close', 'Close') }}</button>
+                <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="saveDocuments()">{{ lbl('SaveDocuments', 'Save Documents') }}</button>
               </footer>
             }
           </div>

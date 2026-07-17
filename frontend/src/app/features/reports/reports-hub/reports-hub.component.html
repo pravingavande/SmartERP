@@ -10,8 +10,24 @@
   <div class="reports-layout">
     <aside class="report-list-panel">
       <div class="report-list-head">Donation</div>
-      <nav class="report-nav" aria-label="Report list">
-        @for (report of reports; track report.id) {
+      <nav class="report-nav" aria-label="Donation reports">
+        @for (report of donationReports(); track report.id) {
+          <button
+            type="button"
+            class="report-nav-item"
+            [class.active]="activeReport().id === report.id"
+            [title]="report.titleMr"
+            (click)="selectReport(report)"
+          >
+            <span class="report-nav-item__en">{{ report.titleEn }}</span>
+            <span class="report-nav-item__mr">{{ report.titleMr }}</span>
+          </button>
+        }
+      </nav>
+
+      <div class="report-list-head report-list-head--next">Accounts</div>
+      <nav class="report-nav" aria-label="Account reports">
+        @for (report of accountReports(); track report.id) {
           <button
             type="button"
             class="report-nav-item"
@@ -34,9 +50,9 @@
 
       <div class="list-filters report-filters">
         <label class="field">
-          <span class="field-label">School / Organization</span>
+          <span class="field-label">School / Organization @if (activeReport().requireSchool) { <span class="req">*</span> }</span>
           <select class="field-control" [ngModel]="filter().orgId" (ngModelChange)="updateFilter('orgId', $event ? +$event : null)" name="orgId">
-            <option [ngValue]="null">All</option>
+            <option [ngValue]="null">{{ activeReport().requireSchool ? '-- Select --' : 'All' }}</option>
             @for (o of lookups()?.orgs ?? []; track o.orgID) {
               <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
             }

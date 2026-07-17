@@ -226,8 +226,13 @@ export class OutwardRegisterComponent {
       this.toast.showError('Allowed file types: PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX.', 'Invalid file');
       return;
     }
+    const orgId = this.form().orgID ?? this.listOrgID();
+    if (!orgId) {
+      this.toast.showError('Please select School / Organization before uploading a file.', 'Upload failed');
+      return;
+    }
     this.fileUploading.set(true);
-    this.io.uploadOutwardFile(file).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ fileName, message }) => {
+    this.io.uploadOutwardFile(file, orgId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ fileName, message }) => {
       this.fileUploading.set(false);
       if (!fileName) {
         this.toast.showError(message ?? 'Unable to upload file.', 'Upload failed');

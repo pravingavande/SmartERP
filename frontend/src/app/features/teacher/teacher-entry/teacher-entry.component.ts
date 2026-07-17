@@ -26,15 +26,18 @@ import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import {
-  TEACHER_MAX_AGE,
-  TEACHER_MIN_AGE,
+  computeRetireDateIso,
+  computeSelectionGradeDateIso,
+  computeSeniorGradeDateIso
+} from '../../../core/utils/teacher-service-dates.util';
+import {
   mapTeacherBackendMessageToFieldErrors,
   validateTeacherForm,
   validateTeacherPhoto
 } from '../../../core/utils/teacher-validation.util';
 
 type FormMode = 'new' | 'edit' | 'view';
-type FormSection = 'basic' | 'documents' | 'schools';
+type FormSection = 'basic' | 'schools' | 'documents';
 
 interface FormStep {
   id: FormSection;
@@ -44,11 +47,11 @@ interface FormStep {
 
 const FORM_STEPS: FormStep[] = [
   { id: 'basic', step: 1, label: 'Basic Details' },
-  { id: 'documents', step: 2, label: 'Documents' },
-  { id: 'schools', step: 3, label: 'School History' }
+  { id: 'schools', step: 2, label: 'School History' },
+  { id: 'documents', step: 3, label: 'Documents' }
 ];
 
-const SECTION_ORDER: FormSection[] = ['basic', 'documents', 'schools'];
+const SECTION_ORDER: FormSection[] = ['basic', 'schools', 'documents'];
 
 @Component({
   selector: 'app-teacher-entry',
@@ -67,14 +70,6 @@ export class TeacherEntryComponent {
 
   /** Label from LanguageKeyValueMaster (M/E per Settings). */
   readonly lbl = (key: string, fallback?: string) => this.languageService.label(key, fallback);
-  readonly dobMax = todayIsoDate();
-  readonly dobMin = (() => {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() - TEACHER_MAX_AGE);
-    return d.toISOString().slice(0, 10);
-  })();
-  readonly teacherMinAge = TEACHER_MIN_AGE;
-  readonly teacherMaxAge = TEACHER_MAX_AGE;
   private readonly listReload$ = new Subject<void>();
   private readonly searchChanges$ = new Subject<string>();
   private searchDebounceSubscribed = false;
@@ -119,18 +114,20 @@ export class TeacherEntryComponent {
     return Math.min(total, (this.listPageIndex() + 1) * this.listPageSize());
   });
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
+  /** Form/list User Role options — SuperAdmin hidden. */
+  readonly selectableUserRoles = computed(() =>
+    (this.masterLookups()?.userRoles ?? []).filter(
+      (ur) => (ur.userRoleName ?? '').trim().toLowerCase() !== 'superadmin'
+    )
+  );
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly isWizardFlow = computed(() => this.wizardActive() && !this.isViewMode());
-  readonly isLastWizardStep = computed(() => this.activeSection() === 'schools');
+  readonly isLastWizardStep = computed(() => this.activeSection() === 'documents');
   readonly displayName = computed(() => {
     const f = this.form();
     return f.employeeName?.trim()
-      || [f.firstname, f.middleName, f.lastName].filter(Boolean).join(' ').trim()
+      || buildEmployeeName(f.firstname, f.middleName, f.lastName)
       || 'Teacher';
-  });
-  readonly employeeNamePreview = computed(() => {
-    const f = this.form();
-    return buildEmployeeName(f.firstname, f.middleName, f.lastName);
   });
 
   private docSeq = 0;
@@ -245,6 +242,8 @@ export class TeacherEntryComponent {
     const empty = this.emptyForm();
     this.form.set(empty);
     if (orgId) this.onOrgChange(orgId);
+    this.applyGradeDatesFromWorkingStart();
+    this.applyRetireDateFromDobAndLeaveYear();
   }
 
   editTeacher(item: TeacherListItem): void {
@@ -333,6 +332,43 @@ export class TeacherEntryComponent {
 
   updateForm<K extends keyof TeacherFormState>(key: K, value: TeacherFormState[K]): void {
     this.form.update((f) => ({ ...f, [key]: value }));
+    if (key === 'dob' || key === 'retirementYear') {
+      this.applyRetireDateFromDobAndLeaveYear();
+    }
+    if (key === 'dateOfWorkingStart') {
+      this.applyGradeDatesFromWorkingStart();
+    }
+  }
+
+  onDesignationChange(code: number | null): void {
+    const leaveYear = this.masterLookups()?.designations.find((d) => d.code === code)?.leaveYear ?? null;
+    this.form.update((f) => ({
+      ...f,
+      designationCode: code,
+      retirementYear: leaveYear
+    }));
+    this.applyRetireDateFromDobAndLeaveYear();
+  }
+
+  /** Date of Working Start + 12/24 years → last day of that month. */
+  private applyGradeDatesFromWorkingStart(): void {
+    const start = this.form().dateOfWorkingStart;
+    const payment = computeSeniorGradeDateIso(start);
+    const nivad = computeSelectionGradeDateIso(start);
+    if (!payment && !nivad) return;
+    this.form.update((f) => ({
+      ...f,
+      paymentGradeDate: payment ?? f.paymentGradeDate,
+      nivadGradeDate: nivad ?? f.nivadGradeDate
+    }));
+  }
+
+  /** DOB + Retirement Year → last day of that month (Retire Date). */
+  private applyRetireDateFromDobAndLeaveYear(): void {
+    const f = this.form();
+    const retire = computeRetireDateIso(f.dob, f.retirementYear);
+    if (!retire) return;
+    this.form.update((cur) => ({ ...cur, serviceOutDate: retire }));
   }
 
   onOrgChange(orgId: number | null): void {
@@ -364,6 +400,12 @@ export class TeacherEntryComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    const orgId = this.form().orgID;
+    if (!orgId) {
+      this.toast.showError('Please select School / Organization before uploading photo.');
+      input.value = '';
+      return;
+    }
     const photoError = validateTeacherPhoto(file);
     if (photoError) {
       this.toast.showError(photoError);
@@ -372,7 +414,7 @@ export class TeacherEntryComponent {
     }
     this.photoUploading.set(true);
     this.teacherService
-      .uploadPhoto(file)
+      .uploadPhoto(file, orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((storedName) => {
         this.photoUploading.set(false);
@@ -435,6 +477,12 @@ export class TeacherEntryComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    const row = this.form().documents[index];
+    if (!row?.empDocumentCode) {
+      this.toast.showError('Please select Document Type before uploading.');
+      input.value = '';
+      return;
+    }
     const ext = '.' + (file.name.split('.').pop() ?? '').toLowerCase();
     if (!['.pdf', '.jpg', '.jpeg', '.png'].includes(ext)) {
       this.toast.showError('Only PDF, JPG, JPEG, and PNG files are allowed.');
@@ -446,8 +494,14 @@ export class TeacherEntryComponent {
       input.value = '';
       return;
     }
+    const orgId = this.form().orgID;
+    if (!orgId) {
+      this.toast.showError('Please select School / Organization before uploading document.');
+      input.value = '';
+      return;
+    }
     this.teacherService
-      .uploadDocument(file)
+      .uploadDocument(file, orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((storedName) => {
         input.value = '';
@@ -513,9 +567,14 @@ export class TeacherEntryComponent {
     this.loading.set(true);
     this.fieldErrors.set({});
     this.saveError.set(null);
+    const current = this.form();
+    const withName = {
+      ...current,
+      employeeName: buildEmployeeName(current.firstname, current.middleName, current.lastName) || current.employeeName
+    };
     const payload = this.formMode() === 'new'
-      ? { ...this.form(), isActive: true }
-      : this.form();
+      ? { ...withName, isActive: true }
+      : withName;
     this.teacherService
       .save(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -693,7 +752,7 @@ export class TeacherEntryComponent {
       photoPath: '',
       photoPreviewUrl: null,
       genderCode: null,
-      dob: '',
+      dob: todayIsoDate(),
       adharCardNo: '',
       shalarthID: '',
       scaleOfPay: '',
@@ -721,7 +780,7 @@ export class TeacherEntryComponent {
       paymentGradeDate: todayIsoDate(),
       nivadGradeDate: todayIsoDate(),
       retirementYear: null,
-      serviceOutDate: '',
+      serviceOutDate: todayIsoDate(),
       shiftID: null,
       appUserName: '',
       appPassword: '',

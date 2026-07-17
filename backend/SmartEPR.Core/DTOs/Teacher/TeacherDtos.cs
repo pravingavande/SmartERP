@@ -6,6 +6,13 @@ public sealed class CodeNameOptionDto
     public string Name { get; init; } = string.Empty;
 }
 
+public sealed class DesignationOptionDto
+{
+    public long Code { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public int? LeaveYear { get; init; }
+}
+
 public sealed class IdNameOptionDto
 {
     public int Id { get; init; }
@@ -22,7 +29,7 @@ public sealed class TeacherLookupsDto
 {
     public IReadOnlyList<IdNameOptionDto> StaffTypes { get; init; } = [];
     public IReadOnlyList<UserRoleOptionDto> UserRoles { get; init; } = [];
-    public IReadOnlyList<CodeNameOptionDto> Designations { get; init; } = [];
+    public IReadOnlyList<DesignationOptionDto> Designations { get; init; } = [];
     public IReadOnlyList<CodeNameOptionDto> Genders { get; init; } = [];
     public IReadOnlyList<IdNameOptionDto> Religions { get; init; } = [];
     public IReadOnlyList<IdNameOptionDto> Categories { get; init; } = [];

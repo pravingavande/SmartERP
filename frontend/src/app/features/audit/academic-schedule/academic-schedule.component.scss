@@ -11,36 +11,27 @@
 }
 
 .schedule-filters-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.85rem 1rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 0.65rem;
 
-  .field {
+  .field,
+  .field-org-filter {
     min-width: 0;
+    flex: 1 1 0;
   }
 
-  .field-label {
-    display: block;
-    margin-bottom: 0.35rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--epr-navy);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+  .field-org-filter {
+    flex: 0 0 11.5rem;
+    max-width: 11.5rem;
   }
 
-  .field-control {
-    width: 100%;
-    min-height: 2.35rem;
-    box-sizing: border-box;
+  .field-month,
+  .field-week {
+    flex: 0 0 7.5rem;
+    max-width: 8rem;
   }
-}
-
-.schedule-search {
-  display: block;
-  margin-top: 0.9rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid #eef1f5;
 
   .field-label {
     display: block;
@@ -97,12 +88,25 @@
 
 @media (max-width: 1100px) {
   .schedule-filters-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: wrap;
+
+    .field,
+    .field-org-filter,
+    .field-month,
+    .field-week {
+      flex: 1 1 calc(33.33% - 0.65rem);
+      max-width: none;
+    }
   }
 }
 
 @media (max-width: 640px) {
   .schedule-filters-grid {
-    grid-template-columns: 1fr;
+    .field,
+    .field-org-filter,
+    .field-month,
+    .field-week {
+      flex: 1 1 100%;
+    }
   }
 }

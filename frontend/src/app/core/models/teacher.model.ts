@@ -15,6 +15,12 @@ export interface CodeNameOption {
   name: string;
 }
 
+export interface DesignationOption {
+  code: number;
+  name: string;
+  leaveYear: number | null;
+}
+
 export interface IdNameOption {
   id: number;
   name: string;
@@ -28,7 +34,7 @@ export interface UserRoleOption {
 export interface TeacherLookups {
   staffTypes: IdNameOption[];
   userRoles: UserRoleOption[];
-  designations: CodeNameOption[];
+  designations: DesignationOption[];
   genders: CodeNameOption[];
   religions: IdNameOption[];
   categories: IdNameOption[];

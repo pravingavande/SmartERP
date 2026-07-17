@@ -12,6 +12,7 @@ import {
   SansthaOrgOption
 } from '../models/organization.model';
 import { AuthService } from './auth.service';
+import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 
 @Injectable({ providedIn: 'root' })
 export class OrganizationService {
@@ -127,7 +128,7 @@ export class OrganizationService {
   }
 
   fileUrl(fileName: string): string {
-    return `${this.base}/file/${encodeURIComponent(fileName)}`;
+    return `${this.base}/file/${encodeRelativeStoragePath(fileName)}`;
   }
 
   downloadFile(url: string): Observable<Blob> {

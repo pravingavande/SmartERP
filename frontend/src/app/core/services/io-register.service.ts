@@ -15,6 +15,7 @@ import {
   YearIoOption
 } from '../models/io-register.model';
 import { apiData, apiMessage, apiSuccess } from '../utils/api-response.util';
+import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 import { trimText } from '../utils/master-validation.util';
 
 @Injectable({ providedIn: 'root' })
@@ -83,17 +84,18 @@ export class IoRegisterService {
     );
   }
 
-  uploadInwardFile(file: File): Observable<{ fileName: string | null; message?: string }> {
+  uploadInwardFile(file: File, orgId: number): Observable<{ fileName: string | null; message?: string }> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ApiResponse<string>>(`${this.base}/inward/upload`, formData).pipe(
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.post<ApiResponse<string>>(`${this.base}/inward/upload`, formData, { params }).pipe(
       map((r) => ({ fileName: apiSuccess(r) ? apiData(r) ?? null : null, message: apiMessage(r) })),
       catchError(() => of({ fileName: null, message: 'Unable to upload file.' }))
     );
   }
 
   inwardFileUrl(fileName: string): string {
-    return `${this.base}/inward/file/${encodeURIComponent(fileName)}`;
+    return `${this.base}/inward/file/${encodeRelativeStoragePath(fileName)}`;
   }
 
   exportInward(filter: InwardFilter, format: 'csv' | 'pdf'): Observable<Blob> {
@@ -155,17 +157,18 @@ export class IoRegisterService {
     );
   }
 
-  uploadOutwardFile(file: File): Observable<{ fileName: string | null; message?: string }> {
+  uploadOutwardFile(file: File, orgId: number): Observable<{ fileName: string | null; message?: string }> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ApiResponse<string>>(`${this.base}/outward/upload`, formData).pipe(
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.post<ApiResponse<string>>(`${this.base}/outward/upload`, formData, { params }).pipe(
       map((r) => ({ fileName: apiSuccess(r) ? apiData(r) ?? null : null, message: apiMessage(r) })),
       catchError(() => of({ fileName: null, message: 'Unable to upload file.' }))
     );
   }
 
   outwardFileUrl(fileName: string): string {
-    return `${this.base}/outward/file/${encodeURIComponent(fileName)}`;
+    return `${this.base}/outward/file/${encodeRelativeStoragePath(fileName)}`;
   }
 
   exportOutward(filter: OutwardFilter, format: 'csv' | 'pdf'): Observable<Blob> {

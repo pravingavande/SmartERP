@@ -433,7 +433,12 @@ export class EventCalendarComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    this.calendarService.uploadFile(file).subscribe((stored) => {
+    const orgId = this.selectedOrgIds()[0] ?? this.form().underOrgID;
+    if (!orgId) {
+      this.toast.showError('Please select at least one school before uploading a file.');
+      return;
+    }
+    this.calendarService.uploadFile(file, orgId).subscribe((stored) => {
       if (!stored) {
         this.toast.showError('File upload failed.');
         return;

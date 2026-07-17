@@ -20,12 +20,12 @@ public sealed class IoRegisterController : ControllerBase
     };
 
     private readonly IIoRegisterService _ioRegisterService;
-    private readonly IWebHostEnvironment _environment;
+    private readonly ILocalFileStorage _fileStorage;
 
-    public IoRegisterController(IIoRegisterService ioRegisterService, IWebHostEnvironment environment)
+    public IoRegisterController(IIoRegisterService ioRegisterService, ILocalFileStorage fileStorage)
     {
         _ioRegisterService = ioRegisterService;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet("lookups")]
@@ -98,12 +98,12 @@ public sealed class IoRegisterController : ControllerBase
 
     [HttpPost("inward/upload")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> UploadInwardFile(IFormFile file, CancellationToken cancellationToken)
-        => await UploadFileAsync(file, "InwardRegister", cancellationToken).ConfigureAwait(false);
+    public async Task<IActionResult> UploadInwardFile(IFormFile file, [FromQuery] long orgId, CancellationToken cancellationToken)
+        => await UploadFileAsync(file, "InwardRegister", orgId, cancellationToken).ConfigureAwait(false);
 
-    [HttpGet("inward/file/{fileName}")]
-    public IActionResult DownloadInwardFile(string fileName)
-        => DownloadFile("InwardRegister", fileName);
+    [HttpGet("inward/file/{*relativePath}")]
+    public IActionResult DownloadInwardFile(string relativePath)
+        => DownloadFile("InwardRegister", relativePath);
 
     [HttpGet("outward/next-record-no")]
     public async Task<IActionResult> GetOutwardNextRecordNo([FromQuery] long orgId, [FromQuery] long? yioId, CancellationToken cancellationToken)
@@ -165,17 +165,20 @@ public sealed class IoRegisterController : ControllerBase
 
     [HttpPost("outward/upload")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> UploadOutwardFile(IFormFile file, CancellationToken cancellationToken)
-        => await UploadFileAsync(file, "OutwardRegister", cancellationToken).ConfigureAwait(false);
+    public async Task<IActionResult> UploadOutwardFile(IFormFile file, [FromQuery] long orgId, CancellationToken cancellationToken)
+        => await UploadFileAsync(file, "OutwardRegister", orgId, cancellationToken).ConfigureAwait(false);
 
-    [HttpGet("outward/file/{fileName}")]
-    public IActionResult DownloadOutwardFile(string fileName)
-        => DownloadFile("OutwardRegister", fileName);
+    [HttpGet("outward/file/{*relativePath}")]
+    public IActionResult DownloadOutwardFile(string relativePath)
+        => DownloadFile("OutwardRegister", relativePath);
 
-    private async Task<IActionResult> UploadFileAsync(IFormFile file, string folder, CancellationToken cancellationToken)
+    private async Task<IActionResult> UploadFileAsync(IFormFile file, string folder, long orgId, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
             return Ok(ApiResponse<string>.Fail("File is required."));
+
+        if (orgId <= 0)
+            return Ok(ApiResponse<string>.Fail("Organization is required for file upload."));
 
         if (file.Length > 10 * 1024 * 1024)
             return Ok(ApiResponse<string>.Fail("Maximum file size is 10 MB."));
@@ -184,31 +187,23 @@ public sealed class IoRegisterController : ControllerBase
         if (!AllowedExtensions.Contains(ext))
             return Ok(ApiResponse<string>.Fail("Allowed file types: PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX."));
 
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", folder);
-        Directory.CreateDirectory(uploadDir);
+        await using var stream = file.OpenReadStream();
+        var relativePath = await _fileStorage
+            .SaveAsync(folder, orgId, stream, file.FileName, cancellationToken)
+            .ConfigureAwait(false);
 
-        var storedName = $"{Guid.NewGuid():N}{ext}";
-        var fullPath = Path.Combine(uploadDir, storedName);
-        await using (var stream = System.IO.File.Create(fullPath))
-        {
-            await file.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-        }
-
-        return Ok(ApiResponse<string>.Ok(storedName, "File uploaded."));
+        return Ok(ApiResponse<string>.Ok(relativePath, "File uploaded."));
     }
 
-    private IActionResult DownloadFile(string folder, string fileName)
+    private IActionResult DownloadFile(string folder, string relativePath)
     {
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains("..") || fileName.Contains('/') || fileName.Contains('\\'))
-            return BadRequest();
-
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", folder);
-        var fullPath = Path.Combine(uploadDir, fileName);
-        if (!System.IO.File.Exists(fullPath))
+        var fullPath = _fileStorage.ResolvePhysicalPath(folder, relativePath);
+        if (fullPath is null)
             return NotFound();
 
-        var contentType = GetContentType(Path.GetExtension(fileName));
-        return PhysicalFile(fullPath, contentType, fileName, enableRangeProcessing: true);
+        var downloadName = Path.GetFileName(fullPath);
+        var contentType = GetContentType(Path.GetExtension(fullPath));
+        return PhysicalFile(fullPath, contentType, downloadName, enableRangeProcessing: true);
     }
 
     private static string GetContentType(string ext) => ext.ToLowerInvariant() switch

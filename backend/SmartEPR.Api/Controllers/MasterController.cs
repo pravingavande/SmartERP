@@ -19,18 +19,20 @@ public sealed class MasterController : ControllerBase
         ".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"
     };
 
+    private const string AcademicScheduleFeature = "AcademicSchedule";
+
     private readonly IMasterService _masterService;
     private readonly ISettingsService _settingsService;
-    private readonly IWebHostEnvironment _environment;
+    private readonly ILocalFileStorage _fileStorage;
 
     public MasterController(
         IMasterService masterService,
         ISettingsService settingsService,
-        IWebHostEnvironment environment)
+        ILocalFileStorage fileStorage)
     {
         _masterService = masterService;
         _settingsService = settingsService;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet("class")]
@@ -158,41 +160,36 @@ public sealed class MasterController : ControllerBase
 
     [HttpPost("academic-schedule/upload")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> UploadAcademicScheduleFile(IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadAcademicScheduleFile(IFormFile file, [FromQuery] long orgId, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
             return Ok(ApiResponse<string>.Fail("File is required."));
+
+        if (orgId <= 0)
+            return Ok(ApiResponse<string>.Fail("Organization is required for file upload."));
 
         var ext = Path.GetExtension(file.FileName);
         if (!AllowedExtensions.Contains(ext))
             return Ok(ApiResponse<string>.Fail("Allowed file types: PDF, DOC, DOCX, JPG, JPEG, PNG."));
 
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "AcademicSchedule");
-        Directory.CreateDirectory(uploadDir);
+        await using var stream = file.OpenReadStream();
+        var relativePath = await _fileStorage
+            .SaveAsync(AcademicScheduleFeature, orgId, stream, file.FileName, cancellationToken)
+            .ConfigureAwait(false);
 
-        var storedName = $"{Guid.NewGuid():N}{ext}";
-        var fullPath = Path.Combine(uploadDir, storedName);
-        await using (var stream = System.IO.File.Create(fullPath))
-        {
-            await file.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-        }
-
-        return Ok(ApiResponse<string>.Ok(storedName, "File uploaded."));
+        return Ok(ApiResponse<string>.Ok(relativePath, "File uploaded."));
     }
 
-    [HttpGet("academic-schedule/file/{fileName}")]
-    public IActionResult DownloadAcademicScheduleFile(string fileName)
+    [HttpGet("academic-schedule/file/{*relativePath}")]
+    public IActionResult DownloadAcademicScheduleFile(string relativePath)
     {
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains("..") || fileName.Contains('/') || fileName.Contains('\\'))
-            return BadRequest();
-
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "AcademicSchedule");
-        var fullPath = Path.Combine(uploadDir, fileName);
-        if (!System.IO.File.Exists(fullPath))
+        var fullPath = _fileStorage.ResolvePhysicalPath(AcademicScheduleFeature, relativePath);
+        if (fullPath is null)
             return NotFound();
 
-        var contentType = GetContentType(Path.GetExtension(fileName));
-        return PhysicalFile(fullPath, contentType, fileName, enableRangeProcessing: true);
+        var downloadName = Path.GetFileName(fullPath);
+        var contentType = GetContentType(Path.GetExtension(fullPath));
+        return PhysicalFile(fullPath, contentType, downloadName, enableRangeProcessing: true);
     }
 
     [HttpGet("inventory/lookups")]

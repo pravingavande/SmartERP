@@ -15,6 +15,7 @@ import {
 import { OrgOption } from '../models/audit.model';
 import { AuditService } from './audit.service';
 import { AuthService } from './auth.service';
+import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 
 @Injectable({ providedIn: 'root' })
 export class EventCalendarService {
@@ -112,10 +113,11 @@ export class EventCalendarService {
     );
   }
 
-  uploadFile(file: File): Observable<string | null> {
+  uploadFile(file: File, orgId: number): Observable<string | null> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ApiResponse<string>>(`${this.base}/upload`, formData).pipe(
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.post<ApiResponse<string>>(`${this.base}/upload`, formData, { params }).pipe(
       map((r) => (r.success && r.data ? r.data : null)),
       catchError(() => of(null))
     );
@@ -129,7 +131,7 @@ export class EventCalendarService {
   }
 
   fileUrl(fileName: string): string {
-    return `${this.base}/file/${encodeURIComponent(fileName)}`;
+    return `${this.base}/file/${encodeRelativeStoragePath(fileName)}`;
   }
 
   downloadFile(url: string): Observable<Blob> {

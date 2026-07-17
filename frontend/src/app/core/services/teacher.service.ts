@@ -7,6 +7,7 @@ import { OrgOption } from '../models/audit.model';
 import {
   ApiResponse,
   CodeNameOption,
+  DesignationOption,
   IdNameOption,
   TeacherFormState,
   TeacherListFilter,
@@ -18,6 +19,7 @@ import {
   TEACHER_STAFF_TYPE_ID,
   UserRoleOption
 } from '../models/teacher.model';
+import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 
 @Injectable({ providedIn: 'root' })
 export class TeacherService {
@@ -162,19 +164,21 @@ export class TeacherService {
     );
   }
 
-  uploadPhoto(file: File): Observable<string | null> {
+  uploadPhoto(file: File, orgId: number): Observable<string | null> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ApiResponse<string>>(`${this.base}/upload-photo`, formData).pipe(
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.post<ApiResponse<string>>(`${this.base}/upload-photo`, formData, { params }).pipe(
       map((r) => (r.success && r.data ? r.data : null)),
       catchError(() => of(null))
     );
   }
 
-  uploadDocument(file: File): Observable<string | null> {
+  uploadDocument(file: File, orgId: number): Observable<string | null> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ApiResponse<string>>(`${this.base}/upload-document`, formData).pipe(
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.post<ApiResponse<string>>(`${this.base}/upload-document`, formData, { params }).pipe(
       map((r) => (r.success && r.data ? r.data : null)),
       catchError(() => of(null))
     );
@@ -182,12 +186,12 @@ export class TeacherService {
 
   photoUrl(fileName: string | null | undefined): string | null {
     if (!fileName?.trim()) return null;
-    return `${this.base}/photo/${encodeURIComponent(fileName.trim())}`;
+    return `${this.base}/photo/${encodeRelativeStoragePath(fileName.trim())}`;
   }
 
   documentUrl(fileName: string | null | undefined): string | null {
     if (!fileName?.trim()) return null;
-    return `${this.base}/document/${encodeURIComponent(fileName.trim())}`;
+    return `${this.base}/document/${encodeRelativeStoragePath(fileName.trim())}`;
   }
 
   downloadFile(url: string): Observable<Blob> {
@@ -203,7 +207,7 @@ export class TeacherService {
       lookups: {
         staffTypes: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'staffTypes', 'StaffTypes')),
         userRoles: this.pickUserRoles(lk),
-        designations: this.normalizeCodeNames(this.pickArray<CodeNameOption>(lk, 'designations', 'Designations')),
+        designations: this.normalizeDesignations(this.pickArray<DesignationOption>(lk, 'designations', 'Designations')),
         genders: this.normalizeCodeNames(this.pickArray<CodeNameOption>(lk, 'genders', 'Genders')),
         religions: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'religions', 'Religions')),
         categories: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'categories', 'Categories')),
@@ -245,6 +249,18 @@ export class TeacherService {
       code: x.code ?? (x as CodeNameOption & { Code?: number }).Code ?? 0,
       name: x.name ?? (x as CodeNameOption & { Name?: string }).Name ?? ''
     }));
+  }
+
+  private normalizeDesignations(raw?: DesignationOption[] | null): DesignationOption[] {
+    return (raw ?? []).map((x) => {
+      const ext = x as DesignationOption & { Code?: number; Name?: string; LeaveYear?: number | null };
+      const leave = ext.leaveYear ?? ext.LeaveYear;
+      return {
+        code: x.code ?? ext.Code ?? 0,
+        name: x.name ?? ext.Name ?? '',
+        leaveYear: leave == null || Number.isNaN(Number(leave)) ? null : Number(leave)
+      };
+    });
   }
 
   private normalizeIdNames(raw?: IdNameOption[] | null): IdNameOption[] {

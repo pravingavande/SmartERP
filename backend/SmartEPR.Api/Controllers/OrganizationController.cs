@@ -20,13 +20,15 @@ public sealed class OrganizationController : ControllerBase
 
     private const long MaxUploadBytes = 5 * 1024 * 1024;
 
-    private readonly IOrganizationService _organizationService;
-    private readonly IWebHostEnvironment _environment;
+    private const string DocumentFeature = "OrganizationDocuments";
 
-    public OrganizationController(IOrganizationService organizationService, IWebHostEnvironment environment)
+    private readonly IOrganizationService _organizationService;
+    private readonly ILocalFileStorage _fileStorage;
+
+    public OrganizationController(IOrganizationService organizationService, ILocalFileStorage fileStorage)
     {
         _organizationService = organizationService;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet("lookups")]
@@ -101,31 +103,26 @@ public sealed class OrganizationController : ControllerBase
         if (!AllowedExtensions.Contains(extension))
             return Ok(ApiResponse<string>.Fail("Only PDF, JPG, JPEG, and PNG files are allowed."));
 
-        var storedName = $"ORG-{orgId ?? 0}-{documentId ?? 0}-{Guid.NewGuid():N}{extension}";
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "OrganizationDocuments");
-        Directory.CreateDirectory(uploadDir);
-        var fullPath = Path.Combine(uploadDir, storedName);
+        // documentId kept for API compatibility; storage is OrgID-folder based.
+        _ = documentId;
 
-        await using (var stream = System.IO.File.Create(fullPath))
-        {
-            await file.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-        }
+        await using var stream = file.OpenReadStream();
+        var relativePath = await _fileStorage
+            .SaveAsync(DocumentFeature, orgId ?? 0, stream, file.FileName, cancellationToken)
+            .ConfigureAwait(false);
 
-        return Ok(ApiResponse<string>.Ok(storedName, "Document uploaded."));
+        return Ok(ApiResponse<string>.Ok(relativePath, "Document uploaded."));
     }
 
-    [HttpGet("file/{fileName}")]
-    public IActionResult DownloadFile(string fileName)
+    [HttpGet("file/{*relativePath}")]
+    public IActionResult DownloadFile(string relativePath)
     {
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains("..", StringComparison.Ordinal))
-            return BadRequest();
-
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "OrganizationDocuments");
-        var fullPath = Path.Combine(uploadDir, fileName);
-        if (!System.IO.File.Exists(fullPath))
+        var fullPath = _fileStorage.ResolvePhysicalPath(DocumentFeature, relativePath);
+        if (fullPath is null)
             return NotFound();
 
-        var contentType = Path.GetExtension(fileName).ToLowerInvariant() switch
+        var downloadName = Path.GetFileName(fullPath);
+        var contentType = Path.GetExtension(fullPath).ToLowerInvariant() switch
         {
             ".pdf" => "application/pdf",
             ".jpg" or ".jpeg" => "image/jpeg",
@@ -133,7 +130,7 @@ public sealed class OrganizationController : ControllerBase
             _ => "application/octet-stream"
         };
 
-        return PhysicalFile(fullPath, contentType, fileName, enableRangeProcessing: true);
+        return PhysicalFile(fullPath, contentType, downloadName, enableRangeProcessing: true);
     }
 
     private bool TryGetUserId(out long userId)

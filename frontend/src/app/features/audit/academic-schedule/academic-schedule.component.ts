@@ -66,7 +66,6 @@ export class AcademicScheduleComponent {
   readonly listFromDate = signal('');
   readonly listToDate = signal('');
   readonly listAyId = signal<number | null>(null);
-  readonly searchText = signal('');
 
   readonly sortKey = signal<keyof AcademicScheduleItem>('srNo');
   readonly sortDir = signal<SortDirection>('desc');
@@ -136,7 +135,7 @@ export class AcademicScheduleComponent {
       fromDate: this.listFromDate() || null,
       toDate: this.listToDate() || null,
       ayId: this.listAyId(),
-      search: this.searchText() || null
+      search: null
     };
     this.master
       .getAcademicSchedules(filter)
@@ -159,11 +158,6 @@ export class AcademicScheduleComponent {
     this.listPageIndex.set(0);
     this.closeForm();
     this.loadList();
-  }
-
-  onSearchChange(value: string): void {
-    this.searchText.set(value);
-    this.onFilterChange();
   }
 
   toggleSort(key: keyof AcademicScheduleItem): void {
@@ -263,9 +257,14 @@ export class AcademicScheduleComponent {
       return;
     }
 
+    const orgId = this.form().underOrgID ?? this.listOrgID();
+    if (!orgId) {
+      this.toast.showError('Please select School / Organization before uploading a file.', 'Upload failed');
+      return;
+    }
     this.fileUploading.set(true);
     this.master
-      .uploadAcademicScheduleFile(file)
+      .uploadAcademicScheduleFile(file, orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ fileName, message }) => {
         this.fileUploading.set(false);

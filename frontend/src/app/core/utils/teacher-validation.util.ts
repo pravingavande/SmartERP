@@ -4,16 +4,6 @@ const MOBILE_RE = /^\d{10}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AADHAR_RE = /^\d{12}$/;
 const PAN_RE = /^[A-Z]{5}\d{4}[A-Z]$/i;
-export const TEACHER_MIN_AGE = 18;
-export const TEACHER_MAX_AGE = 70;
-
-function ageFromDob(dobIso: string, today = new Date()): number {
-  const dob = new Date(`${dobIso}T00:00:00`);
-  let age = today.getFullYear() - dob.getFullYear();
-  const monthDiff = today.getMonth() - dob.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age -= 1;
-  return age;
-}
 
 export function validateTeacherForm(form: TeacherFormState, options?: { requirePassword?: boolean }): Record<string, string> {
   const errors: Record<string, string> = {};
@@ -24,6 +14,12 @@ export function validateTeacherForm(form: TeacherFormState, options?: { requireP
   if (!form.designationCode) errors['designationCode'] = 'Please select Designation.';
   if (!form.staffTypeID) errors['staffTypeID'] = 'Please select Staff Type.';
   if (!form.genderCode) errors['genderCode'] = 'Please select Gender.';
+  if (!form.religionID) errors['religionID'] = 'Please select Religion.';
+  if (!form.categoryID) errors['categoryID'] = 'Please select Category.';
+  if (!form.bloodGroupID) errors['bloodGroupID'] = 'Please select Blood Group.';
+  if (!form.jtCategoryID) errors['jtCategoryID'] = 'Please select JT Category.';
+  if (!form.shiftID) errors['shiftID'] = 'Please select Shift.';
+  if (!form.userRoleID) errors['userRoleID'] = 'Please select User Role.';
 
   if (!form.mobileNo1?.trim()) {
     errors['mobileNo1'] = 'Mobile no. 1 is required.';
@@ -50,18 +46,9 @@ export function validateTeacherForm(form: TeacherFormState, options?: { requireP
   }
 
   if (form.dob?.trim()) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const dob = new Date(`${form.dob.trim()}T00:00:00`);
     if (Number.isNaN(dob.getTime())) {
       errors['dob'] = 'Date of birth is invalid.';
-    } else if (dob > today) {
-      errors['dob'] = 'Future date is not allowed for Date of Birth.';
-    } else {
-      const age = ageFromDob(form.dob.trim(), today);
-      if (age < TEACHER_MIN_AGE || age > TEACHER_MAX_AGE) {
-        errors['dob'] = `Age must be between ${TEACHER_MIN_AGE} and ${TEACHER_MAX_AGE} years.`;
-      }
     }
   }
 
@@ -95,6 +82,12 @@ export function mapTeacherBackendMessageToFieldErrors(message: string): Record<s
   if (lower.includes('designation')) return { designationCode: message };
   if (lower.includes('user type')) return { staffTypeID: message };
   if (lower.includes('gender')) return { genderCode: message };
+  if (lower.includes('religion')) return { religionID: message };
+  if (lower.includes('blood')) return { bloodGroupID: message };
+  if (lower.includes('category') && lower.includes('jt')) return { jtCategoryID: message };
+  if (lower.includes('category')) return { categoryID: message };
+  if (lower.includes('shift')) return { shiftID: message };
+  if (lower.includes('user role') || lower.includes('role')) return { userRoleID: message };
   if (lower.includes('mobile')) return { mobileNo1: message };
   if (lower.includes('email')) return { emailID: message };
   if (lower.includes('aadhar')) return { adharCardNo: message };

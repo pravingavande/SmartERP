@@ -24,6 +24,7 @@ import {
 } from '../models/master.model';
 import { OrgOption } from '../models/audit.model';
 import { apiData, apiMessage, apiSuccess } from '../utils/api-response.util';
+import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 import { trimText } from '../utils/master-validation.util';
 import { AuthService } from './auth.service';
 
@@ -183,17 +184,18 @@ export class MasterService {
     );
   }
 
-  uploadAcademicScheduleFile(file: File): Observable<{ fileName: string | null; message?: string }> {
+  uploadAcademicScheduleFile(file: File, orgId: number): Observable<{ fileName: string | null; message?: string }> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ApiResponse<string>>(`${this.base}/academic-schedule/upload`, formData).pipe(
+    const params = new HttpParams().set('orgId', orgId.toString());
+    return this.http.post<ApiResponse<string>>(`${this.base}/academic-schedule/upload`, formData, { params }).pipe(
       map((r) => ({ fileName: r.success && r.data ? r.data : null, message: r.message ?? undefined })),
       catchError(() => of({ fileName: null, message: 'Unable to upload file.' }))
     );
   }
 
   academicScheduleFileUrl(fileName: string): string {
-    return `${this.base}/academic-schedule/file/${encodeURIComponent(fileName)}`;
+    return `${this.base}/academic-schedule/file/${encodeRelativeStoragePath(fileName)}`;
   }
 
   downloadFile(url: string): Observable<Blob> {

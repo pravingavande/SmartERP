@@ -26,13 +26,16 @@ public sealed class TeacherController : ControllerBase
     private const long MaxPhotoBytes = 2 * 1024 * 1024;
     private const long MaxDocumentBytes = 5 * 1024 * 1024;
 
-    private readonly ITeacherService _teacherService;
-    private readonly IWebHostEnvironment _environment;
+    private const string PhotoFeature = "TeacherPhotos";
+    private const string DocumentFeature = "TeacherDocuments";
 
-    public TeacherController(ITeacherService teacherService, IWebHostEnvironment environment)
+    private readonly ITeacherService _teacherService;
+    private readonly ILocalFileStorage _fileStorage;
+
+    public TeacherController(ITeacherService teacherService, ILocalFileStorage fileStorage)
     {
         _teacherService = teacherService;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet("lookups")]
@@ -101,10 +104,13 @@ public sealed class TeacherController : ControllerBase
     }
 
     [HttpPost("upload-photo")]
-    public async Task<IActionResult> UploadPhoto(IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadPhoto(IFormFile file, [FromQuery] long orgId, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
             return Ok(ApiResponse<string>.Fail("No file uploaded."));
+
+        if (orgId <= 0)
+            return Ok(ApiResponse<string>.Fail("Organization is required for photo upload."));
 
         if (file.Length > MaxPhotoBytes)
             return Ok(ApiResponse<string>.Fail("Photo must be 2 MB or smaller."));
@@ -113,30 +119,22 @@ public sealed class TeacherController : ControllerBase
         if (!PhotoExtensions.Contains(ext))
             return Ok(ApiResponse<string>.Fail("Only JPG, JPEG, and PNG photos are allowed."));
 
-        var storedName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "TeacherPhotos");
-        Directory.CreateDirectory(uploadDir);
-        var fullPath = Path.Combine(uploadDir, storedName);
-        await using (var stream = System.IO.File.Create(fullPath))
-        {
-            await file.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-        }
+        await using var stream = file.OpenReadStream();
+        var relativePath = await _fileStorage
+            .SaveAsync(PhotoFeature, orgId, stream, file.FileName, cancellationToken)
+            .ConfigureAwait(false);
 
-        return Ok(ApiResponse<string>.Ok(storedName, "Photo uploaded."));
+        return Ok(ApiResponse<string>.Ok(relativePath, "Photo uploaded."));
     }
 
-    [HttpGet("photo/{fileName}")]
-    public IActionResult GetPhoto(string fileName)
+    [HttpGet("photo/{*relativePath}")]
+    public IActionResult GetPhoto(string relativePath)
     {
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains(".."))
+        var fullPath = _fileStorage.ResolvePhysicalPath(PhotoFeature, relativePath);
+        if (fullPath is null)
             return NotFound();
 
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "TeacherPhotos");
-        var fullPath = Path.Combine(uploadDir, fileName);
-        if (!System.IO.File.Exists(fullPath))
-            return NotFound();
-
-        var contentType = Path.GetExtension(fileName).ToLowerInvariant() switch
+        var contentType = Path.GetExtension(fullPath).ToLowerInvariant() switch
         {
             ".png" => "image/png",
             ".jpg" or ".jpeg" => "image/jpeg",
@@ -147,10 +145,13 @@ public sealed class TeacherController : ControllerBase
 
     [HttpPost("upload-document")]
     [RequestSizeLimit(MaxDocumentBytes)]
-    public async Task<IActionResult> UploadDocument(IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadDocument(IFormFile file, [FromQuery] long orgId, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
             return Ok(ApiResponse<string>.Fail("No file uploaded."));
+
+        if (orgId <= 0)
+            return Ok(ApiResponse<string>.Fail("Organization is required for document upload."));
 
         if (file.Length > MaxDocumentBytes)
             return Ok(ApiResponse<string>.Fail("Document must be 5 MB or smaller."));
@@ -159,37 +160,30 @@ public sealed class TeacherController : ControllerBase
         if (!DocumentExtensions.Contains(ext))
             return Ok(ApiResponse<string>.Fail("Only PDF, JPG, JPEG, and PNG files are allowed."));
 
-        var storedName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "TeacherDocuments");
-        Directory.CreateDirectory(uploadDir);
-        var fullPath = Path.Combine(uploadDir, storedName);
-        await using (var stream = System.IO.File.Create(fullPath))
-        {
-            await file.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-        }
+        await using var stream = file.OpenReadStream();
+        var relativePath = await _fileStorage
+            .SaveAsync(DocumentFeature, orgId, stream, file.FileName, cancellationToken)
+            .ConfigureAwait(false);
 
-        return Ok(ApiResponse<string>.Ok(storedName, "Document uploaded."));
+        return Ok(ApiResponse<string>.Ok(relativePath, "Document uploaded."));
     }
 
-    [HttpGet("document/{fileName}")]
-    public IActionResult GetDocument(string fileName)
+    [HttpGet("document/{*relativePath}")]
+    public IActionResult GetDocument(string relativePath)
     {
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains("..", StringComparison.Ordinal))
+        var fullPath = _fileStorage.ResolvePhysicalPath(DocumentFeature, relativePath);
+        if (fullPath is null)
             return NotFound();
 
-        var uploadDir = Path.Combine(_environment.ContentRootPath, "Uploads", "TeacherDocuments");
-        var fullPath = Path.Combine(uploadDir, fileName);
-        if (!System.IO.File.Exists(fullPath))
-            return NotFound();
-
-        var contentType = Path.GetExtension(fileName).ToLowerInvariant() switch
+        var downloadName = Path.GetFileName(fullPath);
+        var contentType = Path.GetExtension(fullPath).ToLowerInvariant() switch
         {
             ".pdf" => "application/pdf",
             ".png" => "image/png",
             ".jpg" or ".jpeg" => "image/jpeg",
             _ => "application/octet-stream"
         };
-        return PhysicalFile(fullPath, contentType, fileName, enableRangeProcessing: true);
+        return PhysicalFile(fullPath, contentType, downloadName, enableRangeProcessing: true);
     }
 
     private bool TryGetUserId(out long userId)
