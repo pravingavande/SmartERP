@@ -161,6 +161,33 @@ export interface AuditDashboardPage {
   rows: AuditDashboardRow[];
 }
 
+export interface AuditCashSummaryVoucherRow {
+  orgID: number;
+  organizationName: string;
+  receiptToday: number;
+  receiptPreviousDay: number;
+  receiptCurrentWeek: number;
+  receiptCurrentMonth: number;
+  receiptCurrentFy: number;
+  paymentToday: number;
+  paymentPreviousDay: number;
+  paymentCurrentWeek: number;
+  paymentCurrentMonth: number;
+  paymentCurrentFy: number;
+}
+
+export interface AuditCashSummaryAvailableRow {
+  orgID: number;
+  organizationName: string;
+  cashInHand: number;
+  cashInBank: number;
+}
+
+export interface AuditCashSummaryPage {
+  voucherRows: AuditCashSummaryVoucherRow[];
+  availableCashRows: AuditCashSummaryAvailableRow[];
+}
+
 export const CASH_PAYMENT_TYPE_ID = 1;
 
 export interface AccountRegisterMasterOption {

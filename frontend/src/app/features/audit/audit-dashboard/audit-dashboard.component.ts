@@ -7,12 +7,15 @@ import { forkJoin, map, of, switchMap, take } from 'rxjs';
 import { AuditService } from '../../../core/services/audit.service';
 import { DonationService } from '../../../core/services/donation.service';
 import {
+  AuditCashSummaryAvailableRow,
+  AuditCashSummaryVoucherRow,
   AuditDashboardRow,
   AuditDashboardSummary,
-  AuditLookups,
   FyOption,
   OrgOption
 } from '../../../core/models/audit.model';
+
+type DashboardTab = 'transaction' | 'cash';
 
 interface SummaryCard {
   title: string;
@@ -58,11 +61,20 @@ export class AuditDashboardComponent {
 
   readonly loading = signal(true);
   readonly summaryLoading = signal(false);
+  readonly cashLoading = signal(false);
+  readonly cashLoaded = signal(false);
+  readonly activeTab = signal<DashboardTab>('transaction');
+
   readonly rows = signal<AuditDashboardRow[]>([]);
   readonly summary = signal<AuditDashboardSummary | null>(null);
   readonly fyList = signal<FyOption[]>([]);
   readonly orgs = signal<OrgOption[]>([]);
   readonly selectedFyID = signal<number | null>(null);
+
+  readonly cashFyID = signal<number | null>(null);
+  readonly cashOrgID = signal<number | null>(null);
+  readonly cashVoucherRows = signal<AuditCashSummaryVoucherRow[]>([]);
+  readonly cashAvailableRows = signal<AuditCashSummaryAvailableRow[]>([]);
 
   readonly donutRadius = 78;
   readonly donutCircumference = 2 * Math.PI * 78;
@@ -71,6 +83,79 @@ export class AuditDashboardComponent {
     const s = this.summary();
     if (!s) return null;
     return this.buildVisuals(s);
+  });
+
+  readonly voucherGrandTotal = computed(() => {
+    const rows = this.cashVoucherRows();
+    const sum = (pick: (r: AuditCashSummaryVoucherRow) => number) =>
+      rows.reduce((acc, r) => acc + pick(r), 0);
+    return {
+      receiptToday: sum((r) => r.receiptToday),
+      receiptPreviousDay: sum((r) => r.receiptPreviousDay),
+      receiptCurrentWeek: sum((r) => r.receiptCurrentWeek),
+      receiptCurrentMonth: sum((r) => r.receiptCurrentMonth),
+      receiptCurrentFy: sum((r) => r.receiptCurrentFy),
+      paymentToday: sum((r) => r.paymentToday),
+      paymentPreviousDay: sum((r) => r.paymentPreviousDay),
+      paymentCurrentWeek: sum((r) => r.paymentCurrentWeek),
+      paymentCurrentMonth: sum((r) => r.paymentCurrentMonth),
+      paymentCurrentFy: sum((r) => r.paymentCurrentFy)
+    };
+  });
+
+  readonly availableGrandTotal = computed(() => {
+    const rows = this.cashAvailableRows();
+    return {
+      cashInHand: rows.reduce((acc, r) => acc + r.cashInHand, 0),
+      cashInBank: rows.reduce((acc, r) => acc + r.cashInBank, 0)
+    };
+  });
+
+  readonly cashVisuals = computed(() => {
+    const v = this.voucherGrandTotal();
+    const a = this.availableGrandTotal();
+    const receiptFy = v.receiptCurrentFy;
+    const paymentFy = v.paymentCurrentFy;
+    const netFy = receiptFy - paymentFy;
+    const flowTotal = receiptFy + paymentFy;
+    const totalAvailable = a.cashInHand + a.cashInBank;
+    const hasVoucherData = this.cashVoucherRows().length > 0;
+    const hasAvailableData = this.cashAvailableRows().length > 0;
+
+    const periods = [
+      { label: 'Today', receipt: v.receiptToday, payment: v.paymentToday },
+      { label: 'Prev Day', receipt: v.receiptPreviousDay, payment: v.paymentPreviousDay },
+      { label: 'Week', receipt: v.receiptCurrentWeek, payment: v.paymentCurrentWeek },
+      { label: 'Month', receipt: v.receiptCurrentMonth, payment: v.paymentCurrentMonth },
+      { label: 'FY', receipt: v.receiptCurrentFy, payment: v.paymentCurrentFy }
+    ].map((p) => {
+      const max = Math.max(p.receipt, p.payment, 1);
+      const net = p.receipt - p.payment;
+      return {
+        ...p,
+        net,
+        receiptPct: (p.receipt / max) * 100,
+        paymentPct: (p.payment / max) * 100,
+        positive: net >= 0
+      };
+    });
+
+    return {
+      hasVoucherData,
+      hasAvailableData,
+      receiptFy,
+      paymentFy,
+      netFy,
+      netPositive: netFy >= 0,
+      inflowPct: flowTotal > 0 ? (receiptFy / flowTotal) * 100 : 50,
+      outflowPct: flowTotal > 0 ? (paymentFy / flowTotal) * 100 : 50,
+      cashInHand: a.cashInHand,
+      cashInBank: a.cashInBank,
+      totalAvailable,
+      handPct: totalAvailable > 0 ? (a.cashInHand / totalAvailable) * 100 : 0,
+      bankPct: totalAvailable > 0 ? (a.cashInBank / totalAvailable) * 100 : 0,
+      periods
+    };
   });
 
   constructor() {
@@ -86,6 +171,7 @@ export class AuditDashboardComponent {
         this.orgs.set(orgOptions);
         const fyId = dashboard.summary.fyID ?? fyOptions[0]?.fyID ?? null;
         this.selectedFyID.set(fyId);
+        this.cashFyID.set(fyId);
         this.rows.set(dashboard.rows);
 
         if (dashboard.summary.fyID != null) {
@@ -95,6 +181,13 @@ export class AuditDashboardComponent {
           this.loadClientSummary(fyId, fyOptions, orgOptions, () => this.loading.set(false));
         }
       });
+  }
+
+  setTab(tab: DashboardTab): void {
+    this.activeTab.set(tab);
+    if (tab === 'cash' && !this.cashLoaded()) {
+      this.loadCashSummary();
+    }
   }
 
   onFyChange(fyId: number | null): void {
@@ -115,6 +208,29 @@ export class AuditDashboardComponent {
       .subscribe((summary) => {
         this.summary.set(summary);
         this.summaryLoading.set(false);
+      });
+  }
+
+  onCashFyChange(fyId: number | null): void {
+    this.cashFyID.set(fyId);
+    this.loadCashSummary();
+  }
+
+  onCashOrgChange(orgId: number | null): void {
+    this.cashOrgID.set(orgId);
+    this.loadCashSummary();
+  }
+
+  private loadCashSummary(): void {
+    this.cashLoading.set(true);
+    this.audit
+      .getCashSummary(this.cashFyID(), this.cashOrgID())
+      .pipe(take(1))
+      .subscribe((page) => {
+        this.cashVoucherRows.set(page.voucherRows);
+        this.cashAvailableRows.set(page.availableCashRows);
+        this.cashLoaded.set(true);
+        this.cashLoading.set(false);
       });
   }
 

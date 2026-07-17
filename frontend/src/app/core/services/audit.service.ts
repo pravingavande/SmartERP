@@ -11,6 +11,9 @@ import {
   AuditDashboardPage,
   AuditDashboardRow,
   AuditDashboardSummary,
+  AuditCashSummaryAvailableRow,
+  AuditCashSummaryPage,
+  AuditCashSummaryVoucherRow,
   AuditLookups,
   PartyFormState,
   LedgerHeadFormState,
@@ -50,6 +53,57 @@ export class AuditService {
       }),
       catchError(() => of(this.emptyDashboardPage()))
     );
+  }
+
+  getCashSummary(fyId?: number | null, orgId?: number | null): Observable<AuditCashSummaryPage> {
+    let params = new HttpParams();
+    if (fyId) params = params.set('fyId', fyId.toString());
+    if (orgId) params = params.set('orgId', orgId.toString());
+    return this.http.get<ApiResponse<AuditCashSummaryPage>>(`${this.base}/dashboard/cash-summary`, { params }).pipe(
+      map((r) => {
+        if (!r.success || !r.data) return this.emptyCashSummaryPage();
+        return {
+          voucherRows: (r.data.voucherRows ?? []).map((row) =>
+            this.normalizeCashVoucherRow(row as AuditCashSummaryVoucherRow & Record<string, unknown>)
+          ),
+          availableCashRows: (r.data.availableCashRows ?? []).map((row) =>
+            this.normalizeCashAvailableRow(row as AuditCashSummaryAvailableRow & Record<string, unknown>)
+          )
+        };
+      }),
+      catchError(() => of(this.emptyCashSummaryPage()))
+    );
+  }
+
+  private emptyCashSummaryPage(): AuditCashSummaryPage {
+    return { voucherRows: [], availableCashRows: [] };
+  }
+
+  private normalizeCashVoucherRow(raw: AuditCashSummaryVoucherRow & Record<string, unknown>): AuditCashSummaryVoucherRow {
+    const n = (a: string, b: string) => Number(raw[a as keyof typeof raw] ?? raw[b] ?? 0);
+    return {
+      orgID: Number(raw.orgID ?? raw['OrgID'] ?? 0),
+      organizationName: String(raw.organizationName ?? raw['OrganizationName'] ?? ''),
+      receiptToday: n('receiptToday', 'ReceiptToday'),
+      receiptPreviousDay: n('receiptPreviousDay', 'ReceiptPreviousDay'),
+      receiptCurrentWeek: n('receiptCurrentWeek', 'ReceiptCurrentWeek'),
+      receiptCurrentMonth: n('receiptCurrentMonth', 'ReceiptCurrentMonth'),
+      receiptCurrentFy: n('receiptCurrentFy', 'ReceiptCurrentFy'),
+      paymentToday: n('paymentToday', 'PaymentToday'),
+      paymentPreviousDay: n('paymentPreviousDay', 'PaymentPreviousDay'),
+      paymentCurrentWeek: n('paymentCurrentWeek', 'PaymentCurrentWeek'),
+      paymentCurrentMonth: n('paymentCurrentMonth', 'PaymentCurrentMonth'),
+      paymentCurrentFy: n('paymentCurrentFy', 'PaymentCurrentFy')
+    };
+  }
+
+  private normalizeCashAvailableRow(raw: AuditCashSummaryAvailableRow & Record<string, unknown>): AuditCashSummaryAvailableRow {
+    return {
+      orgID: Number(raw.orgID ?? raw['OrgID'] ?? 0),
+      organizationName: String(raw.organizationName ?? raw['OrganizationName'] ?? ''),
+      cashInHand: Number(raw.cashInHand ?? raw['CashInHand'] ?? 0),
+      cashInBank: Number(raw.cashInBank ?? raw['CashInBank'] ?? 0)
+    };
   }
 
   private emptyDashboardPage(): AuditDashboardPage {
@@ -184,7 +238,7 @@ export class AuditService {
       filePath: form.filePath || null,
       fyID: form.fyID,
       details: form.details
-        .filter((d) => d.ledgerHeadId && d.amount > 0)
+        .filter((d) => d.ledgerHeadId != null && d.ledgerHeadId !== 0 && d.amount > 0)
         .map((d) => ({
           srNo: d.srNo,
           ledgerHeadId: d.ledgerHeadId!,

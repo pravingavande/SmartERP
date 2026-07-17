@@ -51,6 +51,16 @@ export const routes: Routes = [
           import('./features/audit/payment-voucher/payment-voucher.component').then((m) => m.PaymentVoucherComponent)
       },
       {
+        path: 'audit/bank-deposit',
+        loadComponent: () =>
+          import('./features/audit/bank-deposit/bank-deposit.component').then((m) => m.BankDepositComponent)
+      },
+      {
+        path: 'audit/bank-withdraw',
+        loadComponent: () =>
+          import('./features/audit/bank-withdraw/bank-withdraw.component').then((m) => m.BankWithdrawComponent)
+      },
+      {
         path: 'audit/donation',
         loadComponent: () =>
           import('./features/audit/donation-entry/donation-entry.component').then((m) => m.DonationEntryComponent)

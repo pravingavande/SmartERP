@@ -157,12 +157,10 @@ public sealed class LocalFileStorageTests : IDisposable
     }
 
     [Fact]
-    public void SanitizeFeature_RejectsTraversalFeatureName()
+    public async Task SanitizeFeature_RejectsTraversalFeatureName()
     {
-        Assert.ThrowsAsync<ArgumentException>(async () =>
-        {
-            await using var content = new MemoryStream([1]);
-            await _storage.SaveAsync("../evil", 1, content, "a.txt");
-        });
+        await using var content = new MemoryStream([1]);
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _storage.SaveAsync("../evil", 1, content, "a.txt"));
     }
 }

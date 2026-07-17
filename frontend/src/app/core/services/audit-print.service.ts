@@ -5,7 +5,14 @@ import { Donation } from '../models/donation.model';
 @Injectable({ providedIn: 'root' })
 export class AuditPrintService {
   printVoucher(voucher: Voucher): void {
-    const title = voucher.vType === 'R' || voucher.vType === 'RV' ? 'Receipt Voucher' : 'Payment Voucher';
+    const title =
+      voucher.vType === 'R' || voucher.vType === 'RV'
+        ? 'Receipt Voucher'
+        : voucher.vType === 'BD'
+          ? 'Bank Deposit'
+          : voucher.vType === 'BW'
+            ? 'Bank Withdraw'
+            : 'Payment Voucher';
     const detailRows = voucher.details
       .map(
         (d) => `

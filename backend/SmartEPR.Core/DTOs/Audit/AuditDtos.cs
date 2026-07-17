@@ -234,6 +234,36 @@ public sealed class AuditDashboardResponseDto
     public IReadOnlyList<AuditDashboardRowDto> Rows { get; init; } = [];
 }
 
+public sealed class AuditCashSummaryVoucherRowDto
+{
+    public long OrgID { get; init; }
+    public string OrganizationName { get; init; } = string.Empty;
+    public decimal ReceiptToday { get; init; }
+    public decimal ReceiptPreviousDay { get; init; }
+    public decimal ReceiptCurrentWeek { get; init; }
+    public decimal ReceiptCurrentMonth { get; init; }
+    public decimal ReceiptCurrentFy { get; init; }
+    public decimal PaymentToday { get; init; }
+    public decimal PaymentPreviousDay { get; init; }
+    public decimal PaymentCurrentWeek { get; init; }
+    public decimal PaymentCurrentMonth { get; init; }
+    public decimal PaymentCurrentFy { get; init; }
+}
+
+public sealed class AuditCashSummaryAvailableRowDto
+{
+    public long OrgID { get; init; }
+    public string OrganizationName { get; init; } = string.Empty;
+    public decimal CashInHand { get; init; }
+    public decimal CashInBank { get; init; }
+}
+
+public sealed class AuditCashSummaryResponseDto
+{
+    public IReadOnlyList<AuditCashSummaryVoucherRowDto> VoucherRows { get; init; } = [];
+    public IReadOnlyList<AuditCashSummaryAvailableRowDto> AvailableCashRows { get; init; } = [];
+}
+
 public sealed class AuditLookupsDto
 {
     public IReadOnlyList<OrgOptionDto> Orgs { get; init; } = [];

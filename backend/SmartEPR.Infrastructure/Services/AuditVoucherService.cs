@@ -1,5 +1,6 @@
 using SmartEPR.Core.DTOs.Audit;
 using SmartEPR.Core.Interfaces;
+using SmartEPR.Core.Validation;
 
 namespace SmartEPR.Infrastructure.Services;
 
@@ -55,10 +56,7 @@ public sealed class AuditVoucherService : IAuditVoucherService
 
     public async Task<VoucherDto?> SaveVoucherAsync(long userId, SaveVoucherRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (request.Details.Count == 0)
-            return null;
-
-        if (request.Details.Sum(d => d.Amount) <= 0)
+        if (AuditVoucherRules.ValidateSave(request) is not null)
             return null;
 
         var voucherId = await _repository.SaveVoucherAsync(userId, request, cancellationToken).ConfigureAwait(false);
@@ -86,6 +84,18 @@ public sealed class AuditVoucherService : IAuditVoucherService
         {
             Rows = await rowsTask.ConfigureAwait(false),
             Summary = await summaryTask.ConfigureAwait(false)
+        };
+    }
+
+    public async Task<AuditCashSummaryResponseDto> GetCashSummaryAsync(long userId, long? fyId, long? orgId, CancellationToken cancellationToken = default)
+    {
+        var (voucherRows, availableCashRows) = await _repository
+            .GetCashSummaryAsync(userId, fyId, orgId, cancellationToken)
+            .ConfigureAwait(false);
+        return new AuditCashSummaryResponseDto
+        {
+            VoucherRows = voucherRows,
+            AvailableCashRows = availableCashRows
         };
     }
 

@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Json;
 using Dapper;
 using SmartEPR.Core.DTOs.Audit;
@@ -9,10 +10,12 @@ namespace SmartEPR.Infrastructure.Repositories;
 public sealed class AuditVoucherRepository : IAuditVoucherRepository
 {
     private readonly StoredProcedureExecutor _executor;
+    private readonly SqlConnectionFactory _connectionFactory;
 
-    public AuditVoucherRepository(StoredProcedureExecutor executor)
+    public AuditVoucherRepository(StoredProcedureExecutor executor, SqlConnectionFactory connectionFactory)
     {
         _executor = executor;
+        _connectionFactory = connectionFactory;
     }
 
     public Task<IReadOnlyList<OrgOptionDto>> GetUserOrgsAsync(long userId, CancellationToken cancellationToken = default)
@@ -195,6 +198,32 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         p.Add("@FyID", fyId);
         var row = await _executor.QuerySingleOrDefaultAsync<AuditDashboardSummaryDto>("dbo.sp_Audit_GetDashboardSummary", p, cancellationToken).ConfigureAwait(false);
         return row ?? new AuditDashboardSummaryDto();
+    }
+
+    public async Task<(IReadOnlyList<AuditCashSummaryVoucherRowDto> VoucherRows, IReadOnlyList<AuditCashSummaryAvailableRowDto> AvailableCashRows)> GetCashSummaryAsync(
+        long userId,
+        long? fyId,
+        long? orgId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+        var p = new DynamicParameters();
+        p.Add("@UserID", userId);
+        p.Add("@FyID", fyId);
+        p.Add("@OrgID", orgId);
+
+        using var multi = await connection.QueryMultipleAsync(
+            new CommandDefinition(
+                "dbo.sp_Audit_GetCashSummary",
+                p,
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
+
+        var voucherRows = (await multi.ReadAsync<AuditCashSummaryVoucherRowDto>().ConfigureAwait(false)).AsList();
+        var availableRows = (await multi.ReadAsync<AuditCashSummaryAvailableRowDto>().ConfigureAwait(false)).AsList();
+        return (voucherRows, availableRows);
     }
 
     public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default)

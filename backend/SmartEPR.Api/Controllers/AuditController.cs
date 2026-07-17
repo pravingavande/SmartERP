@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartEPR.Core.Common;
 using SmartEPR.Core.DTOs.Audit;
 using SmartEPR.Core.Interfaces;
+using SmartEPR.Core.Validation;
 
 namespace SmartEPR.Api.Controllers;
 
@@ -28,6 +29,19 @@ public sealed class AuditController : ControllerBase
 
         var page = await _auditService.GetDashboardPageAsync(userId, fyId, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<AuditDashboardResponseDto>.Ok(page));
+    }
+
+    [HttpGet("dashboard/cash-summary")]
+    public async Task<IActionResult> GetCashSummary(
+        [FromQuery] long? fyId,
+        [FromQuery] long? orgId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(ApiResponse<AuditCashSummaryResponseDto>.Fail("Invalid token."));
+
+        var page = await _auditService.GetCashSummaryAsync(userId, fyId, orgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<AuditCashSummaryResponseDto>.Ok(page));
     }
 
     [HttpGet("lookups")]
@@ -103,9 +117,12 @@ public sealed class AuditController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Unauthorized(ApiResponse<VoucherDto>.Fail("Invalid token."));
 
+        if (AuditVoucherRules.ValidateSave(request) is { } validationError)
+            return Ok(ApiResponse<VoucherDto>.Fail(validationError));
+
         var saved = await _auditService.SaveVoucherAsync(userId, request, cancellationToken).ConfigureAwait(false);
         return saved is null
-            ? Ok(ApiResponse<VoucherDto>.Fail("Unable to save voucher. Add at least one detail line."))
+            ? Ok(ApiResponse<VoucherDto>.Fail("Unable to save voucher."))
             : Ok(ApiResponse<VoucherDto>.Ok(saved, "Voucher saved."));
     }
 

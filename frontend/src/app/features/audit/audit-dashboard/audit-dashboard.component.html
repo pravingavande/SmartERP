@@ -7,13 +7,34 @@
     <div class="actions">
       <a routerLink="/audit/receipt-voucher" class="btn btn-primary">Receipt Voucher</a>
       <a routerLink="/audit/payment-voucher" class="btn btn-outline">Payment Voucher</a>
+      <a routerLink="/audit/bank-deposit" class="btn btn-outline">Bank Deposit</a>
+      <a routerLink="/audit/bank-withdraw" class="btn btn-outline">Bank Withdraw</a>
       <a routerLink="/audit/donation" class="btn btn-outline">Donation Entry</a>
     </div>
   </header>
 
+  <nav class="dash-tabs" aria-label="Audit dashboard tabs">
+    <button
+      type="button"
+      class="dash-tab"
+      [class.active]="activeTab() === 'transaction'"
+      (click)="setTab('transaction')"
+    >
+      Transaction Summary
+    </button>
+    <button
+      type="button"
+      class="dash-tab"
+      [class.active]="activeTab() === 'cash'"
+      (click)="setTab('cash')"
+    >
+      Cash Summary
+    </button>
+  </nav>
+
   @if (loading()) {
     <p class="loading">Loading audit dashboard...</p>
-  } @else {
+  } @else if (activeTab() === 'transaction') {
   <div class="summary-section">
     <div class="summary-head">
       <div>
@@ -190,11 +211,11 @@
       <table class="audit-table">
         <thead>
           <tr>
-            <th>School / Org</th>
+            <th>School / Organization</th>
             <th>Account Register</th>
-            <th>Last Transaction</th>
-            <th>Balance</th>
-            <th>Type</th>
+            <th>Last Transaction Date</th>
+            <th>Current Balance</th>
+            <th>Voucher Type</th>
           </tr>
         </thead>
         <tbody>
@@ -211,6 +232,264 @@
           }
         </tbody>
       </table>
+    </div>
+  </div>
+  } @else {
+  <div class="cash-summary-section" [class.loading-cards]="cashLoading()">
+    <div class="summary-head cash-filters">
+      <div>
+        <h2>Cash Summary</h2>
+        <p class="summary-sub">At-a-glance cash flow and available balances by period</p>
+      </div>
+      <div class="cash-filter-row">
+        <label class="fy-filter">
+          <span class="field-label">Organization / Sanstha</span>
+          <select
+            class="field-control"
+            [ngModel]="cashOrgID()"
+            (ngModelChange)="onCashOrgChange($event ? +$event : null)"
+            name="cashOrgID"
+          >
+            <option [ngValue]="null">All Organizations</option>
+            @for (org of orgs(); track org.orgID) {
+              <option [ngValue]="org.orgID">{{ org.organizationName }}</option>
+            }
+          </select>
+        </label>
+        <label class="fy-filter">
+          <span class="field-label">Financial Year</span>
+          <select
+            class="field-control"
+            [ngModel]="cashFyID()"
+            (ngModelChange)="onCashFyChange($event ? +$event : null)"
+            name="cashFyID"
+          >
+            @for (fy of fyList(); track fy.fyID) {
+              <option [ngValue]="fy.fyID">{{ fy.fyName }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </div>
+
+    @if (cashVisuals(); as cv) {
+      <div class="cash-kpi-grid">
+        <article class="cash-kpi inflow">
+          <span class="kpi-label">Receipts (FY)</span>
+          <strong class="kpi-value">{{ cv.receiptFy | currency:'INR':'symbol':'1.0-0' }}</strong>
+          <span class="kpi-hint">Money coming in</span>
+        </article>
+        <article class="cash-kpi outflow">
+          <span class="kpi-label">Payments (FY)</span>
+          <strong class="kpi-value">{{ cv.paymentFy | currency:'INR':'symbol':'1.0-0' }}</strong>
+          <span class="kpi-hint">Money going out</span>
+        </article>
+        <article class="cash-kpi net" [class.positive]="cv.netPositive" [class.negative]="!cv.netPositive">
+          <span class="kpi-label">Net Flow (FY)</span>
+          <strong class="kpi-value">{{ cv.netFy | currency:'INR':'symbol':'1.0-0' }}</strong>
+          <span class="kpi-hint">{{ cv.netPositive ? 'Surplus' : 'Deficit' }} (Receipt − Payment)</span>
+        </article>
+        <article class="cash-kpi available">
+          <span class="kpi-label">Total Available</span>
+          <strong class="kpi-value">{{ cv.totalAvailable | currency:'INR':'symbol':'1.0-0' }}</strong>
+          <span class="kpi-hint">Hand + Bank</span>
+        </article>
+      </div>
+
+      <div class="cash-visuals-grid">
+        <article class="visual-panel cash-period-panel">
+          <header class="panel-title">
+            <h3>Period Comparison</h3>
+            <span class="panel-sub">Receipt vs Payment across time windows</span>
+          </header>
+          @if (cv.hasVoucherData) {
+            <div class="period-bars">
+              @for (p of cv.periods; track p.label) {
+                <div class="period-row">
+                  <div class="period-meta">
+                    <span class="period-label">{{ p.label }}</span>
+                    <span class="period-net" [class.pos]="p.positive" [class.neg]="!p.positive">
+                      Net {{ p.net | currency:'INR':'symbol':'1.0-0' }}
+                    </span>
+                  </div>
+                  <div class="period-tracks">
+                    <div class="period-track">
+                      <span class="track-tag receipt">R</span>
+                      <div class="track-bg">
+                        <div class="track-fill receipt-fill" [style.width.%]="p.receiptPct"></div>
+                      </div>
+                      <span class="track-amt receipt">{{ p.receipt | currency:'INR':'symbol':'1.0-0' }}</span>
+                    </div>
+                    <div class="period-track">
+                      <span class="track-tag payment">P</span>
+                      <div class="track-bg">
+                        <div class="track-fill payment-fill" [style.width.%]="p.paymentPct"></div>
+                      </div>
+                      <span class="track-amt payment">{{ p.payment | currency:'INR':'symbol':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="cash-flow-meter-wrap">
+              <div class="flow-meter">
+                <div class="meter-in" [style.width.%]="cv.inflowPct"></div>
+                <div class="meter-out" [style.width.%]="cv.outflowPct"></div>
+              </div>
+              <div class="flow-meter-legend">
+                <span><i class="dot in"></i> Receipts {{ cv.inflowPct | number:'1.0-0' }}%</span>
+                <span><i class="dot out"></i> Payments {{ cv.outflowPct | number:'1.0-0' }}%</span>
+              </div>
+            </div>
+          } @else {
+            <p class="visual-empty">No period data for selected filters.</p>
+          }
+        </article>
+
+        <article class="visual-panel cash-available-panel">
+          <header class="panel-title">
+            <h3>Where is the cash?</h3>
+            <span class="panel-sub">Split of available balances</span>
+          </header>
+          @if (cv.hasAvailableData) {
+            <div class="available-split">
+              <div class="split-card hand">
+                <span class="split-icon" aria-hidden="true">₹</span>
+                <span class="split-label">Cash in Hand</span>
+                <strong>{{ cv.cashInHand | currency:'INR':'symbol':'1.0-0' }}</strong>
+                <span class="split-pct">{{ cv.handPct | number:'1.0-0' }}% of total</span>
+              </div>
+              <div class="split-card bank">
+                <span class="split-icon" aria-hidden="true">B</span>
+                <span class="split-label">Cash in Bank</span>
+                <strong>{{ cv.cashInBank | currency:'INR':'symbol':'1.0-0' }}</strong>
+                <span class="split-pct">{{ cv.bankPct | number:'1.0-0' }}% of total</span>
+              </div>
+            </div>
+            <div class="available-meter" role="img" [attr.aria-label]="'Cash split: hand ' + (cv.handPct | number:'1.0-0') + '%, bank ' + (cv.bankPct | number:'1.0-0') + '%'">
+              <div class="hand-seg" [style.width.%]="cv.handPct || 0"></div>
+              <div class="bank-seg" [style.width.%]="cv.bankPct || 0"></div>
+            </div>
+            <div class="available-meter-legend">
+              <span><i class="dot hand"></i> Hand</span>
+              <span><i class="dot bank"></i> Bank</span>
+              <span class="total-pill">Total {{ cv.totalAvailable | currency:'INR':'symbol':'1.0-0' }}</span>
+            </div>
+          } @else {
+            <p class="visual-empty">No available cash data for selected filters.</p>
+          }
+        </article>
+      </div>
+    }
+
+    <div class="table-section cash-block">
+      <h2>Receipt &amp; Payment Detail</h2>
+      <p class="section-sub">Organization-wise Receipt (R) and Payment (P) by period</p>
+      <div class="rp-legend">
+        <span class="leg receipt"><i></i> R = Receipt</span>
+        <span class="leg payment"><i></i> P = Payment</span>
+      </div>
+      <div class="table-wrap cash-table-wrap">
+        <table class="audit-table cash-voucher-table cash-rp-table">
+          <thead>
+            <tr>
+              <th rowspan="2" class="sticky-col">Organization Name</th>
+              <th colspan="2" class="period-head">Today</th>
+              <th colspan="2" class="period-head">Yesterday</th>
+              <th colspan="2" class="period-head">Week</th>
+              <th colspan="2" class="period-head">Month</th>
+              <th colspan="2" class="period-head">FY</th>
+            </tr>
+            <tr class="rp-subhead">
+              <th class="r-col">R</th>
+              <th class="p-col">P</th>
+              <th class="r-col">R</th>
+              <th class="p-col">P</th>
+              <th class="r-col">R</th>
+              <th class="p-col">P</th>
+              <th class="r-col">R</th>
+              <th class="p-col">P</th>
+              <th class="r-col">R</th>
+              <th class="p-col">P</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of cashVoucherRows(); track row.orgID) {
+              <tr>
+                <td class="sticky-col org-name">{{ row.organizationName }}</td>
+                <td class="amt receipt">{{ row.receiptToday | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ row.paymentToday | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt receipt">{{ row.receiptPreviousDay | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ row.paymentPreviousDay | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt receipt">{{ row.receiptCurrentWeek | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ row.paymentCurrentWeek | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt receipt">{{ row.receiptCurrentMonth | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ row.paymentCurrentMonth | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt receipt">{{ row.receiptCurrentFy | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ row.paymentCurrentFy | currency:'INR':'symbol':'1.0-0' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="11" class="empty">No voucher summary available for the selected filters.</td></tr>
+            }
+          </tbody>
+          @if (cashVoucherRows().length) {
+            <tfoot>
+              <tr class="grand-total">
+                <td class="sticky-col">Grand Total</td>
+                <td class="amt receipt">{{ voucherGrandTotal().receiptToday | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ voucherGrandTotal().paymentToday | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt receipt">{{ voucherGrandTotal().receiptPreviousDay | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ voucherGrandTotal().paymentPreviousDay | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt receipt">{{ voucherGrandTotal().receiptCurrentWeek | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ voucherGrandTotal().paymentCurrentWeek | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt receipt">{{ voucherGrandTotal().receiptCurrentMonth | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ voucherGrandTotal().paymentCurrentMonth | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt receipt">{{ voucherGrandTotal().receiptCurrentFy | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td class="amt payment">{{ voucherGrandTotal().paymentCurrentFy | currency:'INR':'symbol':'1.0-0' }}</td>
+              </tr>
+            </tfoot>
+          }
+        </table>
+      </div>
+    </div>
+
+    <div class="table-section cash-block">
+      <h2>Available Cash Detail</h2>
+      <p class="section-sub">Cash in hand and cash in bank by organization</p>
+      <div class="table-wrap">
+        <table class="audit-table cash-available-table">
+          <thead>
+            <tr>
+              <th>Organization Name</th>
+              <th>Cash in Hand</th>
+              <th>Cash in Bank</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of cashAvailableRows(); track row.orgID) {
+              <tr>
+                <td class="org-name">{{ row.organizationName }}</td>
+                <td class="amt receipt">{{ row.cashInHand | currency:'INR':'symbol':'1.2-2' }}</td>
+                <td class="amt bank">{{ row.cashInBank | currency:'INR':'symbol':'1.2-2' }}</td>
+                <td class="amt total">{{ row.cashInHand + row.cashInBank | currency:'INR':'symbol':'1.2-2' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="empty">No available cash data for the selected filters.</td></tr>
+            }
+          </tbody>
+          @if (cashAvailableRows().length) {
+            <tfoot>
+              <tr class="grand-total">
+                <td>Grand Total</td>
+                <td class="amt">{{ availableGrandTotal().cashInHand | currency:'INR':'symbol':'1.2-2' }}</td>
+                <td class="amt">{{ availableGrandTotal().cashInBank | currency:'INR':'symbol':'1.2-2' }}</td>
+                <td class="amt">{{ availableGrandTotal().cashInHand + availableGrandTotal().cashInBank | currency:'INR':'symbol':'1.2-2' }}</td>
+              </tr>
+            </tfoot>
+          }
+        </table>
+      </div>
     </div>
   </div>
   }

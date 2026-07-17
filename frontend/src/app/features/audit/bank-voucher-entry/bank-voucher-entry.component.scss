@@ -1,0 +1,196 @@
+@import '../voucher-entry/voucher-entry.component.scss';
+
+.bank-voucher-page {
+  .bank-voucher-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+
+    h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--epr-navy);
+      font-weight: 700;
+    }
+  }
+
+  .type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+
+    &.deposit {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    &.withdraw {
+      background: #fff3e0;
+      color: #e65100;
+    }
+  }
+
+  .bank-header-grid {
+    grid-template-columns:
+      minmax(200px, 1.6fr)
+      minmax(100px, 0.55fr)
+      minmax(150px, 0.85fr)
+      minmax(140px, 0.75fr);
+    align-items: end;
+    gap: 0.65rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .detail-block {
+    margin-top: 1rem;
+  }
+
+  .bank-detail-table {
+    width: 100%;
+
+    .col-ledger {
+      width: 38%;
+    }
+
+    .col-narration {
+      width: 42%;
+    }
+
+    .col-amount {
+      width: 20%;
+    }
+
+    .narration-input {
+      width: 100%;
+      min-height: 2.15rem;
+      resize: none;
+    }
+
+    .amount-col input {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    .total-label {
+      text-align: right;
+      font-weight: 700;
+      color: var(--epr-navy);
+      padding-right: 0.75rem;
+    }
+
+    .total-value {
+      font-weight: 800;
+      color: var(--epr-navy);
+      text-align: right;
+      white-space: nowrap;
+    }
+  }
+
+  .remark-row {
+    margin-top: 0.85rem;
+    grid-template-columns: 1fr;
+
+    .field-wide {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .form-footer {
+    display: flex;
+    gap: 0.65rem;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+    border-top: 1px solid #d8e2ee;
+  }
+
+  .form-save-error {
+    margin: 0 0 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 6px;
+    background: #ffebee;
+    color: #c62828;
+    font-weight: 600;
+  }
+
+  .field-invalid .field-control,
+  .cell-invalid select,
+  .cell-invalid input {
+    border-color: #c62828 !important;
+  }
+
+  .receipt-list-table {
+    .col-vno { width: 12%; }
+    .col-vdate { width: 16%; }
+    .col-amt { width: 16%; }
+    .col-remark { width: 34%; }
+    .col-actions { width: 22%; }
+  }
+}
+
+@media (max-width: 900px) {
+  .bank-voucher-page {
+    .bank-header-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .bank-voucher-page {
+    .bank-header-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .bank-detail-table {
+      display: block;
+
+      thead {
+        display: none;
+      }
+
+      tbody,
+      tfoot,
+      tr,
+      td {
+        display: block;
+        width: 100%;
+      }
+
+      td {
+        padding: 0.45rem 0;
+      }
+
+      td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--epr-muted);
+        margin-bottom: 0.2rem;
+      }
+
+      .total-label {
+        text-align: left;
+        padding-right: 0;
+      }
+
+      .total-value {
+        text-align: left;
+      }
+    }
+  }
+}

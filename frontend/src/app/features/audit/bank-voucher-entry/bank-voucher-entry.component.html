@@ -1,0 +1,323 @@
+<section class="audit-page bank-voucher-page">
+  <header class="page-header">
+    <div>
+      <h1>{{ title() }}</h1>
+      <p>{{ isDeposit() ? 'Deposit cash into bank ledger' : 'Withdraw cash from bank ledger' }}</p>
+    </div>
+    <div class="header-actions">
+      @if (!formVisible()) {
+        <a routerLink="/audit/dashboard" class="btn btn-outline btn-back">← Back</a>
+        <button type="button" class="btn btn-primary" (click)="newVoucher()">+ Add New</button>
+      } @else {
+        <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
+      }
+    </div>
+  </header>
+
+  @if (!formVisible()) {
+    <div class="list-filters">
+      <app-org-school-select
+        name="listOrgID"
+        [orgs]="lookups()?.orgs ?? []"
+        [value]="listOrgID()"
+        (valueChange)="onListOrgChange($event)"
+      />
+      <label class="field">
+        <span class="field-label">Account Register</span>
+        <select
+          class="field-control"
+          [disabled]="lookupsLoading() || !listOrgID()"
+          [ngModel]="listAccountRegisterID()"
+          (ngModelChange)="onListAccountRegisterChange($event ? +$event : null)"
+          name="listAccountRegisterID"
+        >
+          <option [ngValue]="null">-- Select Register --</option>
+          @for (r of accountRegisters(); track r.accountRegisterID) {
+            <option [ngValue]="r.accountRegisterID">{{ r.accountRegister }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Financial Year</span>
+        <select
+          class="field-control"
+          [ngModel]="listFyID()"
+          (ngModelChange)="onListFyChange($event ? +$event : null)"
+          name="listFyID"
+        >
+          <option [ngValue]="null">-- Select FY --</option>
+          @for (fy of lookups()?.fyList ?? []; track fy.fyID) {
+            <option [ngValue]="fy.fyID">{{ fy.fyName }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  }
+
+  <div class="audit-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
+    @if (!formVisible()) {
+      <aside class="list-panel">
+        <h3>All {{ title() }}s</h3>
+        <div class="records-table-wrap">
+          <table class="records-table receipt-list-table">
+            <colgroup>
+              <col class="col-vno" />
+              <col class="col-vdate" />
+              <col class="col-amt" />
+              <col class="col-remark" />
+              <col class="col-actions" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-vno">Voucher No</th>
+                <th class="col-vdate">Transaction Date</th>
+                <th class="col-amt">Amount</th>
+                <th class="col-remark">Remark</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (v of paginatedVouchers(); track v.voucherID) {
+                <tr>
+                  <td class="code">{{ v.vCode }}</td>
+                  <td class="date-col">{{ v.vDate | date:'dd/MM/yyyy' }}</td>
+                  <td class="amt">{{ v.totalAmount | currency:'INR':'symbol':'1.2-2' }}</td>
+                  <td class="remark-col">{{ v.remark || '—' }}</td>
+                  <td class="actions">
+                    <div class="action-group">
+                      <app-list-action-btn action="edit" (clicked)="editVoucher(v)" />
+                      <app-list-action-btn action="delete" (clicked)="confirmDeleteVoucher(v)" />
+                      <button type="button" class="action-btn print" title="Print" (click)="reprintVoucher(v)">Print</button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty">No {{ title() | lowercase }} vouchers for selected org / FY</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (displayedVouchers().length > 0) {
+            <div class="list-pagination">
+              <label class="page-size-field">
+                <span>Rows</span>
+                <select [ngModel]="listPageSize()" (ngModelChange)="onListPageSizeChange(+$event)" name="listPageSize">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                </select>
+              </label>
+              <span class="page-info">{{ listPageStart() }}–{{ listPageEnd() }} of {{ displayedVouchers().length }}</span>
+              <button type="button" class="btn btn-outline" [disabled]="listPageIndex() === 0" (click)="goListPage(-1)">Prev</button>
+              <button type="button" class="btn btn-outline" [disabled]="listPageIndex() >= listPageCount() - 1" (click)="goListPage(1)">Next</button>
+            </div>
+          }
+        </div>
+      </aside>
+    }
+
+    @if (formVisible()) {
+      <section class="form-panel">
+        @if (isViewMode()) {
+          <p class="view-banner">View mode — record is read-only</p>
+        }
+
+        <form class="voucher-form bank-voucher-form" (ngSubmit)="save()">
+          @if (saveError()) {
+            <p class="form-save-error">{{ saveError() }}</p>
+          }
+
+          <div class="voucher-form-body">
+            <div class="form-section form-section-unified">
+              <div class="section-head">
+                <h3>{{ isViewMode() ? 'View' : isEditMode() ? 'Edit' : 'New' }} {{ title() }}</h3>
+                <span class="type-badge" [class.deposit]="isDeposit()" [class.withdraw]="!isDeposit()">
+                  {{ vType() }}
+                </span>
+              </div>
+
+              <!-- Header: Register | Voucher No | Date | FY -->
+              <div class="form-grid bank-header-grid">
+                <label class="field" [class.field-invalid]="!!fieldErrors()['accountRegisterID']">
+                  <span class="field-label">Account Register *</span>
+                  <select
+                    class="field-control"
+                    [disabled]="isViewMode() || isEditMode()"
+                    [ngModel]="form().accountRegisterID"
+                    (ngModelChange)="updateField('accountRegisterID', $event ? +$event : null)"
+                    name="accountRegisterID"
+                  >
+                    <option [ngValue]="null">-- Select Register --</option>
+                    @for (r of accountRegisters(); track r.accountRegisterID) {
+                      <option [ngValue]="r.accountRegisterID">{{ r.accountRegister }}</option>
+                    }
+                  </select>
+                  @if (fieldErrors()['accountRegisterID']; as err) {
+                    <span class="field-error">{{ err }}</span>
+                  }
+                </label>
+
+                <label class="field field-compact">
+                  <span class="field-label">Voucher No</span>
+                  <input class="field-control field-readonly" [ngModel]="form().vCode" name="vCode" readonly />
+                </label>
+
+                <label class="field field-compact" [class.field-invalid]="!!fieldErrors()['vDate']">
+                  <span class="field-label">Transaction Date *</span>
+                  <input
+                    type="date"
+                    class="field-control"
+                    [disabled]="isViewMode()"
+                    [ngModel]="form().vDate"
+                    (ngModelChange)="updateField('vDate', $event)"
+                    name="vDate"
+                  />
+                  @if (fieldErrors()['vDate']; as err) {
+                    <span class="field-error">{{ err }}</span>
+                  }
+                </label>
+
+                <label class="field field-compact" [class.field-invalid]="!!fieldErrors()['fyID']">
+                  <span class="field-label">Financial Year *</span>
+                  <select
+                    class="field-control"
+                    [disabled]="isViewMode() || isEditMode()"
+                    [ngModel]="form().fyID"
+                    (ngModelChange)="updateField('fyID', $event ? +$event : null)"
+                    name="fyID"
+                  >
+                    <option [ngValue]="null">-- Select FY --</option>
+                    @for (fy of lookups()?.fyList ?? []; track fy.fyID) {
+                      <option [ngValue]="fy.fyID">{{ fy.fyName }}</option>
+                    }
+                  </select>
+                  @if (fieldErrors()['fyID']; as err) {
+                    <span class="field-error">{{ err }}</span>
+                  }
+                </label>
+              </div>
+
+              <!-- Detail: Bank Ledger | Narration | Amount -->
+              <div class="detail-block">
+                <div class="detail-table-wrap">
+                  <table class="detail-table bank-detail-table">
+                    <colgroup>
+                      <col class="col-ledger" />
+                      <col class="col-narration" />
+                      <col class="col-amount" />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th class="ledger-col">Bank Ledger Head *</th>
+                        <th class="narration-col">Narration</th>
+                        <th class="amount-col">Amount *</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="ledger-col" [class.cell-invalid]="!!fieldErrors()['ledgerHeadId']">
+                          <select
+                            [disabled]="isViewMode()"
+                            [ngModel]="form().details[0]?.ledgerHeadId"
+                            (ngModelChange)="onLedgerHeadChange($event ? +$event : null)"
+                            name="ledgerHeadId"
+                          >
+                            <option [ngValue]="null">-- Select Bank Ledger --</option>
+                            @for (h of bankLedgerHeads(); track h.ledgerHeadID) {
+                              <option [ngValue]="h.ledgerHeadID">{{ h.ledgerHead }}</option>
+                            }
+                          </select>
+                          @if (fieldErrors()['ledgerHeadId']; as err) {
+                            <span class="field-error">{{ err }}</span>
+                          }
+                        </td>
+                        <td class="narration-col">
+                          <input
+                            class="narration-input"
+                            list="bankNarrationList"
+                            [disabled]="isViewMode()"
+                            [ngModel]="form().details[0]?.ledgerHeadNarration"
+                            (ngModelChange)="onNarrationChange($event)"
+                            name="narration"
+                            placeholder="Narration"
+                          />
+                          <datalist id="bankNarrationList">
+                            @for (n of narrations(); track n) {
+                              <option [value]="n"></option>
+                            }
+                          </datalist>
+                        </td>
+                        <td class="amount-col" [class.cell-invalid]="!!fieldErrors()['amount']">
+                          <input
+                            appMarathiNumber
+                            mode="decimal"
+                            [disabled]="isViewMode()"
+                            [ngModel]="form().details[0]?.amount"
+                            (ngModelChange)="onAmountChange($event)"
+                            name="amount"
+                            placeholder="0.00"
+                          />
+                          @if (fieldErrors()['amount']; as err) {
+                            <span class="field-error">{{ err }}</span>
+                          }
+                        </td>
+                      </tr>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="2" class="total-label">
+                          {{ isDeposit() ? 'Deposit Amount' : 'Withdraw Amount' }}
+                        </td>
+                        <td class="total-value amount-col">
+                          {{ (form().details[0]?.amount || 0) | currency:'INR':'symbol':'1.2-2' }}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Remark -->
+              <div class="form-grid remark-row">
+                <label class="field field-wide">
+                  <span class="field-label">Remark</span>
+                  <input
+                    class="field-control"
+                    [disabled]="isViewMode()"
+                    [ngModel]="form().remark"
+                    (ngModelChange)="updateField('remark', $event)"
+                    name="remark"
+                    placeholder="Optional remark"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          @if (!isViewMode()) {
+            <div class="form-footer form-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="loading()">
+                {{ loading() ? 'Saving...' : 'Save' }}
+              </button>
+              <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+            </div>
+          }
+        </form>
+      </section>
+    }
+  </div>
+
+  @if (showPrintPrompt()) {
+    <div class="modal-backdrop">
+      <div class="modal-card">
+        <h3>Print {{ title() }}?</h3>
+        <p>Voucher saved successfully. Do you want to print?</p>
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" (click)="confirmPrint(true)">Print</button>
+          <button type="button" class="btn btn-outline" (click)="confirmPrint(false)">Close</button>
+        </div>
+      </div>
+    </div>
+  }
+</section>
