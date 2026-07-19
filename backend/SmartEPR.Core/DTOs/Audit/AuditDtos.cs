@@ -42,7 +42,7 @@ public sealed class LedgerHeadOptionDto
 {
     public long LedgerHeadID { get; init; }
     public string LedgerHead { get; init; } = string.Empty;
-    public string? LedgerHeadShort { get; init; }
+    public string? LedgerHeadEng { get; init; }
     public long? LedgerTypeID { get; init; }
 }
 
@@ -227,7 +227,7 @@ public sealed class LedgerHeadMasterDto
     public long UnderOrgID { get; init; }
     public long SrNo { get; init; }
     public string LedgerHead { get; init; } = string.Empty;
-    public string? LedgerHeadShort { get; init; }
+    public string? LedgerHeadEng { get; init; }
     public long LedgerTypeID { get; init; }
     public string? LedgerType { get; init; }
     public bool IsActive { get; init; }
@@ -238,7 +238,7 @@ public sealed class SaveLedgerHeadRequestDto
     public long? LedgerHeadID { get; init; }
     public long UnderOrgID { get; init; }
     public string LedgerHead { get; init; } = string.Empty;
-    public string? LedgerHeadShort { get; init; }
+    public string? LedgerHeadEng { get; init; }
     public long LedgerTypeID { get; init; }
     public bool IsActive { get; init; } = true;
 }

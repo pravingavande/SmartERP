@@ -7,6 +7,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { DonationService } from '../../../core/services/donation.service';
 import { AuditService } from '../../../core/services/audit.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ReportPrintService } from '../../../core/services/report-print.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -20,7 +21,7 @@ import {
   FyOption,
   BankLedgerHeadOption
 } from '../../../core/models/donation.model';
-import { AuditLookups } from '../../../core/models/audit.model';
+import { AuditLookups, OrgOption } from '../../../core/models/audit.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import { coerceEnglishIntegerString, coerceEnglishNumber, formatAadharDisplay, filterAadharTyping, normalizeAadharDigits } from '../../../core/utils/marathi-numerals';
@@ -39,6 +40,7 @@ type FormMode = 'new' | 'edit' | 'view';
 export class DonationEntryComponent {
   private readonly donation = inject(DonationService);
   private readonly audit = inject(AuditService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly reportPrint = inject(ReportPrintService);
   private readonly dashboardService = inject(DashboardService);
@@ -96,6 +98,8 @@ export class DonationEntryComponent {
     const fyId = this.listFyID();
     return this.lookups()?.fyList.find((fy) => fy.fyID === fyId)?.fyName ?? '—';
   });
+  /** Sanstha-only — same as Account Register Define. */
+  readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
 
   constructor() {
     this.loadLookups();
@@ -110,14 +114,15 @@ export class DonationEntryComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ lookups: data, profile }) => {
         this.lookupsLoading.set(false);
-        this.lookups.set(data);
-        if (!data?.orgs?.length) {
-          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
+        const sansthaOrgs = this.resolveSansthaOrgs(data?.sansthaOrgs ?? []);
+        this.lookups.set(data ? { ...data, sansthaOrgs } : null);
+        if (!sansthaOrgs.length) {
+          this.errorMessage.set('No Sanstha found for your login.');
           return;
         }
 
-        const activeFy = data.fyList[0] ?? null;
-        const orgId = this.resolveDefaultOrgId(data, profile);
+        const activeFy = data?.fyList?.[0] ?? null;
+        const orgId = this.resolveDefaultSansthaOrgId(sansthaOrgs, profile);
         const fyId = activeFy?.fyID ?? null;
 
         this.listOrgID.set(orgId);
@@ -128,16 +133,45 @@ export class DonationEntryComponent {
       });
   }
 
-  private resolveDefaultOrgId(data: AuditLookups, profile: UserProfile | null): number | null {
-    if (profile?.schoolCode) {
-      const match = data.orgs.find((o) => o.schoolCode === profile.schoolCode);
+  /** Same as Account Register Define — Sanstha options only. */
+  private resolveSansthaOrgs(fromApi: OrgOption[]): OrgOption[] {
+    if (fromApi.length) return fromApi;
+
+    const session = this.auth.currentUser();
+    const orgs: OrgOption[] = [];
+
+    for (const ctx of session?.schoolContexts ?? []) {
+      if (!orgs.some((o) => o.orgID === ctx.sansthaId)) {
+        orgs.push({
+          orgID: ctx.sansthaId,
+          organizationName: ctx.sansthaName,
+          schoolCode: ctx.sansthaId
+        });
+      }
+    }
+
+    if (!orgs.length && session?.sansthaId && session.sansthaName) {
+      orgs.push({
+        orgID: session.sansthaId,
+        organizationName: session.sansthaName,
+        schoolCode: session.sansthaId
+      });
+    }
+
+    return orgs;
+  }
+
+  private resolveDefaultSansthaOrgId(orgs: OrgOption[], profile: UserProfile | null): number | null {
+    const session = this.auth.currentUser();
+    if (session?.sansthaId) {
+      const match = orgs.find((o) => o.orgID === session.sansthaId);
       if (match) return match.orgID;
     }
     if (profile?.orgId) {
-      const match = data.orgs.find((o) => o.orgID === profile.orgId);
+      const match = orgs.find((o) => o.orgID === profile.orgId);
       if (match) return match.orgID;
     }
-    return data.orgs.length === 1 ? data.orgs[0].orgID : data.orgs[0]?.orgID ?? null;
+    return orgs[0]?.orgID ?? null;
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -210,7 +244,7 @@ export class DonationEntryComponent {
     const orgId = this.listOrgID();
     const fyId = this.listFyID();
     if (!orgId || !fyId) {
-      this.errorMessage.set('Select Org / School and Financial Year on the list page before adding new.');
+      this.errorMessage.set('Select Org / Sanstha and Financial Year on the list page before adding new.');
       return;
     }
     this.formMode.set('new');

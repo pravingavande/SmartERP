@@ -378,7 +378,7 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         p.Add("@LedgerHeadID", request.LedgerHeadID > 0 ? request.LedgerHeadID : null, dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.InputOutput);
         p.Add("@UnderOrgID", request.UnderOrgID);
         p.Add("@LedgerHead", request.LedgerHead);
-        p.Add("@LedgerHeadShort", request.LedgerHeadShort);
+        p.Add("@LedgerHeadEng", request.LedgerHeadEng);
         p.Add("@LedgerTypeID", request.LedgerTypeID);
         p.Add("@IsActive", request.IsActive);
 

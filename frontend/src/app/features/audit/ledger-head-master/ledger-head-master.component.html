@@ -39,7 +39,7 @@
           <thead>
             <tr>
               <th>Ledger Head</th>
-              <th>Short Name</th>
+              <th>English Name</th>
               <th>Type</th>
               <th>Status</th>
               <th class="actions-col">Actions</th>
@@ -49,7 +49,7 @@
             @for (h of paginatedLedgerHeads(); track h.ledgerHeadID) {
               <tr [class.active]="form().ledgerHeadID === h.ledgerHeadID">
                 <td>{{ h.ledgerHead }}</td>
-                <td>{{ h.ledgerHeadShort || '—' }}</td>
+                <td>{{ h.ledgerHeadEng || '—' }}</td>
                 <td>{{ h.ledgerType || '—' }}</td>
                 <td>{{ h.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
@@ -121,8 +121,8 @@
                 }
               </label>
               <label class="field full">
-                <span class="field-label">Ledger Head Short</span>
-                <input class="field-control" type="text" [ngModel]="form().ledgerHeadShort" (ngModelChange)="updateForm('ledgerHeadShort', $event)" name="ledgerHeadShort">
+                <span class="field-label">Ledger Head (English)</span>
+                <input class="field-control" type="text" [ngModel]="form().ledgerHeadEng" (ngModelChange)="updateForm('ledgerHeadEng', $event)" name="ledgerHeadEng">
               </label>
               @if (formMode() === 'edit') {
               <label class="field checkbox-field master-active-field">

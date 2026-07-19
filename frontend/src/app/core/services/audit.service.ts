@@ -148,10 +148,11 @@ export class AuditService {
     return this.http.get<ApiResponse<AuditLookups>>(`${this.base}/lookups`).pipe(
       map((r) => {
         if (!r.success || !r.data) return null;
-        const data = r.data as AuditLookups & { SansthaOrgs?: OrgOption[] };
+        const data = r.data as AuditLookups & { Orgs?: OrgOption[]; SansthaOrgs?: OrgOption[] };
+        const rawOrgs = data.orgs ?? data.Orgs ?? [];
         return {
           ...data,
-          orgs: this.auth.filterSchoolOrgs((data.orgs ?? []).map((o) => this.normalizeOrgOption(o))),
+          orgs: this.auth.filterSchoolOrgs(rawOrgs.map((o) => this.normalizeOrgOption(o))),
           sansthaOrgs: (data.sansthaOrgs ?? data.SansthaOrgs ?? []).map((o) => this.normalizeOrgOption(o))
         };
       }),
@@ -472,6 +473,8 @@ export class AuditService {
       UnderOrgID?: number;
       SrNo?: number;
       LedgerHead?: string;
+      LedgerHeadEng?: string | null;
+      ledgerHeadShort?: string | null;
       LedgerHeadShort?: string | null;
       LedgerTypeID?: number;
       LedgerType?: string | null;
@@ -483,7 +486,7 @@ export class AuditService {
       underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? 0,
       srNo: raw.srNo ?? raw.SrNo ?? 0,
       ledgerHead: raw.ledgerHead ?? raw.LedgerHead ?? '',
-      ledgerHeadShort: raw.ledgerHeadShort ?? raw.LedgerHeadShort ?? null,
+      ledgerHeadEng: raw.ledgerHeadEng ?? raw.LedgerHeadEng ?? raw.ledgerHeadShort ?? raw.LedgerHeadShort ?? null,
       ledgerTypeID: raw.ledgerTypeID ?? raw.LedgerTypeID ?? 0,
       ledgerType: raw.ledgerType ?? raw.LedgerType ?? null,
       isActive: raw.isActive ?? raw.IsActive ?? true
@@ -602,7 +605,7 @@ export class AuditService {
       ledgerHeadID: form.ledgerHeadID,
       underOrgID: form.underOrgID,
       ledgerHead: form.ledgerHead.trim(),
-      ledgerHeadShort: form.ledgerHeadShort.trim() || null,
+      ledgerHeadEng: form.ledgerHeadEng.trim() || null,
       ledgerTypeID: form.ledgerTypeID,
       isActive: form.isActive
     };

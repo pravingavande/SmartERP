@@ -1,21 +1,7 @@
--- Ledger Head Master CRUD + ledger type lookup
--- Rules: no SELECT *, no MERGE, no BETWEEN
+-- Rename mapping: LedgerHeadShort -> LedgerHeadEng (column already renamed on table)
+-- Fixes audit lookups 500 (Invalid column name 'LedgerHeadShort')
 
-USE SmartERP;
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Audit_GetLedgerTypes
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        lt.LedgerTypeID,
-        lt.LedgerType
-    FROM dbo.ACLedgerTypeMaster lt
-    WHERE lt.IsActive = 1
-    ORDER BY lt.SrNo, lt.LedgerTypeID;
-END
+USE SmartERP_TESTING;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_Audit_LedgerHead_GetList
@@ -58,22 +44,6 @@ BEGIN
     FROM dbo.ACLedgerHeadMaster lh
     LEFT JOIN dbo.ACLedgerTypeMaster lt ON lt.LedgerTypeID = lh.LedgerTypeID
     WHERE lh.LedgerHeadID = @LedgerHeadID;
-END
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Audit_LedgerHead_GetNextSrNo
-    @UnderOrgID BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @NextSrNo BIGINT;
-
-    SELECT @NextSrNo = ISNULL(MAX(lh.SrNo), 0) + 1
-    FROM dbo.ACLedgerHeadMaster lh
-    WHERE lh.UnderOrgID = @UnderOrgID;
-
-    SELECT ISNULL(@NextSrNo, 1) AS NextSrNo;
 END
 GO
 
@@ -128,7 +98,6 @@ BEGIN
 END
 GO
 
--- Fix voucher lookups to use LedgerHeadID (LedgerHeadCode column removed)
 CREATE OR ALTER PROCEDURE dbo.sp_Audit_GetLedgerHeads
 AS
 BEGIN
@@ -159,26 +128,5 @@ BEGIN
     WHERE lh.IsActive = 1
       AND lt.BankFlag = N'Y'
     ORDER BY lh.LedgerHead;
-END
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Audit_Voucher_GetDetails
-    @VoucherID BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        d.VoucherDetailID,
-        d.VoucherID,
-        d.SrNo,
-        d.LedgerHeadID,
-        d.LedgerHeadNarration,
-        d.Amount,
-        lh.LedgerHead
-    FROM dbo.ACVoucherDetail d
-    LEFT JOIN dbo.ACLedgerHeadMaster lh ON lh.LedgerHeadID = d.LedgerHeadID
-    WHERE d.VoucherID = @VoucherID
-    ORDER BY d.SrNo;
 END
 GO

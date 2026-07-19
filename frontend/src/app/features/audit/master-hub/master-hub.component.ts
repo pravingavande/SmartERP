@@ -54,6 +54,14 @@ export class MasterHubComponent {
       adminOnly: true
     },
     {
+      label: 'Account Register Define',
+      description: 'Map account registers to each Sanstha',
+      icon: 'register',
+      route: '/audit/account-register-define',
+      tone: 'account',
+      adminOnly: true
+    },
+    {
       label: 'Donation Head Master',
       description: 'School-wise donation heads',
       icon: 'donation-head',

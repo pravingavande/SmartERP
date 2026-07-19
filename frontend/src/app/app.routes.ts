@@ -88,6 +88,12 @@ export const routes: Routes = [
         canActivate: [adminMasterGuard]
       },
       {
+        path: 'audit/account-register-define',
+        loadComponent: () =>
+          import('./features/audit/account-register-define/account-register-define.component').then((m) => m.AccountRegisterDefineComponent),
+        canActivate: [adminMasterGuard]
+      },
+      {
         path: 'audit/donation-head-master',
         loadComponent: () =>
           import('./features/audit/donation-head-master/donation-head-master.component').then((m) => m.DonationHeadMasterComponent),

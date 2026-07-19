@@ -5,6 +5,7 @@ export const ADMIN_MASTER_USER_ROLE_IDS = [1, 2] as const;
 export const ADMIN_ONLY_MASTER_ROUTE_PATHS = [
   'audit/ledger-head-master',
   'audit/account-register-master',
+  'audit/account-register-define',
   'audit/donation-head-master',
   'audit/leave-type-master',
   'audit/class-master',

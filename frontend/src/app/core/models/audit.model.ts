@@ -40,7 +40,7 @@ export interface FyOption {
 export interface LedgerHeadOption {
   ledgerHeadID: number;
   ledgerHead: string;
-  ledgerHeadShort?: string | null;
+  ledgerHeadEng?: string | null;
   ledgerTypeID?: number | null;
 }
 
@@ -259,7 +259,7 @@ export interface LedgerHeadMaster {
   underOrgID: number;
   srNo: number;
   ledgerHead: string;
-  ledgerHeadShort?: string | null;
+  ledgerHeadEng?: string | null;
   ledgerTypeID: number;
   ledgerType?: string | null;
   isActive: boolean;
@@ -270,7 +270,7 @@ export interface LedgerHeadFormState {
   underOrgID: number | null;
   srNo: number;
   ledgerHead: string;
-  ledgerHeadShort: string;
+  ledgerHeadEng: string;
   ledgerTypeID: number | null;
   isActive: boolean;
 }

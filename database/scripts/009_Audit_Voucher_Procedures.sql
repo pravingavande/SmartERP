@@ -174,7 +174,7 @@ BEGIN
     SELECT
         lh.LedgerHeadCode AS LedgerHeadID,
         lh.LedgerHead,
-        lh.LedgerHeadShort,
+        lh.LedgerHeadEng,
         lh.LedgerTypeID
     FROM dbo.ACLedgerHeadMaster lh
     WHERE lh.IsActive = 1
@@ -190,7 +190,7 @@ BEGIN
     SELECT
         lh.LedgerHeadCode AS LedgerHeadID,
         lh.LedgerHead,
-        lh.LedgerHeadShort
+        lh.LedgerHeadEng
     FROM dbo.ACLedgerHeadMaster lh
     WHERE lh.IsActive = 1
       AND lh.LedgerTypeID = 2

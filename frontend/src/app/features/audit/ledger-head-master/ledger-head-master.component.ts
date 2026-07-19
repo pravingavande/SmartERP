@@ -184,7 +184,7 @@ export class LedgerHeadMasterComponent {
       underOrgID: item.underOrgID,
       srNo: item.srNo,
       ledgerHead: item.ledgerHead,
-      ledgerHeadShort: item.ledgerHeadShort ?? '',
+      ledgerHeadEng: item.ledgerHeadEng ?? '',
       ledgerTypeID: item.ledgerTypeID,
       isActive: item.isActive
     });
@@ -249,7 +249,7 @@ export class LedgerHeadMasterComponent {
         underOrgID: item.underOrgID,
         srNo: item.srNo,
         ledgerHead: item.ledgerHead,
-        ledgerHeadShort: item.ledgerHeadShort ?? '',
+        ledgerHeadEng: item.ledgerHeadEng ?? '',
         ledgerTypeID: item.ledgerTypeID,
         isActive: false
       })
@@ -283,7 +283,7 @@ export class LedgerHeadMasterComponent {
       underOrgID: null,
       srNo: 1,
       ledgerHead: '',
-      ledgerHeadShort: '',
+      ledgerHeadEng: '',
       ledgerTypeID: null,
       isActive: true
     };
