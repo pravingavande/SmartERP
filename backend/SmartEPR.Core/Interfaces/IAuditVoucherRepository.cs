@@ -26,7 +26,13 @@ public interface IAuditVoucherRepository
         long? fyId,
         long? orgId,
         CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AccountRegisterMasterDto>> GetAccountRegisterListAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<AccountRegisterMasterDto?> GetAccountRegisterByIdAsync(long accountRegisterId, CancellationToken cancellationToken = default);
+    Task<long> GetNextAccountRegisterSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<long> SaveAccountRegisterAsync(SaveAccountRegisterMasterRequestDto request, CancellationToken cancellationToken = default);
+    Task DeleteAccountRegisterAsync(long accountRegisterId, CancellationToken cancellationToken = default);
+    Task<ImportAccountRegisterResultDto> ImportAccountRegistersAsync(long destinationUnderOrgId, IReadOnlyList<long> accountRegisterIds, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterDefineByOrgAsync(long orgId, CancellationToken cancellationToken = default);
     Task SaveAccountRegisterDefineAsync(long orgId, IReadOnlyList<long> accountRegisterIds, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PartyMasterDto>> GetPartyListAsync(long orgId, CancellationToken cancellationToken = default);
@@ -55,7 +61,13 @@ public interface IAuditVoucherService
     Task<AuditDashboardSummaryDto> GetDashboardSummaryAsync(long userId, long? fyId, CancellationToken cancellationToken = default);
     Task<AuditDashboardResponseDto> GetDashboardPageAsync(long userId, long? fyId, CancellationToken cancellationToken = default);
     Task<AuditCashSummaryResponseDto> GetCashSummaryAsync(long userId, long? fyId, long? orgId, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AccountRegisterMasterDto>> GetAccountRegisterListAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<AccountRegisterMasterDto?> GetAccountRegisterByIdAsync(long accountRegisterId, CancellationToken cancellationToken = default);
+    Task<long> GetNextAccountRegisterSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<(AccountRegisterMasterDto? Data, string? Error)> SaveAccountRegisterAsync(SaveAccountRegisterMasterRequestDto request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> DeleteAccountRegisterAsync(long accountRegisterId, CancellationToken cancellationToken = default);
+    Task<(ImportAccountRegisterResultDto? Data, string? Error)> ImportAccountRegistersAsync(ImportAccountRegisterRequestDto request, CancellationToken cancellationToken = default);
     Task<AccountRegisterDefineDto> GetAccountRegisterDefineAsync(long orgId, CancellationToken cancellationToken = default);
     Task SaveAccountRegisterDefineAsync(SaveAccountRegisterDefineRequestDto request, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PartyMasterDto>> GetPartyListAsync(long orgId, CancellationToken cancellationToken = default);

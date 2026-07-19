@@ -160,4 +160,160 @@ public sealed class AuditVoucherRulesTests
                 new VoucherDetailLineRequestDto { SrNo = 1, LedgerHeadId = 1, Amount = 100 },
                 new VoucherDetailLineRequestDto { SrNo = 2, LedgerHeadId = 2, Amount = 50 }
             ])));
+
+    private static SaveVoucherRequestDto ValidUpdate(long voucherId = 88) => new()
+    {
+        VoucherID = voucherId,
+        OrgID = 12,
+        AccountRegisterID = 3,
+        VType = "BD",
+        VCode = 1,
+        VDate = new DateTime(2026, 7, 15),
+        FyID = 5,
+        Details =
+        [
+            new VoucherDetailLineRequestDto
+            {
+                SrNo = 1,
+                LedgerHeadId = 101,
+                LedgerHeadNarration = "SBI deposit edit",
+                Amount = 3000m
+            }
+        ]
+    };
+
+    [Fact]
+    public void ValidateUpdate_AcceptsValidExistingVoucher()
+        => Assert.Null(AuditVoucherRules.ValidateUpdate(ValidUpdate()));
+
+    [Fact]
+    public void ValidateUpdate_RejectsNullVoucherId()
+    {
+        var request = new SaveVoucherRequestDto
+        {
+            VoucherID = null,
+            OrgID = 12,
+            AccountRegisterID = 3,
+            VType = "BD",
+            VCode = 1,
+            VDate = new DateTime(2026, 7, 15),
+            FyID = 5,
+            Details =
+            [
+                new VoucherDetailLineRequestDto { SrNo = 1, LedgerHeadId = 101, Amount = 100 }
+            ]
+        };
+
+        Assert.Equal("Voucher is required.", AuditVoucherRules.ValidateUpdate(request));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void ValidateUpdate_RejectsInvalidVoucherId(long voucherId)
+        => Assert.Equal("Voucher is required.", AuditVoucherRules.ValidateUpdate(ValidUpdate(voucherId)));
+
+    [Fact]
+    public void ValidateUpdate_RejectsMissingOrganization()
+    {
+        var request = new SaveVoucherRequestDto
+        {
+            VoucherID = 88,
+            OrgID = 0,
+            AccountRegisterID = 3,
+            VType = "BD",
+            FyID = 5,
+            Details = [new VoucherDetailLineRequestDto { SrNo = 1, LedgerHeadId = 101, Amount = 100 }]
+        };
+
+        Assert.Equal("Organization is required.", AuditVoucherRules.ValidateUpdate(request));
+    }
+
+    [Fact]
+    public void ValidateUpdate_RejectsMissingAccountRegister()
+    {
+        var request = new SaveVoucherRequestDto
+        {
+            VoucherID = 88,
+            OrgID = 12,
+            AccountRegisterID = 0,
+            VType = "BD",
+            FyID = 5,
+            Details = [new VoucherDetailLineRequestDto { SrNo = 1, LedgerHeadId = 101, Amount = 100 }]
+        };
+
+        Assert.Equal("Account Register is required.", AuditVoucherRules.ValidateUpdate(request));
+    }
+
+    [Fact]
+    public void ValidateUpdate_BankVoucher_RejectsMultipleDetailLines()
+    {
+        var request = new SaveVoucherRequestDto
+        {
+            VoucherID = 88,
+            OrgID = 12,
+            AccountRegisterID = 3,
+            VType = "BW",
+            FyID = 5,
+            Details =
+            [
+                new VoucherDetailLineRequestDto { SrNo = 1, LedgerHeadId = 1, Amount = 100 },
+                new VoucherDetailLineRequestDto { SrNo = 2, LedgerHeadId = 2, Amount = 50 }
+            ]
+        };
+
+        Assert.Equal(
+            "Bank Deposit / Withdraw must have exactly one ledger line.",
+            AuditVoucherRules.ValidateUpdate(request));
+    }
+
+    [Fact]
+    public void ValidateUpdate_PaymentAllowsMultipleLines()
+    {
+        var request = new SaveVoucherRequestDto
+        {
+            VoucherID = 88,
+            OrgID = 12,
+            AccountRegisterID = 3,
+            VType = "P",
+            FyID = 5,
+            Details =
+            [
+                new VoucherDetailLineRequestDto { SrNo = 1, LedgerHeadId = 1, Amount = 100 },
+                new VoucherDetailLineRequestDto { SrNo = 2, LedgerHeadId = 2, Amount = 50 }
+            ]
+        };
+
+        Assert.Null(AuditVoucherRules.ValidateUpdate(request));
+    }
+
+    [Fact]
+    public void ValidateSaveOrUpdate_UsesSave_WhenNoVoucherId()
+        => Assert.Null(AuditVoucherRules.ValidateSaveOrUpdate(ValidBankDeposit()));
+
+    [Fact]
+    public void ValidateSaveOrUpdate_UsesUpdate_WhenVoucherIdPresent()
+        => Assert.Null(AuditVoucherRules.ValidateSaveOrUpdate(ValidUpdate(voucherId: 42)));
+
+    [Fact]
+    public void ValidateSaveOrUpdate_SavePath_RejectsMissingOrganization()
+        => Assert.Equal(
+            "Organization is required.",
+            AuditVoucherRules.ValidateSaveOrUpdate(ValidBankDeposit(orgId: 0)));
+
+    [Fact]
+    public void ValidateSaveOrUpdate_UpdatePath_ValidatesFieldsAfterVoucherId()
+    {
+        var request = new SaveVoucherRequestDto
+        {
+            VoucherID = 10,
+            OrgID = 0,
+            AccountRegisterID = 3,
+            VType = "BD",
+            FyID = 5,
+            Details = [new VoucherDetailLineRequestDto { SrNo = 1, LedgerHeadId = 1, Amount = 10 }]
+        };
+
+        Assert.Equal("Organization is required.", AuditVoucherRules.ValidateSaveOrUpdate(request));
+    }
 }

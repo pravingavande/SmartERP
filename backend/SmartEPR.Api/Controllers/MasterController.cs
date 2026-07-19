@@ -36,10 +36,17 @@ public sealed class MasterController : ControllerBase
     }
 
     [HttpGet("class")]
-    public async Task<IActionResult> GetClassList([FromQuery] string? search, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetClassList([FromQuery] long orgId, [FromQuery] string? search, CancellationToken cancellationToken)
     {
-        var items = await _masterService.GetClassListAsync(search, cancellationToken).ConfigureAwait(false);
+        var items = await _masterService.GetClassListAsync(orgId, search, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<IReadOnlyList<ClassMasterDto>>.Ok(items));
+    }
+
+    [HttpGet("class/next-srno")]
+    public async Task<IActionResult> GetClassNextSrNo([FromQuery] long orgId, CancellationToken cancellationToken)
+    {
+        var next = await _masterService.GetClassNextSrNoAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<NextSrNoDto>.Ok(new NextSrNoDto { NextSrNo = (int)(next ?? 1) }));
     }
 
     [HttpPost("class")]
@@ -49,6 +56,17 @@ public sealed class MasterController : ControllerBase
         return data is null
             ? Ok(ApiResponse<ClassMasterDto>.Fail(error ?? "Unable to save class."))
             : Ok(ApiResponse<ClassMasterDto>.Ok(data, "Class saved."));
+    }
+
+    [HttpPost("class/import")]
+    public async Task<IActionResult> ImportClasses([FromBody] ImportClassRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _masterService.ImportClassesAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import classes."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(
+                data,
+                $"Imported {data.ImportedCount} class(es). Skipped {data.SkippedCount}."));
     }
 
     [HttpDelete("class/{classId:long}")]

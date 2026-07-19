@@ -47,12 +47,12 @@ public sealed class TeacherServiceBusinessTests
         var request = ValidRequest();
         request.OrgID = null;
 
-        var (data, error) = await CreateService().SaveAsync(request);
+        var (data, error) = await CreateService().SaveAsync(1, request);
 
         Assert.Null(data);
         Assert.Equal("Organization is required.", error);
         _teacherRepository.Verify(
-            r => r.SaveAsync(It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -67,12 +67,12 @@ public sealed class TeacherServiceBusinessTests
             .Setup(r => r.IsAppUserNameDuplicateAsync("ramesh.teacher", null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var (data, error) = await CreateService().SaveAsync(request);
+        var (data, error) = await CreateService().SaveAsync(1, request);
 
         Assert.Null(data);
         Assert.Equal("App user name must be unique.", error);
         _teacherRepository.Verify(
-            r => r.SaveAsync(It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -87,7 +87,7 @@ public sealed class TeacherServiceBusinessTests
             .Setup(r => r.IsAppUserNameDuplicateAsync(It.IsAny<string>(), It.IsAny<long?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var (data, error) = await CreateService().SaveAsync(request);
+        var (data, error) = await CreateService().SaveAsync(1, request);
 
         Assert.Null(data);
         Assert.Equal("Password is required for app login users.", error);
@@ -109,14 +109,14 @@ public sealed class TeacherServiceBusinessTests
             .Setup(r => r.IsAppUserNameDuplicateAsync(It.IsAny<string>(), It.IsAny<long?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _teacherRepository
-            .Setup(r => r.SaveAsync(It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .Callback<SaveTeacherRequestDto, bool, CancellationToken>((dto, _, _) => captured = dto)
+            .Setup(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Callback<long, SaveTeacherRequestDto, bool, CancellationToken>((_, dto, _, _) => captured = dto)
             .ReturnsAsync(42);
         _teacherRepository
             .Setup(r => r.GetByIdAsync(42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(SavedTeacher());
 
-        var (data, error) = await CreateService().SaveAsync(request);
+        var (data, error) = await CreateService().SaveAsync(1, request);
 
         Assert.Null(error);
         Assert.NotNull(data);
@@ -134,16 +134,16 @@ public sealed class TeacherServiceBusinessTests
     public async Task SaveAsync_NewRecordUpdatesPasswordFlag()
     {
         _teacherRepository
-            .Setup(r => r.SaveAsync(It.IsAny<SaveTeacherRequestDto>(), true, It.IsAny<CancellationToken>()))
+            .Setup(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveTeacherRequestDto>(), true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(42);
         _teacherRepository
             .Setup(r => r.GetByIdAsync(42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(SavedTeacher());
 
-        await CreateService().SaveAsync(ValidRequest());
+        await CreateService().SaveAsync(1, ValidRequest());
 
         _teacherRepository.Verify(
-            r => r.SaveAsync(It.IsAny<SaveTeacherRequestDto>(), true, It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(1, It.IsAny<SaveTeacherRequestDto>(), true, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -158,16 +158,16 @@ public sealed class TeacherServiceBusinessTests
             .Setup(r => r.IsAppUserNameDuplicateAsync(It.IsAny<string>(), 42L, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _teacherRepository
-            .Setup(r => r.SaveAsync(It.IsAny<SaveTeacherRequestDto>(), false, It.IsAny<CancellationToken>()))
+            .Setup(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveTeacherRequestDto>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(42);
         _teacherRepository
             .Setup(r => r.GetByIdAsync(42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(SavedTeacher());
 
-        await CreateService().SaveAsync(request);
+        await CreateService().SaveAsync(1, request);
 
         _teacherRepository.Verify(
-            r => r.SaveAsync(It.IsAny<SaveTeacherRequestDto>(), false, It.IsAny<CancellationToken>()),
+            r => r.SaveAsync(1, It.IsAny<SaveTeacherRequestDto>(), false, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -175,13 +175,13 @@ public sealed class TeacherServiceBusinessTests
     public async Task SaveAsync_ReturnsSavedTeacherFromRepository()
     {
         _teacherRepository
-            .Setup(r => r.SaveAsync(It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(42);
         _teacherRepository
             .Setup(r => r.GetByIdAsync(42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(SavedTeacher());
 
-        var (data, error) = await CreateService().SaveAsync(ValidRequest());
+        var (data, error) = await CreateService().SaveAsync(1, ValidRequest());
 
         Assert.Null(error);
         Assert.NotNull(data);

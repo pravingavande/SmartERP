@@ -38,7 +38,7 @@ public sealed class TeacherService : ITeacherService
     public Task<int?> GetNextSrNoAsync(long orgId, CancellationToken cancellationToken = default)
         => _teacherRepository.GetNextSrNoAsync(orgId, cancellationToken);
 
-    public async Task<(TeacherDto? Data, string? Error)> SaveAsync(SaveTeacherRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<(TeacherDto? Data, string? Error)> SaveAsync(long actorUserId, SaveTeacherRequestDto request, CancellationToken cancellationToken = default)
     {
         var error = ValidateSave(request);
         if (error is not null)
@@ -60,7 +60,7 @@ public sealed class TeacherService : ITeacherService
             return (null, "Password is required for app login users.");
 
         var normalized = NormalizeRequest(request);
-        var userId = await _teacherRepository.SaveAsync(normalized, updatePassword, cancellationToken).ConfigureAwait(false);
+        var userId = await _teacherRepository.SaveAsync(actorUserId, normalized, updatePassword, cancellationToken).ConfigureAwait(false);
         var saved = await _teacherRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
         return (saved, null);
     }

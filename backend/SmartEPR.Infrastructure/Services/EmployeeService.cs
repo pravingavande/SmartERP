@@ -31,12 +31,12 @@ public sealed class EmployeeService : IEmployeeService
     public Task<EmployeeDto?> GetByIdAsync(long userId, CancellationToken cancellationToken = default)
         => _employeeRepository.GetByIdAsync(userId, cancellationToken);
 
-    public async Task<EmployeeDto?> SaveAsync(SaveEmployeeRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<EmployeeDto?> SaveAsync(long actorUserId, SaveEmployeeRequestDto request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Firstname) || string.IsNullOrWhiteSpace(request.MobileNo1))
             return null;
 
-        var userId = await _employeeRepository.SaveAsync(request, cancellationToken).ConfigureAwait(false);
+        var userId = await _employeeRepository.SaveAsync(actorUserId, request, cancellationToken).ConfigureAwait(false);
         return await _employeeRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
     }
 }

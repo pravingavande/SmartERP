@@ -30,7 +30,29 @@ public static class AuditVoucherRules
     public static decimal ApplyToBalance(decimal currentBalance, string? vType, decimal amount)
         => currentBalance + BalanceSign(vType) * amount;
 
+    /// <summary>
+    /// Insert validation (new voucher). VoucherID should be null/0.
+    /// </summary>
     public static string? ValidateSave(SaveVoucherRequestDto request)
+        => ValidateCommon(request);
+
+    /// <summary>
+    /// Update validation — same field rules as save, plus existing VoucherID required.
+    /// </summary>
+    public static string? ValidateUpdate(SaveVoucherRequestDto request)
+    {
+        if (request.VoucherID is null or <= 0)
+            return "Voucher is required.";
+        return ValidateCommon(request);
+    }
+
+    /// <summary>
+    /// Routes to ValidateUpdate when VoucherID is present; otherwise ValidateSave.
+    /// </summary>
+    public static string? ValidateSaveOrUpdate(SaveVoucherRequestDto request)
+        => request.VoucherID is > 0 ? ValidateUpdate(request) : ValidateSave(request);
+
+    private static string? ValidateCommon(SaveVoucherRequestDto request)
     {
         if (request.OrgID <= 0)
             return "Organization is required.";

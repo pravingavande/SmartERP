@@ -84,6 +84,10 @@ BEGIN
         dr.FyID,
         dr.OrgID,
         dr.OrgIDReceiptNo,
+        dr.CreatedDate,
+        dr.ModifiedDate,
+        dr.CreatedUserID,
+        dr.ModifiedUserID,
         dh.DRHeadName,
         om.OrganizationName,
         pt.PaymentType,
@@ -148,12 +152,14 @@ BEGIN
         INSERT INTO dbo.DREntry (
             ReceiptNo, ReceiptDate, DRHeadID, DonorName, Address, PanNo, AadharNo, MobileNo,
             Amount, PaymentTypeID, TransactionNo, TransactionDate, DepositDate,
-            BankName, LedgerHeadBankID, Remark, UserID, FyID, OrgID, OrgIDReceiptNo
+            BankName, LedgerHeadBankID, Remark, UserID, FyID, OrgID, OrgIDReceiptNo,
+            CreatedDate, CreatedUserID, ModifiedDate, ModifiedUserID
         )
         VALUES (
             @ReceiptNo, @ReceiptDate, @DRHeadID, @DonorName, @Address, @PanNo, @AadharNo, @MobileNo,
             @Amount, @PaymentTypeID, @TransactionNo, @TransactionDate, @DepositDate,
-            @BankName, @LedgerHeadBankID, @Remark, @UserID, @FyID, @OrgID, @OrgIDReceiptNo
+            @BankName, @LedgerHeadBankID, @Remark, @UserID, @FyID, @OrgID, @OrgIDReceiptNo,
+            GETDATE(), @UserID, GETDATE(), @UserID
         );
 
         SET @DRID = SCOPE_IDENTITY();
@@ -177,7 +183,10 @@ BEGIN
             LedgerHeadBankID = @LedgerHeadBankID,
             Remark = @Remark,
             FyID = @FyID,
-            OrgID = @OrgID
+            OrgID = @OrgID,
+            UserID = @UserID,
+            ModifiedDate = GETDATE(),
+            ModifiedUserID = @UserID
         WHERE DRID = @DRID;
     END
 

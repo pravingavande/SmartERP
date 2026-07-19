@@ -48,15 +48,13 @@ export class AccountRegisterDefineComponent {
     this.lookupsLoading.set(true);
     forkJoin({
       lookups: this.audit.getLookups(),
-      registers: this.audit.getAccountRegisterMaster(),
       profile: this.dashboardService.getProfile()
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ lookups, registers, profile }) => {
+      .subscribe(({ lookups, profile }) => {
         this.lookupsLoading.set(false);
         const sansthaOrgs = this.resolveSansthaOrgs(lookups?.sansthaOrgs ?? []);
         this.lookups.set(lookups ? { ...lookups, sansthaOrgs } : null);
-        this.allRegisters.set(registers);
         if (!sansthaOrgs.length) {
           this.errorMessage.set('No Sanstha found for your login.');
           return;
@@ -64,7 +62,7 @@ export class AccountRegisterDefineComponent {
         const orgId = this.resolveDefaultOrgId(sansthaOrgs, profile);
         if (orgId) {
           this.selectedOrgID.set(orgId);
-          this.loadMapping(orgId);
+          this.loadRegistersAndMapping(orgId);
         }
       });
   }
@@ -116,8 +114,21 @@ export class AccountRegisterDefineComponent {
     this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
     this.errorMessage.set(null);
     this.saveError.set(null);
-    if (orgId) this.loadMapping(orgId);
-    else this.selectedRegisterIds.set(new Set());
+    if (orgId) this.loadRegistersAndMapping(orgId);
+    else {
+      this.allRegisters.set([]);
+      this.selectedRegisterIds.set(new Set());
+    }
+  }
+
+  private loadRegistersAndMapping(orgId: number): void {
+    this.audit
+      .getAccountRegisterMaster(orgId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((registers) => {
+        this.allRegisters.set(registers);
+        this.loadMapping(orgId);
+      });
   }
 
   fieldError(key: string): string | null {

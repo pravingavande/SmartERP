@@ -33,14 +33,30 @@ public sealed class MasterServiceValidationTests
             .ReturnsAsync(10);
         _repository
             .Setup(r => r.GetClassByIdAsync(10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ClassMasterDto { ClassID = 10, ClassName = "Grade 1", IsActive = true });
+            .ReturnsAsync(new ClassMasterDto { ClassID = 10, OrgID = 1, SrNo = 1, ClassName = "Grade 1", IsActive = true });
 
         var service = new MasterService(_repository.Object);
-        var (data, error) = await service.SaveClassAsync(new SaveClassRequestDto { ClassName = "  Grade 1  " });
+        var (data, error) = await service.SaveClassAsync(new SaveClassRequestDto
+        {
+            OrgID = 1,
+            SrNo = 1,
+            ClassName = "  Grade 1  "
+        });
 
         Assert.NotNull(data);
         Assert.Null(error);
         Assert.Equal("Grade 1", captured?.ClassName);
+    }
+
+    [Fact]
+    public async Task SaveClassAsync_RejectsMissingOrgAndSrNo()
+    {
+        var service = new MasterService(_repository.Object);
+        var (data, error) = await service.SaveClassAsync(new SaveClassRequestDto { ClassName = "Grade 1" });
+
+        Assert.Null(data);
+        Assert.Equal("Organization is required.", error);
+        _repository.Verify(r => r.SaveClassAsync(It.IsAny<SaveClassRequestDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

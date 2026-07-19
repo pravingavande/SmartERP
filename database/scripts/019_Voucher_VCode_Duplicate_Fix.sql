@@ -87,12 +87,14 @@ BEGIN
         INSERT INTO dbo.ACVoucher (
             OrgID, AccountRegisterID, VType, VCode, VDate, PartyTID, TotalAmount, Remark,
             PaymentTypeID, TransactionNo, TransactionDate, DepositDate, LedgerHeadBankID,
-            BankName, FilePath, UserID, FyID
+            BankName, FilePath, UserID, FyID,
+            CreatedDate, CreatedUserID, ModifiedDate, ModifiedUserID
         )
         VALUES (
             @OrgID, @AccountRegisterID, @VType, @VCode, @VDate, @PartyTID, @TotalAmount, @Remark,
             @PaymentTypeID, @TransactionNo, @TransactionDate, @DepositDate, @LedgerHeadBankID,
-            @BankName, @FilePath, @UserID, @FyID
+            @BankName, @FilePath, @UserID, @FyID,
+            GETDATE(), @UserID, GETDATE(), @UserID
         );
 
         SET @VoucherID = SCOPE_IDENTITY();
@@ -116,7 +118,9 @@ BEGIN
             BankName = @BankName,
             FilePath = @FilePath,
             UserID = @UserID,
-            FyID = @FyID
+            FyID = @FyID,
+            ModifiedDate = GETDATE(),
+            ModifiedUserID = @UserID
         WHERE VoucherID = @VoucherID;
 
         DELETE FROM dbo.ACVoucherDetail

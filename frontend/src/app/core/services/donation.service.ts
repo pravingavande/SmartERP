@@ -10,7 +10,10 @@ import {
   DonationListItem,
   DonationLookups,
   DRHeadDefine,
+  DRHeadFormState,
+  DRHeadMaster,
   DRHeadOption,
+  ImportDRHeadResult,
   OrgOption,
   PaymentTypeOption,
   FyOption,
@@ -126,11 +129,83 @@ export class DonationService {
     );
   }
 
-  getDRHeadMaster(): Observable<DRHeadOption[]> {
-    return this.http.get<ApiResponse<DRHeadOption[]>>(`${this.base}/dr-head-master`).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
+  getDRHeadMaster(underOrgId?: number | null): Observable<DRHeadOption[]> {
+    let params = new HttpParams();
+    if (underOrgId) params = params.set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<DRHeadOption[]>>(`${this.base}/dr-head-master`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data.map((x) => this.normalizeDrHead(x)) : [])),
       catchError(() => of([]))
     );
+  }
+
+  getDRHeadList(underOrgId: number): Observable<DRHeadMaster[]> {
+    const params = new HttpParams().set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<DRHeadMaster[]>>(`${this.base}/dr-head-master/list`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data.map((x) => this.normalizeDRHeadMaster(x)) : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getNextDRHeadSrNo(underOrgId: number): Observable<number> {
+    const params = new HttpParams().set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<number>>(`${this.base}/dr-head-master/next-sr-no`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data : 1)),
+      catchError(() => of(1))
+    );
+  }
+
+  saveDRHead(form: DRHeadFormState): Observable<{ data: DRHeadMaster | null; message: string | null }> {
+    const payload = {
+      drHeadID: form.drHeadID,
+      underOrgID: form.underOrgID,
+      srNo: form.srNo,
+      drHeadName: form.drHeadName.trim(),
+      isActive: form.isActive
+    };
+    return this.http.post<ApiResponse<DRHeadMaster>>(`${this.base}/dr-head-master`, payload).pipe(
+      map((r) => ({
+        data: r.success && r.data ? this.normalizeDRHeadMaster(r.data) : null,
+        message: r.success ? null : (r.message ?? 'Unable to save donation head.')
+      })),
+      catchError(() => of({ data: null, message: 'Unable to save donation head.' }))
+    );
+  }
+
+  deleteDRHead(drHeadId: number): Observable<{ success: boolean; message?: string }> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.base}/dr-head-master/${drHeadId}`).pipe(
+      map((r) => ({ success: !!r.success, message: r.message ?? undefined })),
+      catchError(() => of({ success: false, message: 'Unable to delete donation head.' }))
+    );
+  }
+
+  importDRHeads(
+    destinationUnderOrgId: number,
+    drHeadIds: number[]
+  ): Observable<{ data: ImportDRHeadResult | null; message: string | null }> {
+    const payload = {
+      destinationUnderOrgID: destinationUnderOrgId,
+      drHeadIds
+    };
+    return this.http
+      .post<ApiResponse<ImportDRHeadResult & { ImportedCount?: number; SkippedCount?: number }>>(
+        `${this.base}/dr-head-master/import`,
+        payload
+      )
+      .pipe(
+        map((r) => {
+          if (!r.success || !r.data) {
+            return { data: null, message: r.message ?? 'Unable to import donation heads.' };
+          }
+          return {
+            data: {
+              importedCount: Number(r.data.importedCount ?? r.data.ImportedCount ?? 0),
+              skippedCount: Number(r.data.skippedCount ?? r.data.SkippedCount ?? 0)
+            },
+            message: r.message ?? null
+          };
+        }),
+        catchError(() => of({ data: null, message: 'Unable to import donation heads.' }))
+      );
   }
 
   getDRHeadsForOrg(orgId: number): Observable<DRHeadOption[]> {
@@ -181,10 +256,41 @@ export class DonationService {
     };
   }
 
-  private normalizeDrHead(raw: DRHeadOption & { DRHeadID?: number; DRHeadName?: string }): DRHeadOption {
+  private normalizeDrHead(
+    raw: DRHeadOption & {
+      DRHeadID?: number;
+      UnderOrgID?: number | null;
+      SrNo?: number | null;
+      DRHeadName?: string;
+      IsActive?: boolean;
+    }
+  ): DRHeadOption {
     return {
       drHeadID: raw.drHeadID ?? raw.DRHeadID ?? 0,
-      drHeadName: raw.drHeadName ?? raw.DRHeadName ?? ''
+      underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? null,
+      srNo: raw.srNo ?? raw.SrNo ?? null,
+      drHeadName: raw.drHeadName ?? raw.DRHeadName ?? '',
+      isActive: raw.isActive ?? raw.IsActive ?? true
+    };
+  }
+
+  private normalizeDRHeadMaster(
+    raw: DRHeadMaster & {
+      DRHeadID?: number;
+      UnderOrgID?: number;
+      SrNo?: number;
+      DRHeadName?: string;
+      IsActive?: boolean;
+      OrganizationName?: string | null;
+    }
+  ): DRHeadMaster {
+    return {
+      drHeadID: raw.drHeadID ?? raw.DRHeadID ?? 0,
+      underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? 0,
+      srNo: raw.srNo ?? raw.SrNo ?? 0,
+      drHeadName: raw.drHeadName ?? raw.DRHeadName ?? '',
+      isActive: raw.isActive ?? raw.IsActive ?? true,
+      organizationName: raw.organizationName ?? raw.OrganizationName ?? null
     };
   }
 

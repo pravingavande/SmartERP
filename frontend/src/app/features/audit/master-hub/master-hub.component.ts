@@ -39,25 +39,25 @@ export class MasterHubComponent {
     },
     {
       label: 'Ledger Head Master',
-      description: 'Sanstha-wise ledger heads for voucher entries',
+      description: 'School-wise ledger heads for voucher entries',
       icon: 'register',
       route: '/audit/ledger-head-master',
       tone: 'ledger',
       adminOnly: true
     },
     {
-      label: 'Account Register Define',
-      description: 'Map account registers to each school',
+      label: 'Account Register Master',
+      description: 'School-wise account registers for vouchers',
       icon: 'register',
-      route: '/audit/account-register-define',
+      route: '/audit/account-register-master',
       tone: 'account',
       adminOnly: true
     },
     {
-      label: 'Donation Head Define',
-      description: 'Map donation heads to each school',
+      label: 'Donation Head Master',
+      description: 'School-wise donation heads',
       icon: 'donation-head',
-      route: '/audit/donation-head-define',
+      route: '/audit/donation-head-master',
       tone: 'donation',
       adminOnly: true
     },

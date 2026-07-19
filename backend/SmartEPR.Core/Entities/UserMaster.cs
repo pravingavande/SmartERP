@@ -10,6 +10,10 @@ public sealed class UserMaster
     public string? LastName { get; init; }
     public string? EmailID { get; init; }
     public bool? IsActive { get; init; }
+    public DateTime? CreatedDate { get; init; }
+    public DateTime? ModifiedDate { get; init; }
+    public long? CreatedUserID { get; init; }
+    public long? ModifiedUserID { get; init; }
 
     public bool IsUserActive => IsActive == true;
 

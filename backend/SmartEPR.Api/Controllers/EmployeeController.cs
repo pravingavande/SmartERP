@@ -52,10 +52,10 @@ public sealed class EmployeeController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Save([FromBody] SaveEmployeeRequestDto request, CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out _))
+        if (!TryGetUserId(out var actorUserId))
             return Unauthorized(ApiResponse<EmployeeDto>.Fail("Invalid token."));
 
-        var saved = await _employeeService.SaveAsync(request, cancellationToken).ConfigureAwait(false);
+        var saved = await _employeeService.SaveAsync(actorUserId, request, cancellationToken).ConfigureAwait(false);
         return saved is null
             ? Ok(ApiResponse<EmployeeDto>.Fail("Unable to save employee. First name and mobile are required."))
             : Ok(ApiResponse<EmployeeDto>.Ok(saved, "Employee saved."));

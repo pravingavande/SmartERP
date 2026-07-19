@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using SmartEPR.Core.DTOs.Audit;
 using SmartEPR.Core.Interfaces;
 using SmartEPR.Core.Validation;
@@ -56,7 +57,7 @@ public sealed class AuditVoucherService : IAuditVoucherService
 
     public async Task<VoucherDto?> SaveVoucherAsync(long userId, SaveVoucherRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (AuditVoucherRules.ValidateSave(request) is not null)
+        if (AuditVoucherRules.ValidateSaveOrUpdate(request) is not null)
             return null;
 
         var voucherId = await _repository.SaveVoucherAsync(userId, request, cancellationToken).ConfigureAwait(false);
@@ -99,8 +100,93 @@ public sealed class AuditVoucherService : IAuditVoucherService
         };
     }
 
-    public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default)
-        => _repository.GetAccountRegisterMasterAsync(cancellationToken);
+    public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default)
+        => _repository.GetAccountRegisterMasterAsync(underOrgId, cancellationToken);
+
+    public Task<IReadOnlyList<AccountRegisterMasterDto>> GetAccountRegisterListAsync(long underOrgId, CancellationToken cancellationToken = default)
+        => _repository.GetAccountRegisterListAsync(underOrgId, cancellationToken);
+
+    public Task<AccountRegisterMasterDto?> GetAccountRegisterByIdAsync(long accountRegisterId, CancellationToken cancellationToken = default)
+        => _repository.GetAccountRegisterByIdAsync(accountRegisterId, cancellationToken);
+
+    public Task<long> GetNextAccountRegisterSrNoAsync(long underOrgId, CancellationToken cancellationToken = default)
+        => _repository.GetNextAccountRegisterSrNoAsync(underOrgId, cancellationToken);
+
+    public async Task<(AccountRegisterMasterDto? Data, string? Error)> SaveAccountRegisterAsync(
+        SaveAccountRegisterMasterRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var name = (request.AccountRegister ?? string.Empty).Trim();
+        if (request.UnderOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.SrNo <= 0)
+            return (null, "Sr No is required.");
+        if (string.IsNullOrWhiteSpace(name))
+            return (null, "Account register is required.");
+
+        var saveRequest = new SaveAccountRegisterMasterRequestDto
+        {
+            AccountRegisterID = request.AccountRegisterID,
+            UnderOrgID = request.UnderOrgID,
+            SrNo = request.SrNo,
+            AccountRegister = name,
+            IsActive = request.IsActive
+        };
+
+        try
+        {
+            var id = await _repository.SaveAccountRegisterAsync(saveRequest, cancellationToken).ConfigureAwait(false);
+            var saved = await _repository.GetAccountRegisterByIdAsync(id, cancellationToken).ConfigureAwait(false);
+            return saved is null
+                ? (null, "Unable to save account register.")
+                : (saved, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
+        }
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteAccountRegisterAsync(long accountRegisterId, CancellationToken cancellationToken = default)
+    {
+        if (accountRegisterId <= 0)
+            return (false, "Account register is required.");
+
+        try
+        {
+            await _repository.DeleteAccountRegisterAsync(accountRegisterId, cancellationToken).ConfigureAwait(false);
+            return (true, null);
+        }
+        catch (SqlException ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    public async Task<(ImportAccountRegisterResultDto? Data, string? Error)> ImportAccountRegistersAsync(
+        ImportAccountRegisterRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationUnderOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.DestinationUnderOrgID == 1)
+            return (null, "Cannot import into the source organization.");
+        if (request.AccountRegisterIds is null || request.AccountRegisterIds.Count == 0)
+            return (null, "Select at least one account register to import.");
+
+        try
+        {
+            var result = await _repository.ImportAccountRegistersAsync(
+                request.DestinationUnderOrgID,
+                request.AccountRegisterIds,
+                cancellationToken).ConfigureAwait(false);
+            return (result, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
+        }
+    }
 
     public async Task<AccountRegisterDefineDto> GetAccountRegisterDefineAsync(long orgId, CancellationToken cancellationToken = default)
     {

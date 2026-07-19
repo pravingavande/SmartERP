@@ -182,20 +182,21 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        us.TID,
+        us.UserSchoolID,
+        us.UserID,
         us.SrNo,
         us.OrgID,
-        us.SchoolCode,
-        us.DesignationCode,
+        CAST(NULL AS BIGINT) AS SchoolCode,
+        us.DesignationID AS DesignationCode,
         us.TeachClass,
         us.TeachSubject,
         us.SchoolJoiningDate,
         us.SchoolLeaveDate,
-        us.SansthaTransferOrderNoAndDate,
-        us.ZPTransferOrderNoAndDate
+        CAST(NULL AS NVARCHAR(255)) AS SansthaTransferOrderNoAndDate,
+        CAST(NULL AS NVARCHAR(255)) AS ZPTransferOrderNoAndDate
     FROM dbo.UserSchool us
-    WHERE us.TID = @UserID
-    ORDER BY us.SrNo;
+    WHERE us.UserID = @UserID
+    ORDER BY us.SrNo, us.UserSchoolID;
 END
 GO
 
@@ -311,7 +312,7 @@ BEGIN
 
     DELETE FROM dbo.UserEducation WHERE UserID = @UserID;
     DELETE FROM dbo.UserDocument WHERE UserID = @UserID;
-    DELETE FROM dbo.UserSchool WHERE TID = @UserID;
+    DELETE FROM dbo.UserSchool WHERE UserID = @UserID;
 
     IF @EducationJson IS NOT NULL AND ISJSON(@EducationJson) = 1
     BEGIN
@@ -368,42 +369,33 @@ BEGIN
     IF @SchoolsJson IS NOT NULL AND ISJSON(@SchoolsJson) = 1
     BEGIN
         INSERT INTO dbo.UserSchool (
-            TID,
+            UserID,
             SrNo,
             OrgID,
-            SchoolCode,
-            DesignationCode,
+            DesignationID,
             TeachClass,
             TeachSubject,
             SchoolJoiningDate,
-            SchoolLeaveDate,
-            SansthaTransferOrderNoAndDate,
-            ZPTransferOrderNoAndDate
+            SchoolLeaveDate
         )
         SELECT
             @UserID,
             j.SrNo,
             j.OrgID,
-            j.SchoolCode,
             j.DesignationCode,
             j.TeachClass,
             j.TeachSubject,
             j.SchoolJoiningDate,
-            j.SchoolLeaveDate,
-            j.SansthaTransferOrderNoAndDate,
-            j.ZPTransferOrderNoAndDate
+            j.SchoolLeaveDate
         FROM OPENJSON(@SchoolsJson)
         WITH (
             SrNo BIGINT '$.srNo',
             OrgID BIGINT '$.orgID',
-            SchoolCode BIGINT '$.schoolCode',
             DesignationCode BIGINT '$.designationCode',
             TeachClass NVARCHAR(255) '$.teachClass',
             TeachSubject NVARCHAR(255) '$.teachSubject',
             SchoolJoiningDate DATE '$.schoolJoiningDate',
-            SchoolLeaveDate DATE '$.schoolLeaveDate',
-            SansthaTransferOrderNoAndDate NVARCHAR(255) '$.sansthaTransferOrderNoAndDate',
-            ZPTransferOrderNoAndDate NVARCHAR(255) '$.zpTransferOrderNoAndDate'
+            SchoolLeaveDate DATE '$.schoolLeaveDate'
         ) j;
     END
 

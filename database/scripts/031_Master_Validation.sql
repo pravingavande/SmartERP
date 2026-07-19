@@ -6,6 +6,8 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_Class_Save
     @ClassID BIGINT = NULL OUTPUT,
+    @OrgID BIGINT,
+    @SrNo BIGINT = NULL,
     @ClassName NVARCHAR(200),
     @IsActive BIT = 1
 AS
@@ -14,34 +16,63 @@ BEGIN
     SET XACT_ABORT ON;
 
     SET @ClassName = LTRIM(RTRIM(ISNULL(@ClassName, N'')));
+
+    IF @OrgID IS NULL OR @OrgID <= 0
+    BEGIN
+        RAISERROR('Organization is required.', 16, 1);
+        RETURN;
+    END
+
     IF @ClassName = N''
     BEGIN
         RAISERROR('Class name is required.', 16, 1);
         RETURN;
     END
 
+    IF @SrNo IS NULL OR @SrNo <= 0
+    BEGIN
+        SELECT @SrNo = ISNULL(MAX(c.SrNo), 0) + 1
+        FROM dbo.ClassMaster c WITH (UPDLOCK, HOLDLOCK)
+        WHERE c.OrgID = @OrgID;
+    END
+
     IF EXISTS (
         SELECT 1
         FROM dbo.ClassMaster c
-        WHERE c.ClassName = @ClassName
+        WHERE c.OrgID = @OrgID
+          AND c.SrNo = @SrNo
           AND c.ClassID <> ISNULL(@ClassID, 0)
     )
     BEGIN
-        RAISERROR('Class name already exists.', 16, 1);
+        RAISERROR('Sr No already exists for this organization.', 16, 1);
+        RETURN;
+    END
+
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.ClassMaster c
+        WHERE c.OrgID = @OrgID
+          AND c.ClassName = @ClassName
+          AND c.ClassID <> ISNULL(@ClassID, 0)
+    )
+    BEGIN
+        RAISERROR('Class name already exists for this organization.', 16, 1);
         RETURN;
     END
 
     IF @ClassID IS NULL OR @ClassID = 0
     BEGIN
-        INSERT INTO dbo.ClassMaster (ClassName, IsActive)
-        VALUES (@ClassName, @IsActive);
+        INSERT INTO dbo.ClassMaster (OrgID, SrNo, ClassName, IsActive)
+        VALUES (@OrgID, @SrNo, @ClassName, @IsActive);
 
         SET @ClassID = SCOPE_IDENTITY();
     END
     ELSE
     BEGIN
         UPDATE dbo.ClassMaster
-        SET ClassName = @ClassName,
+        SET OrgID = @OrgID,
+            SrNo = @SrNo,
+            ClassName = @ClassName,
             IsActive = @IsActive
         WHERE ClassID = @ClassID;
     END

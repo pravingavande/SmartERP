@@ -23,8 +23,76 @@ public sealed class DonationRepository : IDonationRepository
         return _executor.QueryListAsync<DRHeadOptionDto>("dbo.sp_Donation_GetDRHeads", p, cancellationToken);
     }
 
-    public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadMasterAsync(CancellationToken cancellationToken = default)
-        => _executor.QueryListAsync<DRHeadOptionDto>("dbo.sp_Donation_GetDRHeadMaster", null, cancellationToken);
+    public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        return _executor.QueryListAsync<DRHeadOptionDto>("dbo.sp_Donation_GetDRHeadMaster", p, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<DRHeadMasterDto>> GetDRHeadListAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        return _executor.QueryListAsync<DRHeadMasterDto>("dbo.sp_Donation_DRHead_GetList", p, cancellationToken);
+    }
+
+    public Task<DRHeadMasterDto?> GetDRHeadByIdAsync(long drHeadId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DRHeadID", drHeadId);
+        return _executor.QuerySingleOrDefaultAsync<DRHeadMasterDto>("dbo.sp_Donation_DRHead_GetById", p, cancellationToken);
+    }
+
+    public async Task<long> GetNextDRHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        var row = await _executor.QuerySingleOrDefaultAsync<NextSrNoRow>("dbo.sp_Donation_DRHead_GetNextSrNo", p, cancellationToken).ConfigureAwait(false);
+        return row?.NextSrNo ?? 1;
+    }
+
+    public async Task<long> SaveDRHeadAsync(SaveDRHeadMasterRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DRHeadID", request.DRHeadID > 0 ? request.DRHeadID : null, dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.InputOutput);
+        p.Add("@UnderOrgID", request.UnderOrgID);
+        p.Add("@SrNo", request.SrNo > 0 ? request.SrNo : null);
+        p.Add("@DRHeadName", request.DRHeadName);
+        p.Add("@IsActive", request.IsActive);
+        await _executor.ExecuteAsync("dbo.sp_Donation_DRHead_Save", p, cancellationToken).ConfigureAwait(false);
+        return p.Get<long>("@DRHeadID");
+    }
+
+    public Task DeleteDRHeadAsync(long drHeadId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DRHeadID", drHeadId);
+        return _executor.ExecuteAsync("dbo.sp_Donation_DRHead_Delete", p, cancellationToken);
+    }
+
+    public async Task<ImportDRHeadResultDto> ImportDRHeadsAsync(
+        long destinationUnderOrgId,
+        IReadOnlyList<long> drHeadIds,
+        CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DestinationUnderOrgID", destinationUnderOrgId);
+        p.Add("@DRHeadIdsJson", JsonSerializer.Serialize(drHeadIds));
+        p.Add("@ImportedCount", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+        p.Add("@SkippedCount", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+
+        var row = await _executor.QuerySingleOrDefaultAsync<ImportDRHeadResultDto>(
+            "dbo.sp_Donation_DRHead_Import",
+            p,
+            cancellationToken).ConfigureAwait(false);
+
+        return row ?? new ImportDRHeadResultDto
+        {
+            ImportedCount = p.Get<int?>("@ImportedCount") ?? 0,
+            SkippedCount = p.Get<int?>("@SkippedCount") ?? 0
+        };
+    }
 
     public Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadDefineByOrgAsync(long orgId, CancellationToken cancellationToken = default)
     {
@@ -139,5 +207,10 @@ public sealed class DonationRepository : IDonationRepository
     private sealed class OrgNextNoRow
     {
         public long NextOrgReceiptNo { get; init; }
+    }
+
+    private sealed class NextSrNoRow
+    {
+        public long NextSrNo { get; init; }
     }
 }

@@ -14,13 +14,19 @@ public sealed class MasterService : IMasterService
         _repository = repository;
     }
 
-    public Task<IReadOnlyList<ClassMasterDto>> GetClassListAsync(string? search, CancellationToken cancellationToken = default)
-        => _repository.GetClassListAsync(search, cancellationToken);
+    public Task<IReadOnlyList<ClassMasterDto>> GetClassListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
+        => _repository.GetClassListAsync(orgId, search, cancellationToken);
+
+    public Task<long?> GetClassNextSrNoAsync(long orgId, CancellationToken cancellationToken = default)
+        => _repository.GetClassNextSrNoAsync(orgId, cancellationToken);
 
     public async Task<(ClassMasterDto? Data, string? Error)> SaveClassAsync(SaveClassRequestDto request, CancellationToken cancellationToken = default)
     {
         request.ClassName = MasterValidators.Trim(request.ClassName);
-        var error = MasterValidators.FirstError(MasterValidators.RequireText(request.ClassName, "Class name"));
+        var error = MasterValidators.FirstError(
+            MasterValidators.RequirePositiveId(request.OrgID, "Organization"),
+            MasterValidators.RequirePositiveId(request.SrNo, "Sr No"),
+            MasterValidators.RequireText(request.ClassName, "Class name"));
         if (error is not null) return (null, error);
 
         try
@@ -48,6 +54,31 @@ public sealed class MasterService : IMasterService
         catch (SqlException ex)
         {
             return (false, ex.Message);
+        }
+    }
+
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportClassesAsync(
+        ImportClassRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.DestinationOrgID == 1)
+            return (null, "Cannot import into the source organization.");
+        if (request.ClassIds is null || request.ClassIds.Count == 0)
+            return (null, "Select at least one class to import.");
+
+        try
+        {
+            var result = await _repository.ImportClassesAsync(
+                request.DestinationOrgID,
+                request.ClassIds,
+                cancellationToken).ConfigureAwait(false);
+            return (result, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
         }
     }
 

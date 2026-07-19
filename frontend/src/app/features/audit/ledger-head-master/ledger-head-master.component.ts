@@ -1,4 +1,5 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -7,24 +8,22 @@ import {
   AuditLookups,
   LedgerHeadFormState,
   LedgerHeadMaster,
-  LedgerTypeOption,
-  OrgOption
+  LedgerTypeOption
 } from '../../../core/models/audit.model';
 import { AuditService } from '../../../core/services/audit.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { UserProfile } from '../../../core/models/dashboard.model';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapBackendMessageToFieldErrors, validateLedgerHeadForm } from '../../../core/utils/master-validation.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-ledger-head-master',
-  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './ledger-head-master.component.html',
   styleUrl: './ledger-head-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -32,7 +31,6 @@ type FormMode = 'new' | 'edit';
 export class LedgerHeadMasterComponent {
   private readonly audit = inject(AuditService);
   private readonly toast = inject(ToastService);
-  private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -52,7 +50,7 @@ export class LedgerHeadMasterComponent {
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
 
-  readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
+  readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
 
   readonly filteredLedgerHeads = computed(() => {
     const typeId = this.listLedgerTypeID();
@@ -81,7 +79,7 @@ export class LedgerHeadMasterComponent {
   });
   readonly selectedOrgName = computed(() => {
     const orgId = this.listOrgID();
-    return this.sansthaOrgs().find((o) => o.orgID === orgId)?.organizationName ?? '—';
+    return this.schoolOrgs().find((o) => o.orgID === orgId)?.organizationName ?? '—';
   });
 
   constructor() {
@@ -98,61 +96,20 @@ export class LedgerHeadMasterComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ lookups: data, ledgerTypes, profile }) => {
         this.lookupsLoading.set(false);
-        const sansthaOrgs = this.resolveSansthaOrgs(data?.sansthaOrgs ?? []);
-        this.lookups.set(data ? { ...data, sansthaOrgs } : null);
+        this.lookups.set(data);
         this.ledgerTypes.set(ledgerTypes);
-        if (!sansthaOrgs.length) {
-          this.errorMessage.set('No Sanstha found for your login.');
+        if (!data?.orgs?.length) {
+          this.errorMessage.set('No schools found for your login.');
           return;
         }
         if (!ledgerTypes.length) {
           this.errorMessage.set('No ledger types found.');
           return;
         }
-        const orgId = this.resolveDefaultOrgId(sansthaOrgs, profile);
+        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
         this.listOrgID.set(orgId);
         if (orgId) this.loadList();
       });
-  }
-
-  private resolveSansthaOrgs(fromApi: OrgOption[]): OrgOption[] {
-    if (fromApi.length) return fromApi;
-
-    const session = this.auth.currentUser();
-    const orgs: OrgOption[] = [];
-
-    for (const ctx of session?.schoolContexts ?? []) {
-      if (!orgs.some((o) => o.orgID === ctx.sansthaId)) {
-        orgs.push({
-          orgID: ctx.sansthaId,
-          organizationName: ctx.sansthaName,
-          schoolCode: ctx.sansthaId
-        });
-      }
-    }
-
-    if (!orgs.length && session?.sansthaId && session.sansthaName) {
-      orgs.push({
-        orgID: session.sansthaId,
-        organizationName: session.sansthaName,
-        schoolCode: session.sansthaId
-      });
-    }
-
-    return orgs;
-  }
-
-  private resolveDefaultOrgId(orgs: OrgOption[], profile: UserProfile | null): number | null {
-    const session = this.auth.currentUser();
-    if (session?.sansthaId) {
-      const match = orgs.find((o) => o.orgID === session.sansthaId);
-      if (match) return match.orgID;
-    }
-    if (profile?.schoolCode) {
-      const match = orgs.find((o) => o.schoolCode === profile.schoolCode);
-      if (match) return match.orgID;
-    }
-    return orgs.length === 1 ? orgs[0].orgID : orgs[0]?.orgID ?? null;
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -200,7 +157,7 @@ export class LedgerHeadMasterComponent {
   newEntry(): void {
     const orgId = this.listOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select Org / Sanstha on the list page before adding new.');
+      this.errorMessage.set('Select Org / School on the list page before adding new.');
       return;
     }
     this.formMode.set('new');

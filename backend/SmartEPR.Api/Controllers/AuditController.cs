@@ -117,7 +117,7 @@ public sealed class AuditController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Unauthorized(ApiResponse<VoucherDto>.Fail("Invalid token."));
 
-        if (AuditVoucherRules.ValidateSave(request) is { } validationError)
+        if (AuditVoucherRules.ValidateSaveOrUpdate(request) is { } validationError)
             return Ok(ApiResponse<VoucherDto>.Fail(validationError));
 
         var saved = await _auditService.SaveVoucherAsync(userId, request, cancellationToken).ConfigureAwait(false);
@@ -134,10 +134,62 @@ public sealed class AuditController : ControllerBase
     }
 
     [HttpGet("account-register-master")]
-    public async Task<IActionResult> GetAccountRegisterMaster(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAccountRegisterMaster([FromQuery] long? underOrgId, CancellationToken cancellationToken)
     {
-        var items = await _auditService.GetAccountRegisterMasterAsync(cancellationToken).ConfigureAwait(false);
+        var items = await _auditService.GetAccountRegisterMasterAsync(underOrgId, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<IReadOnlyList<AccountRegisterMasterOptionDto>>.Ok(items));
+    }
+
+    [HttpGet("account-register-master/list")]
+    public async Task<IActionResult> GetAccountRegisterList([FromQuery] long underOrgId, CancellationToken cancellationToken)
+    {
+        var items = await _auditService.GetAccountRegisterListAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<AccountRegisterMasterDto>>.Ok(items));
+    }
+
+    [HttpGet("account-register-master/next-sr-no")]
+    public async Task<IActionResult> GetNextAccountRegisterSrNo([FromQuery] long underOrgId, CancellationToken cancellationToken)
+    {
+        var no = await _auditService.GetNextAccountRegisterSrNoAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<long>.Ok(no));
+    }
+
+    [HttpGet("account-register-master/{accountRegisterId:long}")]
+    public async Task<IActionResult> GetAccountRegister(long accountRegisterId, CancellationToken cancellationToken)
+    {
+        var item = await _auditService.GetAccountRegisterByIdAsync(accountRegisterId, cancellationToken).ConfigureAwait(false);
+        return item is null
+            ? Ok(ApiResponse<AccountRegisterMasterDto>.Fail("Account register not found."))
+            : Ok(ApiResponse<AccountRegisterMasterDto>.Ok(item));
+    }
+
+    [HttpPost("account-register-master")]
+    public async Task<IActionResult> SaveAccountRegister([FromBody] SaveAccountRegisterMasterRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _auditService.SaveAccountRegisterAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<AccountRegisterMasterDto>.Fail(error ?? "Unable to save account register."))
+            : Ok(ApiResponse<AccountRegisterMasterDto>.Ok(data, "Account register saved."));
+    }
+
+    [HttpPost("account-register-master/import")]
+    public async Task<IActionResult> ImportAccountRegisters([FromBody] ImportAccountRegisterRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _auditService.ImportAccountRegistersAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportAccountRegisterResultDto>.Fail(error ?? "Unable to import account registers."))
+            : Ok(ApiResponse<ImportAccountRegisterResultDto>.Ok(
+                data,
+                $"Imported {data.ImportedCount} register(s). Skipped {data.SkippedCount}."));
+    }
+
+    [HttpDelete("account-register-master/{accountRegisterId:long}")]
+    public async Task<IActionResult> DeleteAccountRegister(long accountRegisterId, CancellationToken cancellationToken)
+    {
+        var (success, error) = await _auditService.DeleteAccountRegisterAsync(accountRegisterId, cancellationToken).ConfigureAwait(false);
+        return success
+            ? Ok(ApiResponse<bool>.Ok(true, "Account register deleted."))
+            : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete account register."));
     }
 
     [HttpGet("account-register-define")]

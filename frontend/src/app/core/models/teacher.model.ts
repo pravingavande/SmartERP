@@ -136,7 +136,10 @@ export interface TeacherFormState {
   appPassword: string;
   closeFlag: boolean;
   isActive: boolean;
-  createdAt: string;
+  createdDate: string;
+  modifiedDate: string;
+  createdUserID: number | null;
+  modifiedUserID: number | null;
   documents: TeacherDocumentLine[];
   schools: TeacherSchoolLine[];
 }

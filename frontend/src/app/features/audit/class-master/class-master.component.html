@@ -4,22 +4,38 @@
       <h1>Class Master</h1>
       <p>Manage classes for academic schedule</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Class</button>
+    <div class="header-actions">
+      @if (canImport()) {
+        <button type="button" class="btn btn-outline" (click)="openImport()">Import</button>
+      }
+      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Class</button>
+    </div>
   </header>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="listOrgID"
+      [orgs]="lookups()?.orgs ?? []"
+      [value]="listOrgID()"
+      (valueChange)="onListOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Search</span>
+      <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search class name">
+    </label>
+  </div>
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
 
   <div class="audit-layout list-only">
     <aside class="list-panel">
-      <div class="list-filters">
-        <label class="field">
-          <span class="field-label">Search</span>
-          <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search class name">
-        </label>
-      </div>
-      @if (listLoading()) { <p class="loading-hint">Loading classes...</p> }
+      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading classes...</p> }
       <div class="records-table-wrap">
         <table class="records-table">
           <thead>
             <tr>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('className')">Class Name</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
               <th>Actions</th>
@@ -28,6 +44,7 @@
           <tbody>
             @for (item of paginatedItems(); track item.classID) {
               <tr>
+                <td>{{ item.srNo }}</td>
                 <td>{{ item.className }}</td>
                 <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
@@ -36,7 +53,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="3" class="empty">No classes found</td></tr>
+              <tr><td colspan="4" class="empty">No classes for selected school</td></tr>
             }
           </tbody>
         </table>
@@ -60,6 +77,30 @@
         <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
           <div class="form-grid">
+            <app-org-school-select
+              name="formOrgID"
+              [orgs]="lookups()?.orgs ?? []"
+              [value]="form().orgID ?? null"
+              [required]="true"
+              [invalid]="!!fieldError('orgID')"
+              [error]="fieldError('orgID')"
+              (valueChange)="onFormOrgChange($event)"
+            />
+            <label class="field" [class.field-invalid]="fieldError('srNo')">
+              <span class="field-label">Sr No *</span>
+              <input
+                class="field-control"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                step="1"
+                required
+                [ngModel]="form().srNo"
+                (ngModelChange)="onSrNoChange($event)"
+                name="srNo"
+              >
+              @if (fieldError('srNo')) { <span class="field-error">{{ fieldError('srNo') }}</span> }
+            </label>
             <label class="field full" [class.field-invalid]="fieldError('className')">
               <span class="field-label">Class Name *</span>
               <input class="field-control" required [ngModel]="form().className" (ngModelChange)="updateForm('className', $event)" name="className">
@@ -77,6 +118,67 @@
             <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
           </footer>
         </form>
+      </div>
+    </div>
+  }
+
+  @if (importVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>Import Classes</h2>
+          <p class="hint">Source: Organization 1 → Destination: {{ selectedOrgName() }}</p>
+        </header>
+        <div class="master-modal-form">
+          <div class="import-toolbar">
+            <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !importSourceItems().length">Select All</button>
+            <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
+            <span class="hint">Selected: {{ importSelectedCount() }}</span>
+          </div>
+          @if (importSourceLoading()) {
+            <p class="loading-hint">Loading source classes...</p>
+          } @else {
+            <div class="records-table-wrap import-grid">
+              <table class="records-table import-table">
+                <thead>
+                  <tr>
+                    <th class="check-col">
+                      <input
+                        type="checkbox"
+                        [checked]="importAllSelected()"
+                        (change)="$any($event.target).checked ? selectAllImport() : unselectAllImport()"
+                        [attr.aria-label]="'Select all'"
+                      >
+                    </th>
+                    <th class="sr-col">Sr</th>
+                    <th class="name-col">Class Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of importSourceItems(); track item.classID) {
+                    <tr>
+                      <td class="check-col">
+                        <input
+                          type="checkbox"
+                          [checked]="isImportSelected(item.classID)"
+                          (change)="toggleImportItem(item.classID, $any($event.target).checked)"
+                        >
+                      </td>
+                      <td class="sr-col">{{ item.srNo }}</td>
+                      <td class="name-col">{{ item.className }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="3" class="empty">No source classes found</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="closeImport()" [disabled]="importLoading()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirmImport()" [disabled]="importLoading() || importSelectedCount() === 0">Import</button>
+          </footer>
+        </div>
       </div>
     </div>
   }

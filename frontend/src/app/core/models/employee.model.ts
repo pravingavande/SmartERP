@@ -69,6 +69,8 @@ export interface EmployeeDocumentLine {
 
 export interface EmployeeSchoolLine {
   rowId: string;
+  userSchoolID?: number | null;
+  userID?: number | null;
   srNo: number;
   orgID: number | null;
   schoolCode: number | null;
@@ -105,6 +107,10 @@ export interface EmployeeFormState {
   appUserName: string;
   appPassword: string;
   isActive: boolean;
+  createdDate?: string;
+  modifiedDate?: string;
+  createdUserID?: number | null;
+  modifiedUserID?: number | null;
   education: EmployeeEducationLine[];
   documents: EmployeeDocumentLine[];
   schools: EmployeeSchoolLine[];

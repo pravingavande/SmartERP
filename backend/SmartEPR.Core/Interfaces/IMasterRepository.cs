@@ -5,10 +5,12 @@ namespace SmartEPR.Core.Interfaces;
 
 public interface IMasterRepository
 {
-    Task<IReadOnlyList<ClassMasterDto>> GetClassListAsync(string? search, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ClassMasterDto>> GetClassListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<ClassMasterDto?> GetClassByIdAsync(long classId, CancellationToken cancellationToken = default);
+    Task<long?> GetClassNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);
     Task<long> SaveClassAsync(SaveClassRequestDto request, CancellationToken cancellationToken = default);
     Task DeleteClassAsync(long classId, CancellationToken cancellationToken = default);
+    Task<ImportClassResultDto> ImportClassesAsync(long destinationOrgId, IReadOnlyList<long> classIds, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(string? search, CancellationToken cancellationToken = default);
     Task<SubjectMasterDto?> GetSubjectByIdAsync(long subjectId, CancellationToken cancellationToken = default);
@@ -44,9 +46,11 @@ public interface IMasterRepository
 
 public interface IMasterService
 {
-    Task<IReadOnlyList<ClassMasterDto>> GetClassListAsync(string? search, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ClassMasterDto>> GetClassListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
+    Task<long?> GetClassNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);
     Task<(ClassMasterDto? Data, string? Error)> SaveClassAsync(SaveClassRequestDto request, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteClassAsync(long classId, CancellationToken cancellationToken = default);
+    Task<(ImportClassResultDto? Data, string? Error)> ImportClassesAsync(ImportClassRequestDto request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(string? search, CancellationToken cancellationToken = default);
     Task<(SubjectMasterDto? Data, string? Error)> SaveSubjectAsync(SaveSubjectRequestDto request, CancellationToken cancellationToken = default);

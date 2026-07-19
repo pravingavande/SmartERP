@@ -12,7 +12,32 @@ export interface OrgOption {
 
 export interface DRHeadOption {
   drHeadID: number;
+  underOrgID?: number | null;
+  srNo?: number | null;
   drHeadName: string;
+  isActive?: boolean;
+}
+
+export interface DRHeadMaster {
+  drHeadID: number;
+  underOrgID: number;
+  srNo: number;
+  drHeadName: string;
+  isActive: boolean;
+  organizationName?: string | null;
+}
+
+export interface DRHeadFormState {
+  drHeadID: number | null;
+  underOrgID: number | null;
+  srNo: number | null;
+  drHeadName: string;
+  isActive: boolean;
+}
+
+export interface ImportDRHeadResult {
+  importedCount: number;
+  skippedCount: number;
 }
 
 export interface PaymentTypeOption {

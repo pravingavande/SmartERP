@@ -23,10 +23,12 @@ public sealed class EmployeeServiceSaveTests
             EmployeeShortName = "R.P."
         };
 
-        var result = await CreateService().SaveAsync(request);
+        var result = await CreateService().SaveAsync(1, request);
 
         Assert.Null(result);
-        _employeeRepository.Verify(r => r.SaveAsync(It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()), Times.Never);
+        _employeeRepository.Verify(
+            r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -39,10 +41,12 @@ public sealed class EmployeeServiceSaveTests
             EmployeeShortName = "R.P."
         };
 
-        var result = await CreateService().SaveAsync(request);
+        var result = await CreateService().SaveAsync(1, request);
 
         Assert.Null(result);
-        _employeeRepository.Verify(r => r.SaveAsync(It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()), Times.Never);
+        _employeeRepository.Verify(
+            r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -59,8 +63,8 @@ public sealed class EmployeeServiceSaveTests
         };
 
         _employeeRepository
-            .Setup(r => r.SaveAsync(It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()))
-            .Callback<SaveEmployeeRequestDto, CancellationToken>((dto, _) => captured = dto)
+            .Setup(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()))
+            .Callback<long, SaveEmployeeRequestDto, CancellationToken>((_, dto, _) => captured = dto)
             .ReturnsAsync(99);
         _employeeRepository
             .Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
@@ -72,15 +76,19 @@ public sealed class EmployeeServiceSaveTests
                 LastName = "Patil",
                 EmployeeName = "Ramesh Kumar Patil",
                 EmployeeShortName = "R.P.",
-                MobileNo1 = "9876543210"
+                MobileNo1 = "9876543210",
+                CreatedUserID = 1
             });
 
-        var result = await CreateService().SaveAsync(request);
+        var result = await CreateService().SaveAsync(1, request);
 
         Assert.NotNull(result);
         Assert.NotNull(captured);
         Assert.Equal("R.P.", captured!.EmployeeShortName);
         Assert.Equal("Ramesh Kumar Patil", result!.EmployeeName);
+        _employeeRepository.Verify(
+            r => r.SaveAsync(1, It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -94,7 +102,7 @@ public sealed class EmployeeServiceSaveTests
         };
 
         _employeeRepository
-            .Setup(r => r.SaveAsync(It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveEmployeeRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(7);
         _employeeRepository
             .Setup(r => r.GetByIdAsync(7, It.IsAny<CancellationToken>()))
@@ -107,7 +115,7 @@ public sealed class EmployeeServiceSaveTests
                 MobileNo1 = "9123456780"
             });
 
-        var result = await CreateService().SaveAsync(request);
+        var result = await CreateService().SaveAsync(1, request);
 
         Assert.NotNull(result);
         Assert.Equal("Suresh Deshmukh", result!.EmployeeName);

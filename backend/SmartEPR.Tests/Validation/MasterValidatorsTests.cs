@@ -54,4 +54,48 @@ public sealed class MasterValidatorsTests
         var error = MasterValidators.RequirePositiveDecimal(value, "Quantity");
         Assert.Equal("Quantity must be greater than zero.", error);
     }
+
+    [Fact]
+    public void FirstError_ReturnsFirstNonNull_UsedByClassSaveOrgThenSrNo()
+    {
+        var error = MasterValidators.FirstError(
+            MasterValidators.RequirePositiveId(0, "Organization"),
+            MasterValidators.RequirePositiveId(0, "Sr No"),
+            MasterValidators.RequireText("Grade 1", "Class name"));
+
+        Assert.Equal("Organization is required.", error);
+    }
+
+    [Fact]
+    public void FirstError_ReturnsSrNo_WhenOrgValidButSrNoMissing()
+    {
+        var error = MasterValidators.FirstError(
+            MasterValidators.RequirePositiveId(2, "Organization"),
+            MasterValidators.RequirePositiveId(0, "Sr No"),
+            MasterValidators.RequireText("Grade 1", "Class name"));
+
+        Assert.Equal("Sr No is required.", error);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(13)]
+    [InlineData(-1)]
+    public void RequireMonth_ReturnsError_WhenOutOfRange(int month)
+        => Assert.Equal("Month is required.", MasterValidators.RequireMonth(month));
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(6)]
+    [InlineData(12)]
+    public void RequireMonth_ReturnsNull_WhenValid(int month)
+        => Assert.Null(MasterValidators.RequireMonth(month));
+
+    [Fact]
+    public void RequireDate_ReturnsError_WhenDefault()
+        => Assert.Equal("Inward date is required.", MasterValidators.RequireDate(default, "Inward date"));
+
+    [Fact]
+    public void RequireDate_ReturnsNull_WhenProvided()
+        => Assert.Null(MasterValidators.RequireDate(new DateTime(2026, 7, 1), "Inward date"));
 }

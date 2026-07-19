@@ -786,7 +786,10 @@ export class TeacherEntryComponent {
       appPassword: '',
       closeFlag: false,
       isActive: true,
-      createdAt: '',
+      createdDate: '',
+      modifiedDate: '',
+      createdUserID: null,
+      modifiedUserID: null,
       documents: [this.createDocumentLine()],
       schools: [this.createSchoolLine(1)]
     };

@@ -327,7 +327,7 @@ BEGIN
     END
 
     DELETE FROM dbo.UserDocument WHERE UserID = @UserID;
-    DELETE FROM dbo.UserSchool WHERE TID = @UserID;
+    DELETE FROM dbo.UserSchool WHERE UserID = @UserID;
 
     IF @DocumentsJson IS NOT NULL AND ISJSON(@DocumentsJson) = 1
     BEGIN
@@ -344,7 +344,7 @@ BEGIN
     IF @SchoolsJson IS NOT NULL AND ISJSON(@SchoolsJson) = 1
     BEGIN
         INSERT INTO dbo.UserSchool (
-            TID, SrNo, OrgID, DesignationID, TeachClass, TeachSubject,
+            UserID, SrNo, OrgID, DesignationID, TeachClass, TeachSubject,
             SchoolJoiningDate, SchoolLeaveDate
         )
         SELECT

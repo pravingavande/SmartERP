@@ -5,7 +5,41 @@ namespace SmartEPR.Core.DTOs.Donation;
 public sealed class DRHeadOptionDto
 {
     public long DRHeadID { get; init; }
+    public long? UnderOrgID { get; init; }
+    public long? SrNo { get; init; }
     public string DRHeadName { get; init; } = string.Empty;
+    public bool IsActive { get; init; } = true;
+}
+
+public sealed class DRHeadMasterDto
+{
+    public long DRHeadID { get; init; }
+    public long UnderOrgID { get; init; }
+    public long SrNo { get; init; }
+    public string DRHeadName { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+    public string? OrganizationName { get; init; }
+}
+
+public sealed class SaveDRHeadMasterRequestDto
+{
+    public long? DRHeadID { get; init; }
+    public long UnderOrgID { get; init; }
+    public long SrNo { get; init; }
+    public string DRHeadName { get; init; } = string.Empty;
+    public bool IsActive { get; init; } = true;
+}
+
+public sealed class ImportDRHeadRequestDto
+{
+    public long DestinationUnderOrgID { get; init; }
+    public IReadOnlyList<long> DRHeadIds { get; init; } = [];
+}
+
+public sealed class ImportDRHeadResultDto
+{
+    public int ImportedCount { get; init; }
+    public int SkippedCount { get; init; }
 }
 
 public sealed class DonationListItemDto
@@ -32,6 +66,10 @@ public sealed class DonationListItemDto
     public long? FyID { get; init; }
     public long? OrgID { get; init; }
     public long? OrgIDReceiptNo { get; init; }
+    public DateTime? CreatedDate { get; init; }
+    public DateTime? ModifiedDate { get; init; }
+    public long? CreatedUserID { get; init; }
+    public long? ModifiedUserID { get; init; }
     public string? DRHeadName { get; init; }
     public string? OrganizationName { get; init; }
     public string? PaymentType { get; init; }

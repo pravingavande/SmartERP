@@ -96,6 +96,10 @@ public sealed class VoucherDto
     public string? FilePath { get; init; }
     public long UserID { get; init; }
     public long FyID { get; init; }
+    public DateTime? CreatedDate { get; init; }
+    public DateTime? ModifiedDate { get; init; }
+    public long? CreatedUserID { get; init; }
+    public long? ModifiedUserID { get; init; }
     public string? OrganizationName { get; init; }
     public string? AccountRegister { get; init; }
     public string? PartyName { get; init; }
@@ -136,7 +140,41 @@ public sealed class SaveVoucherRequestDto
 public sealed class AccountRegisterMasterOptionDto
 {
     public long AccountRegisterID { get; init; }
+    public long? UnderOrgID { get; init; }
+    public long? SrNo { get; init; }
     public string AccountRegister { get; init; } = string.Empty;
+    public bool IsActive { get; init; } = true;
+}
+
+public sealed class AccountRegisterMasterDto
+{
+    public long AccountRegisterID { get; init; }
+    public long UnderOrgID { get; init; }
+    public long SrNo { get; init; }
+    public string AccountRegister { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+    public string? OrganizationName { get; init; }
+}
+
+public sealed class SaveAccountRegisterMasterRequestDto
+{
+    public long? AccountRegisterID { get; init; }
+    public long UnderOrgID { get; init; }
+    public long SrNo { get; init; }
+    public string AccountRegister { get; init; } = string.Empty;
+    public bool IsActive { get; init; } = true;
+}
+
+public sealed class ImportAccountRegisterRequestDto
+{
+    public long DestinationUnderOrgID { get; init; }
+    public IReadOnlyList<long> AccountRegisterIds { get; init; } = [];
+}
+
+public sealed class ImportAccountRegisterResultDto
+{
+    public int ImportedCount { get; init; }
+    public int SkippedCount { get; init; }
 }
 
 public sealed class AccountRegisterDefineDto

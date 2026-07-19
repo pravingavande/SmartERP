@@ -142,7 +142,10 @@ public sealed class TeacherDto
     public string? AppPassword { get; init; }
     public bool? CloseFlag { get; init; }
     public bool? IsActive { get; init; }
-    public DateTime? CreatedAt { get; init; }
+    public DateTime? CreatedDate { get; init; }
+    public DateTime? ModifiedDate { get; init; }
+    public long? CreatedUserID { get; init; }
+    public long? ModifiedUserID { get; init; }
     public IReadOnlyList<TeacherDocumentDto> Documents { get; init; } = [];
     public IReadOnlyList<TeacherSchoolDto> Schools { get; init; } = [];
 }
@@ -156,7 +159,8 @@ public sealed class TeacherDocumentDto
 
 public sealed class TeacherSchoolDto
 {
-    public long TID { get; init; }
+    public long UserSchoolID { get; init; }
+    public long UserID { get; init; }
     public long? SrNo { get; init; }
     public long? OrgID { get; init; }
     public long? SchoolCode { get; init; }

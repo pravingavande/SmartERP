@@ -233,6 +233,10 @@ export class EmployeeService {
     AppUserName?: string;
     AppPassword?: string;
     IsActive?: boolean;
+    CreatedDate?: string | null;
+    ModifiedDate?: string | null;
+    CreatedUserID?: number | null;
+    ModifiedUserID?: number | null;
     Education?: EmployeeFormState['education'];
     Documents?: EmployeeFormState['documents'];
     Schools?: EmployeeFormState['schools'];
@@ -275,6 +279,8 @@ export class EmployeeService {
 
     const schools = (raw.schools ?? raw.Schools ?? []).map((s, i) => {
       const row = s as EmployeeFormState['schools'][number] & {
+        UserSchoolID?: number | null;
+        UserID?: number | null;
         OrgID?: number | null;
         SchoolCode?: number | null;
         DesignationCode?: number | null;
@@ -288,6 +294,8 @@ export class EmployeeService {
       };
       return {
         rowId: row.rowId ?? `sch-${i}`,
+        userSchoolID: row.userSchoolID ?? row.UserSchoolID ?? null,
+        userID: row.userID ?? row.UserID ?? null,
         srNo: row.srNo ?? row.SrNo ?? i + 1,
         orgID: row.orgID ?? row.OrgID ?? null,
         schoolCode: row.schoolCode ?? row.SchoolCode ?? null,
@@ -325,6 +333,10 @@ export class EmployeeService {
       appUserName: raw.appUserName ?? raw.AppUserName ?? '',
       appPassword: raw.appPassword ?? raw.AppPassword ?? '',
       isActive: raw.isActive ?? raw.IsActive ?? true,
+      createdDate: this.toDateTimeDisplay(raw.createdDate ?? raw.CreatedDate),
+      modifiedDate: this.toDateTimeDisplay(raw.modifiedDate ?? raw.ModifiedDate),
+      createdUserID: raw.createdUserID ?? raw.CreatedUserID ?? null,
+      modifiedUserID: raw.modifiedUserID ?? raw.ModifiedUserID ?? null,
       education,
       documents,
       schools
@@ -335,5 +347,11 @@ export class EmployeeService {
     if (!value) return '';
     const text = String(value);
     return text.length >= 10 ? text.slice(0, 10) : text;
+  }
+
+  private toDateTimeDisplay(value: unknown): string {
+    if (!value) return '';
+    const text = String(value).replace('T', ' ');
+    return text.length >= 19 ? text.slice(0, 19) : text;
   }
 }

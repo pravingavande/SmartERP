@@ -82,15 +82,15 @@ export const routes: Routes = [
         canActivate: [adminMasterGuard]
       },
       {
-        path: 'audit/account-register-define',
+        path: 'audit/account-register-master',
         loadComponent: () =>
-          import('./features/audit/account-register-define/account-register-define.component').then((m) => m.AccountRegisterDefineComponent),
+          import('./features/audit/account-register-master/account-register-master.component').then((m) => m.AccountRegisterMasterComponent),
         canActivate: [adminMasterGuard]
       },
       {
-        path: 'audit/donation-head-define',
+        path: 'audit/donation-head-master',
         loadComponent: () =>
-          import('./features/audit/donation-head-define/donation-head-define.component').then((m) => m.DonationHeadDefineComponent),
+          import('./features/audit/donation-head-master/donation-head-master.component').then((m) => m.DonationHeadMasterComponent),
         canActivate: [adminMasterGuard]
       },
       {

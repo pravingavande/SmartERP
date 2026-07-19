@@ -4,8 +4,8 @@ export const ADMIN_MASTER_USER_ROLE_IDS = [1, 2] as const;
 /** Masters visible only to Super Admin and Administrator. */
 export const ADMIN_ONLY_MASTER_ROUTE_PATHS = [
   'audit/ledger-head-master',
-  'audit/account-register-define',
-  'audit/donation-head-define',
+  'audit/account-register-master',
+  'audit/donation-head-master',
   'audit/leave-type-master',
   'audit/class-master',
   'audit/event-types-master',

@@ -5,16 +5,21 @@ USE SmartERP;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_Donation_GetDRHeadMaster
+    @UnderOrgID BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT
         dh.DRHeadID,
-        dh.DRHeadName
+        dh.UnderOrgID,
+        dh.SrNo,
+        dh.DRHeadName,
+        dh.IsActive
     FROM dbo.DRHeadMaster dh
-    WHERE dh.IsActive = 1
-    ORDER BY dh.DRHeadName;
+    WHERE ISNULL(dh.IsActive, 1) = 1
+      AND (@UnderOrgID IS NULL OR dh.UnderOrgID = @UnderOrgID)
+    ORDER BY dh.SrNo, dh.DRHeadName, dh.DRHeadID;
 END
 GO
 

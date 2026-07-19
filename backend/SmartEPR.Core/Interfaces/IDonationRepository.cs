@@ -6,7 +6,13 @@ namespace SmartEPR.Core.Interfaces;
 public interface IDonationRepository
 {
     Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadsAsync(long? orgId = null, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadMasterAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DRHeadMasterDto>> GetDRHeadListAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<DRHeadMasterDto?> GetDRHeadByIdAsync(long drHeadId, CancellationToken cancellationToken = default);
+    Task<long> GetNextDRHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<long> SaveDRHeadAsync(SaveDRHeadMasterRequestDto request, CancellationToken cancellationToken = default);
+    Task DeleteDRHeadAsync(long drHeadId, CancellationToken cancellationToken = default);
+    Task<ImportDRHeadResultDto> ImportDRHeadsAsync(long destinationUnderOrgId, IReadOnlyList<long> drHeadIds, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadDefineByOrgAsync(long orgId, CancellationToken cancellationToken = default);
     Task SaveDRHeadDefineAsync(long orgId, IReadOnlyList<long> drHeadIds, CancellationToken cancellationToken = default);
     Task<long> GetNextReceiptNoAsync(long fyId, CancellationToken cancellationToken = default);
@@ -28,7 +34,13 @@ public interface IDonationService
     Task<DonationListItemDto?> GetByIdAsync(long drId, CancellationToken cancellationToken = default);
     Task<DonationListItemDto?> SaveAsync(long userId, SaveDonationRequestDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(long drId, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadMasterAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DRHeadMasterDto>> GetDRHeadListAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<DRHeadMasterDto?> GetDRHeadByIdAsync(long drHeadId, CancellationToken cancellationToken = default);
+    Task<long> GetNextDRHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<(DRHeadMasterDto? Data, string? Error)> SaveDRHeadAsync(SaveDRHeadMasterRequestDto request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> DeleteDRHeadAsync(long drHeadId, CancellationToken cancellationToken = default);
+    Task<(ImportDRHeadResultDto? Data, string? Error)> ImportDRHeadsAsync(ImportDRHeadRequestDto request, CancellationToken cancellationToken = default);
     Task<DRHeadDefineDto> GetDRHeadDefineAsync(long orgId, CancellationToken cancellationToken = default);
     Task SaveDRHeadDefineAsync(SaveDRHeadDefineRequestDto request, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DRHeadOptionDto>> GetDRHeadsForOrgAsync(long orgId, CancellationToken cancellationToken = default);

@@ -58,7 +58,10 @@ function validForm(): TeacherFormState {
     appPassword: 'secret',
     closeFlag: false,
     isActive: true,
-    createdAt: '',
+    createdDate: '',
+    modifiedDate: '',
+    createdUserID: null,
+    modifiedUserID: null,
     documents: [{ rowId: 'doc-1', empDocumentCode: null, empDocumentPath: '', selectedFileName: null }],
     schools: [{
       rowId: 'sch-1',

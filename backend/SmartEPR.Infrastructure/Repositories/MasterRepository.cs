@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.Json;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using SmartEPR.Core.DTOs.Audit;
@@ -19,9 +20,10 @@ public sealed class MasterRepository : IMasterRepository
         _connectionFactory = connectionFactory;
     }
 
-    public Task<IReadOnlyList<ClassMasterDto>> GetClassListAsync(string? search, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<ClassMasterDto>> GetClassListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
         p.Add("@Search", search);
         return _executor.QueryListAsync<ClassMasterDto>("dbo.sp_Class_GetList", p, cancellationToken);
     }
@@ -33,10 +35,20 @@ public sealed class MasterRepository : IMasterRepository
         return _executor.QuerySingleOrDefaultAsync<ClassMasterDto>("dbo.sp_Class_GetById", p, cancellationToken);
     }
 
+    public async Task<long?> GetClassNextSrNoAsync(long orgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        var row = await _executor.QuerySingleOrDefaultAsync<NextSrNoDto>("dbo.sp_Class_GetNextSrNo", p, cancellationToken).ConfigureAwait(false);
+        return row?.NextSrNo;
+    }
+
     public async Task<long> SaveClassAsync(SaveClassRequestDto request, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
         p.Add("@ClassID", request.ClassID > 0 ? request.ClassID : null, DbType.Int64, ParameterDirection.InputOutput);
+        p.Add("@OrgID", request.OrgID);
+        p.Add("@SrNo", request.SrNo > 0 ? request.SrNo : null);
         p.Add("@ClassName", request.ClassName);
         p.Add("@IsActive", request.IsActive);
         await _executor.ExecuteAsync("dbo.sp_Class_Save", p, cancellationToken).ConfigureAwait(false);
@@ -48,6 +60,29 @@ public sealed class MasterRepository : IMasterRepository
         var p = new DynamicParameters();
         p.Add("@ClassID", classId);
         return _executor.ExecuteAsync("dbo.sp_Class_Delete", p, cancellationToken);
+    }
+
+    public async Task<ImportClassResultDto> ImportClassesAsync(
+        long destinationOrgId,
+        IReadOnlyList<long> classIds,
+        CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DestinationOrgID", destinationOrgId);
+        p.Add("@ClassIdsJson", JsonSerializer.Serialize(classIds));
+        p.Add("@ImportedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        p.Add("@SkippedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+        var row = await _executor.QuerySingleOrDefaultAsync<ImportClassResultDto>(
+            "dbo.sp_Class_Import",
+            p,
+            cancellationToken).ConfigureAwait(false);
+
+        return row ?? new ImportClassResultDto
+        {
+            ImportedCount = p.Get<int?>("@ImportedCount") ?? 0,
+            SkippedCount = p.Get<int?>("@SkippedCount") ?? 0
+        };
     }
 
     public Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(string? search, CancellationToken cancellationToken = default)

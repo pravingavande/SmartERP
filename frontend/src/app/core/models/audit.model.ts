@@ -192,7 +192,32 @@ export const CASH_PAYMENT_TYPE_ID = 1;
 
 export interface AccountRegisterMasterOption {
   accountRegisterID: number;
+  underOrgID?: number | null;
+  srNo?: number | null;
   accountRegister: string;
+  isActive?: boolean;
+}
+
+export interface AccountRegisterMaster {
+  accountRegisterID: number;
+  underOrgID: number;
+  srNo: number;
+  accountRegister: string;
+  isActive: boolean;
+  organizationName?: string | null;
+}
+
+export interface AccountRegisterFormState {
+  accountRegisterID: number | null;
+  underOrgID: number | null;
+  srNo: number | null;
+  accountRegister: string;
+  isActive: boolean;
+}
+
+export interface ImportAccountRegisterResult {
+  importedCount: number;
+  skippedCount: number;
 }
 
 export interface AccountRegisterDefine {

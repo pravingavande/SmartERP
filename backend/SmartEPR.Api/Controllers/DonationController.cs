@@ -155,10 +155,62 @@ public sealed class DonationController : ControllerBase
     }
 
     [HttpGet("dr-head-master")]
-    public async Task<IActionResult> GetDRHeadMaster(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetDRHeadMaster([FromQuery] long? underOrgId, CancellationToken cancellationToken)
     {
-        var items = await _donationService.GetDRHeadMasterAsync(cancellationToken).ConfigureAwait(false);
+        var items = await _donationService.GetDRHeadMasterAsync(underOrgId, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<IReadOnlyList<DRHeadOptionDto>>.Ok(items));
+    }
+
+    [HttpGet("dr-head-master/list")]
+    public async Task<IActionResult> GetDRHeadList([FromQuery] long underOrgId, CancellationToken cancellationToken)
+    {
+        var items = await _donationService.GetDRHeadListAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<IReadOnlyList<DRHeadMasterDto>>.Ok(items));
+    }
+
+    [HttpGet("dr-head-master/next-sr-no")]
+    public async Task<IActionResult> GetNextDRHeadSrNo([FromQuery] long underOrgId, CancellationToken cancellationToken)
+    {
+        var no = await _donationService.GetNextDRHeadSrNoAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<long>.Ok(no));
+    }
+
+    [HttpGet("dr-head-master/{drHeadId:long}")]
+    public async Task<IActionResult> GetDRHead(long drHeadId, CancellationToken cancellationToken)
+    {
+        var item = await _donationService.GetDRHeadByIdAsync(drHeadId, cancellationToken).ConfigureAwait(false);
+        return item is null
+            ? Ok(ApiResponse<DRHeadMasterDto>.Fail("Donation head not found."))
+            : Ok(ApiResponse<DRHeadMasterDto>.Ok(item));
+    }
+
+    [HttpPost("dr-head-master")]
+    public async Task<IActionResult> SaveDRHead([FromBody] SaveDRHeadMasterRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _donationService.SaveDRHeadAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<DRHeadMasterDto>.Fail(error ?? "Unable to save donation head."))
+            : Ok(ApiResponse<DRHeadMasterDto>.Ok(data, "Donation head saved."));
+    }
+
+    [HttpPost("dr-head-master/import")]
+    public async Task<IActionResult> ImportDRHeads([FromBody] ImportDRHeadRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _donationService.ImportDRHeadsAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportDRHeadResultDto>.Fail(error ?? "Unable to import donation heads."))
+            : Ok(ApiResponse<ImportDRHeadResultDto>.Ok(
+                data,
+                $"Imported {data.ImportedCount} donation head(s). Skipped {data.SkippedCount}."));
+    }
+
+    [HttpDelete("dr-head-master/{drHeadId:long}")]
+    public async Task<IActionResult> DeleteDRHead(long drHeadId, CancellationToken cancellationToken)
+    {
+        var (success, error) = await _donationService.DeleteDRHeadAsync(drHeadId, cancellationToken).ConfigureAwait(false);
+        return success
+            ? Ok(ApiResponse<bool>.Ok(true, "Donation head deleted."))
+            : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete donation head."));
     }
 
     [HttpGet("dr-heads")]

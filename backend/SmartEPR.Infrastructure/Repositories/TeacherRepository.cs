@@ -143,7 +143,10 @@ public sealed class TeacherRepository : ITeacherRepository
             AppPassword = header.AppPassword,
             CloseFlag = header.CloseFlag,
             IsActive = header.IsActive,
-            CreatedAt = header.CreatedAt,
+            CreatedDate = header.CreatedDate,
+            ModifiedDate = header.ModifiedDate,
+            CreatedUserID = header.CreatedUserID,
+            ModifiedUserID = header.ModifiedUserID,
             Documents = documents,
             Schools = schools
         };
@@ -166,10 +169,11 @@ public sealed class TeacherRepository : ITeacherRepository
         return row?.IsDuplicate == 1;
     }
 
-    public async Task<long> SaveAsync(SaveTeacherRequestDto request, bool updatePassword, CancellationToken cancellationToken = default)
+    public async Task<long> SaveAsync(long actorUserId, SaveTeacherRequestDto request, bool updatePassword, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserID", request.UserID > 0 ? request.UserID : null, dbType: DbType.Int64, direction: ParameterDirection.InputOutput);
+        p.Add("@ActorUserID", actorUserId > 0 ? actorUserId : null);
         p.Add("@OrgID", request.OrgID);
         p.Add("@SrNo", request.SrNo);
         p.Add("@StaffTypeID", request.StaffTypeID ?? 2);

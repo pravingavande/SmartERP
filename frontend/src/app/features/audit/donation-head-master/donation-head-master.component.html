@@ -1,0 +1,182 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Donation Head Master</h1>
+      <p>School-wise donation heads</p>
+    </div>
+    <div class="header-actions">
+      @if (canImport()) {
+        <button type="button" class="btn btn-outline" (click)="openImport()">Import</button>
+      }
+      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Donation Head</button>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="listOrgID"
+      [orgs]="schoolOrgs()"
+      [value]="listOrgID()"
+      (valueChange)="onListOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Search</span>
+      <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search donation head">
+    </label>
+  </div>
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading donation heads...</p> }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('drHeadName')">Donation Head</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of paginatedItems(); track item.drHeadID) {
+              <tr>
+                <td>{{ item.srNo }}</td>
+                <td>{{ item.drHeadName }}</td>
+                <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+                <td class="actions">
+                  <app-list-action-btn action="edit" (clicked)="editItem(item)" />
+                  @if (item.isActive) {
+                    <app-list-action-btn action="delete" (clicked)="deleteItem(item)" />
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="empty">No donation heads for selected organization</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-master-list-pagination
+        [total]="filteredItems().length"
+        [pageIndex]="listPageIndex()"
+        [pageSize]="listPageSize()"
+        (pageIndexChange)="goToListPage($event)"
+        (pageSizeChange)="onListPageSizeChange($event)"
+      />
+    </aside>
+  </div>
+
+  @if (formVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box">
+        <header class="master-modal-header">
+          <h2>{{ formMode() === 'edit' ? 'Edit Donation Head' : 'New Donation Head' }}</h2>
+        </header>
+        <form class="master-modal-form voucher-form" (ngSubmit)="save()">
+          @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
+          <div class="form-grid">
+            <label class="field full">
+              <span class="field-label">Org / School</span>
+              <input class="field-control field-readonly" type="text" readonly [value]="selectedOrgName()">
+            </label>
+            <label class="field" [class.field-invalid]="fieldError('srNo')">
+              <span class="field-label">Sr No *</span>
+              <input
+                class="field-control"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                step="1"
+                required
+                [ngModel]="form().srNo"
+                (ngModelChange)="onSrNoChange($event)"
+                name="srNo"
+              >
+              @if (fieldError('srNo')) { <span class="field-error">{{ fieldError('srNo') }}</span> }
+            </label>
+            <label class="field full" [class.field-invalid]="fieldError('drHeadName')">
+              <span class="field-label">Donation Head *</span>
+              <input class="field-control" required [ngModel]="form().drHeadName" (ngModelChange)="updateForm('drHeadName', $event)" name="drHeadName">
+              @if (fieldError('drHeadName')) { <span class="field-error">{{ fieldError('drHeadName') }}</span> }
+            </label>
+            @if (formMode() === 'edit') {
+              <label class="field field-check master-active-field">
+                <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
+                <span>Active</span>
+              </label>
+            }
+          </div>
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (importVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>Import Donation Heads</h2>
+          <p class="hint">Source: Organization 1 → Destination: {{ selectedOrgName() }}</p>
+        </header>
+        <div class="master-modal-form">
+          <div class="import-toolbar">
+            <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !importSourceItems().length">Select All</button>
+            <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
+            <span class="hint">Selected: {{ importSelectedCount() }}</span>
+          </div>
+          @if (importSourceLoading()) {
+            <p class="loading-hint">Loading source donation heads...</p>
+          } @else {
+            <div class="records-table-wrap import-grid">
+              <table class="records-table import-table">
+                <thead>
+                  <tr>
+                    <th class="check-col">
+                      <input
+                        type="checkbox"
+                        [checked]="importAllSelected()"
+                        (change)="$any($event.target).checked ? selectAllImport() : unselectAllImport()"
+                        [attr.aria-label]="'Select all'"
+                      >
+                    </th>
+                    <th class="sr-col">Sr</th>
+                    <th class="name-col">Donation Head</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of importSourceItems(); track item.drHeadID) {
+                    <tr>
+                      <td class="check-col">
+                        <input
+                          type="checkbox"
+                          [checked]="isImportSelected(item.drHeadID)"
+                          (change)="toggleImportItem(item.drHeadID, $any($event.target).checked)"
+                        >
+                      </td>
+                      <td class="sr-col">{{ item.srNo ?? '—' }}</td>
+                      <td class="name-col">{{ item.drHeadName }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="3" class="empty">No source donation heads found</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="closeImport()" [disabled]="importLoading()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirmImport()" [disabled]="importLoading() || importSelectedCount() === 0">Import</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+  }
+</section>

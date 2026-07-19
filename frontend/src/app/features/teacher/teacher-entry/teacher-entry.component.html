@@ -480,10 +480,16 @@
                           <span>{{ lbl('IsActive', 'Is Active') }}</span>
                         </label>
                       }
-                      @if (form().createdAt) {
+                      @if (form().createdDate) {
                         <label class="field">
-                          <span class="field-label">{{ lbl('CreatedAt', 'Created At') }}</span>
-                          <input class="field-control" readonly [value]="form().createdAt" name="createdAt">
+                          <span class="field-label">{{ lbl('CreatedDate', 'Created Date') }}</span>
+                          <input class="field-control" readonly [value]="form().createdDate" name="createdDate">
+                        </label>
+                      }
+                      @if (form().modifiedDate) {
+                        <label class="field">
+                          <span class="field-label">{{ lbl('ModifiedDate', 'Modified Date') }}</span>
+                          <input class="field-control" readonly [value]="form().modifiedDate" name="modifiedDate">
                         </label>
                       }
                     </div>

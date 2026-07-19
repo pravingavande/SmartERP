@@ -1,5 +1,6 @@
 import { FieldErrors } from './form-field-errors';
-import { PartyFormState, LedgerHeadFormState } from '../models/audit.model';
+import { AccountRegisterFormState, PartyFormState, LedgerHeadFormState } from '../models/audit.model';
+import { DRHeadFormState } from '../models/donation.model';
 import { LeaveTypeFormState } from '../models/leave.model';
 import {
   AcademicScheduleFormState,
@@ -31,7 +32,14 @@ export function requireId(
 }
 
 export function validateClassForm(form: ClassFormState): FieldErrors {
-  return requireText(form.className, 'className', 'Class name');
+  const errors: FieldErrors = {
+    ...requireId(form.orgID, 'orgID', 'Organization'),
+    ...requireText(form.className, 'className', 'Class name')
+  };
+  if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {
+    errors['srNo'] = 'Sr No is required and must be a positive whole number.';
+  }
+  return errors;
 }
 
 export function validateSubjectForm(form: SubjectFormState): FieldErrors {
@@ -51,6 +59,28 @@ export function validateLedgerHeadForm(form: Pick<LedgerHeadFormState, 'underOrg
     ...requireText(form.ledgerHead, 'ledgerHead', 'Ledger head'),
     ...requireId(form.ledgerTypeID, 'ledgerTypeID', 'Ledger type')
   };
+}
+
+export function validateAccountRegisterForm(form: AccountRegisterFormState): FieldErrors {
+  const errors: FieldErrors = {
+    ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
+    ...requireText(form.accountRegister, 'accountRegister', 'Account register')
+  };
+  if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {
+    errors['srNo'] = 'Sr No is required and must be a positive whole number.';
+  }
+  return errors;
+}
+
+export function validateDRHeadForm(form: DRHeadFormState): FieldErrors {
+  const errors: FieldErrors = {
+    ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
+    ...requireText(form.drHeadName, 'drHeadName', 'Donation head')
+  };
+  if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {
+    errors['srNo'] = 'Sr No is required and must be a positive whole number.';
+  }
+  return errors;
 }
 
 export function validateLeaveTypeForm(form: Pick<LeaveTypeFormState, 'leaveTypeName'>): FieldErrors {
@@ -111,6 +141,9 @@ export function mapBackendMessageToFieldErrors(message?: string | null): FieldEr
   const text = message.toLowerCase();
   if (text.includes('subject name')) return { subjectName: message };
   if (text.includes('class name')) return { className: message };
+  if (text.includes('sr no') || text.includes('srno')) return { srNo: message };
+  if (text.includes('account register')) return { accountRegister: message };
+  if (text.includes('donation head')) return { drHeadName: message };
   if (text.includes('item group name')) return { itemGroupName: message };
   if (text.includes('item group')) return { itemGroupID: message };
   if (text.includes('item name')) return { itemName: message };

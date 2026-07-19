@@ -70,8 +70,7 @@ export class MainLayoutComponent {
       items: [
         { label: 'Academic Scheduler', icon: 'academic-calendar', route: '/academic-calendar' },
         { label: 'Event Calendar', icon: 'event-calendar', route: '/event-calendar' },
-        { label: 'Schools', icon: 'school', route: '/schools' },
-        { label: 'Students', icon: 'students', route: '/students' }
+        { label: 'Schools', icon: 'school', route: '/schools' }
       ]
     },
     {
@@ -90,15 +89,12 @@ export class MainLayoutComponent {
       title: 'Operations',
       items: [
         { label: 'Ticket Raise', icon: 'ticket', route: '/tickets' },
-        { label: 'Attendance', icon: 'attendance', route: '/attendance' },
-        { label: 'Notices', icon: 'notice', route: '/notices' },
         { label: 'Reports', icon: 'reports', route: '/reports' }
       ]
     },
     {
       title: 'Administration',
       items: [
-        { label: 'User Management', icon: 'users', route: '/users' },
         { label: 'Settings', icon: 'settings', route: '/settings' }
       ]
     }

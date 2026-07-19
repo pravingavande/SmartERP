@@ -130,6 +130,10 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
             FilePath = header.FilePath,
             UserID = header.UserID,
             FyID = header.FyID,
+            CreatedDate = header.CreatedDate,
+            ModifiedDate = header.ModifiedDate,
+            CreatedUserID = header.CreatedUserID,
+            ModifiedUserID = header.ModifiedUserID,
             OrganizationName = header.OrganizationName,
             AccountRegister = header.AccountRegister,
             PartyName = header.PartyName,
@@ -226,8 +230,76 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         return (voucherRows, availableRows);
     }
 
-    public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(CancellationToken cancellationToken = default)
-        => _executor.QueryListAsync<AccountRegisterMasterOptionDto>("dbo.sp_Audit_GetAccountRegisterMaster", null, cancellationToken);
+    public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        return _executor.QueryListAsync<AccountRegisterMasterOptionDto>("dbo.sp_Audit_GetAccountRegisterMaster", p, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<AccountRegisterMasterDto>> GetAccountRegisterListAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        return _executor.QueryListAsync<AccountRegisterMasterDto>("dbo.sp_Audit_AccountRegister_GetList", p, cancellationToken);
+    }
+
+    public Task<AccountRegisterMasterDto?> GetAccountRegisterByIdAsync(long accountRegisterId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@AccountRegisterID", accountRegisterId);
+        return _executor.QuerySingleOrDefaultAsync<AccountRegisterMasterDto>("dbo.sp_Audit_AccountRegister_GetById", p, cancellationToken);
+    }
+
+    public async Task<long> GetNextAccountRegisterSrNoAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        var row = await _executor.QuerySingleOrDefaultAsync<NextSrNoRow>("dbo.sp_Audit_AccountRegister_GetNextSrNo", p, cancellationToken).ConfigureAwait(false);
+        return row?.NextSrNo ?? 1;
+    }
+
+    public async Task<long> SaveAccountRegisterAsync(SaveAccountRegisterMasterRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@AccountRegisterID", request.AccountRegisterID > 0 ? request.AccountRegisterID : null, dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.InputOutput);
+        p.Add("@UnderOrgID", request.UnderOrgID);
+        p.Add("@SrNo", request.SrNo > 0 ? request.SrNo : null);
+        p.Add("@AccountRegister", request.AccountRegister);
+        p.Add("@IsActive", request.IsActive);
+        await _executor.ExecuteAsync("dbo.sp_Audit_AccountRegister_Save", p, cancellationToken).ConfigureAwait(false);
+        return p.Get<long>("@AccountRegisterID");
+    }
+
+    public Task DeleteAccountRegisterAsync(long accountRegisterId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@AccountRegisterID", accountRegisterId);
+        return _executor.ExecuteAsync("dbo.sp_Audit_AccountRegister_Delete", p, cancellationToken);
+    }
+
+    public async Task<ImportAccountRegisterResultDto> ImportAccountRegistersAsync(
+        long destinationUnderOrgId,
+        IReadOnlyList<long> accountRegisterIds,
+        CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DestinationUnderOrgID", destinationUnderOrgId);
+        p.Add("@AccountRegisterIdsJson", JsonSerializer.Serialize(accountRegisterIds));
+        p.Add("@ImportedCount", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+        p.Add("@SkippedCount", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+
+        var row = await _executor.QuerySingleOrDefaultAsync<ImportAccountRegisterResultDto>(
+            "dbo.sp_Audit_AccountRegister_Import",
+            p,
+            cancellationToken).ConfigureAwait(false);
+
+        return row ?? new ImportAccountRegisterResultDto
+        {
+            ImportedCount = p.Get<int?>("@ImportedCount") ?? 0,
+            SkippedCount = p.Get<int?>("@SkippedCount") ?? 0
+        };
+    }
 
     public Task<IReadOnlyList<AccountRegisterMasterOptionDto>> GetAccountRegisterDefineByOrgAsync(long orgId, CancellationToken cancellationToken = default)
     {

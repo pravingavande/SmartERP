@@ -103,16 +103,21 @@ public sealed class EmployeeRepository : IEmployeeRepository
             AppUserName = header.AppUserName,
             AppPassword = header.AppPassword,
             IsActive = header.IsActive,
+            CreatedDate = header.CreatedDate,
+            ModifiedDate = header.ModifiedDate,
+            CreatedUserID = header.CreatedUserID,
+            ModifiedUserID = header.ModifiedUserID,
             Education = education,
             Documents = documents,
             Schools = schools
         };
     }
 
-    public async Task<long> SaveAsync(SaveEmployeeRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<long> SaveAsync(long actorUserId, SaveEmployeeRequestDto request, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
         p.Add("@UserID", request.UserID > 0 ? request.UserID : null, dbType: DbType.Int64, direction: ParameterDirection.InputOutput);
+        p.Add("@ActorUserID", actorUserId > 0 ? actorUserId : null);
         p.Add("@SchoolCode", request.SchoolCode);
         p.Add("@OrgID", request.OrgID);
         p.Add("@UserRoleID", request.UserRoleID);

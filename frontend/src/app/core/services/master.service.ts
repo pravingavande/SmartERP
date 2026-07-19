@@ -10,6 +10,7 @@ import {
   ApiResponse,
   ClassFormState,
   ClassMasterItem,
+  ImportClassResult,
   InventoryLookups,
   ItemFormState,
   ItemGroupFormState,
@@ -37,8 +38,8 @@ export class MasterService {
     private readonly auth: AuthService
   ) {}
 
-  getClasses(search?: string | null): Observable<ClassMasterItem[]> {
-    let params = new HttpParams();
+  getClasses(orgId: number, search?: string | null): Observable<ClassMasterItem[]> {
+    let params = new HttpParams().set('orgId', String(orgId));
     if (search?.trim()) params = params.set('search', search.trim());
     return this.http.get<ApiResponse<ClassMasterItem[]>>(`${this.base}/class`, { params }).pipe(
       map((r) => (r.success && r.data ? r.data.map((x) => this.normalizeClass(x)) : [])),
@@ -46,9 +47,23 @@ export class MasterService {
     );
   }
 
+  getClassNextSrNo(orgId: number): Observable<number | null> {
+    const params = new HttpParams().set('orgId', String(orgId));
+    return this.http.get<ApiResponse<{ nextSrNo?: number; NextSrNo?: number }>>(`${this.base}/class/next-srno`, { params }).pipe(
+      map((r) => {
+        if (!r.success || !r.data) return null;
+        const n = r.data.nextSrNo ?? r.data.NextSrNo;
+        return n != null ? Number(n) : null;
+      }),
+      catchError(() => of(null))
+    );
+  }
+
   saveClass(form: ClassFormState): Observable<{ data: ClassMasterItem | null; message?: string }> {
     const payload = {
       classID: form.classID ?? 0,
+      orgID: form.orgID ?? 0,
+      srNo: form.srNo ?? 0,
       className: trimText(form.className),
       isActive: form.isActive
     };
@@ -66,6 +81,36 @@ export class MasterService {
       map((r) => ({ success: !!r.success, message: r.message ?? undefined })),
       catchError(() => of({ success: false, message: 'Unable to delete class.' }))
     );
+  }
+
+  importClasses(
+    destinationOrgId: number,
+    classIds: number[]
+  ): Observable<{ data: ImportClassResult | null; message: string | null }> {
+    const payload = {
+      destinationOrgID: destinationOrgId,
+      classIds
+    };
+    return this.http
+      .post<ApiResponse<ImportClassResult & { ImportedCount?: number; SkippedCount?: number }>>(
+        `${this.base}/class/import`,
+        payload
+      )
+      .pipe(
+        map((r) => {
+          if (!r.success || !r.data) {
+            return { data: null, message: r.message ?? 'Unable to import classes.' };
+          }
+          return {
+            data: {
+              importedCount: Number(r.data.importedCount ?? r.data.ImportedCount ?? 0),
+              skippedCount: Number(r.data.skippedCount ?? r.data.SkippedCount ?? 0)
+            },
+            message: r.message ?? null
+          };
+        }),
+        catchError(() => of({ data: null, message: 'Unable to import classes.' }))
+      );
   }
 
   getSubjects(search?: string | null): Observable<SubjectMasterItem[]> {
@@ -310,11 +355,21 @@ export class MasterService {
   }
 
   private normalizeClass(raw: unknown): ClassMasterItem {
-    const r = raw as ClassMasterItem & { ClassID?: number; ClassName?: string; IsActive?: boolean };
+    const r = raw as ClassMasterItem & {
+      ClassID?: number;
+      OrgID?: number;
+      SrNo?: number;
+      ClassName?: string;
+      IsActive?: boolean;
+      OrganizationName?: string | null;
+    };
     return {
       classID: Number(r.classID ?? r.ClassID ?? 0),
+      orgID: Number(r.orgID ?? r.OrgID ?? 0),
+      srNo: Number(r.srNo ?? r.SrNo ?? 0),
       className: String(r.className ?? r.ClassName ?? ''),
-      isActive: Boolean(r.isActive ?? r.IsActive ?? true)
+      isActive: Boolean(r.isActive ?? r.IsActive ?? true),
+      organizationName: r.organizationName ?? r.OrganizationName ?? null
     };
   }
 

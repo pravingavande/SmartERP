@@ -59,4 +59,86 @@ public sealed class OrganizationServiceValidationTests
         };
         Assert.Null(OrganizationService.ValidateSave(request));
     }
+
+    [Fact]
+    public void ValidateSave_RejectsMissingSchoolCategory()
+    {
+        var request = new SaveOrganizationRequestDto
+        {
+            BusinessCategoryID = 2,
+            UnderOrgID = 3,
+            OrganizationName = "School A"
+        };
+        Assert.Equal("School Category is required.", OrganizationService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsInvalidEmail()
+    {
+        var request = new SaveOrganizationRequestDto
+        {
+            BusinessCategoryID = 2,
+            UnderOrgID = 3,
+            SchoolCategoryID = 1,
+            OrganizationName = "School A",
+            EmailID = "bad-email"
+        };
+        Assert.Equal("Enter a valid email address.", OrganizationService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsInvalidPhone()
+    {
+        var request = new SaveOrganizationRequestDto
+        {
+            BusinessCategoryID = 2,
+            UnderOrgID = 3,
+            SchoolCategoryID = 1,
+            OrganizationName = "School A",
+            PhoneNo = "12AB"
+        };
+        Assert.Equal("Phone number must be numeric.", OrganizationService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsInvalidPan()
+    {
+        var request = new SaveOrganizationRequestDto
+        {
+            BusinessCategoryID = 2,
+            UnderOrgID = 3,
+            SchoolCategoryID = 1,
+            OrganizationName = "School A",
+            PanNo = "INVALID"
+        };
+        Assert.Equal("Enter a valid PAN number.", OrganizationService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsInvalidEstablishmentYear()
+    {
+        var request = new SaveOrganizationRequestDto
+        {
+            BusinessCategoryID = 2,
+            UnderOrgID = 3,
+            SchoolCategoryID = 1,
+            OrganizationName = "School A",
+            EstablishmentYear = "96"
+        };
+        Assert.Equal("Establishment year must be 4 digits.", OrganizationService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_RejectsInvalidWebsite()
+    {
+        var request = new SaveOrganizationRequestDto
+        {
+            BusinessCategoryID = 2,
+            UnderOrgID = 3,
+            SchoolCategoryID = 1,
+            OrganizationName = "School A",
+            WebSite = "not-a-url"
+        };
+        Assert.Equal("Enter a valid website URL.", OrganizationService.ValidateSave(request));
+    }
 }

@@ -372,7 +372,10 @@ export class TeacherService {
       appPassword: '',
       closeFlag: Boolean(r['closeFlag'] ?? r['CloseFlag'] ?? false),
       isActive: Boolean(r['isActive'] ?? r['IsActive'] ?? true),
-      createdAt: this.toDateInput(r['createdAt'] ?? r['CreatedAt']),
+      createdDate: this.toDateTimeDisplay(r['createdDate'] ?? r['CreatedDate']),
+      modifiedDate: this.toDateTimeDisplay(r['modifiedDate'] ?? r['ModifiedDate']),
+      createdUserID: (r['createdUserID'] ?? r['CreatedUserID'] ?? null) as number | null,
+      modifiedUserID: (r['modifiedUserID'] ?? r['ModifiedUserID'] ?? null) as number | null,
       documents: documents.map((d, i) => this.mapDocumentLine(d, i)),
       schools: schools.map((s, i) => this.mapSchoolLine(s, i))
     };
@@ -397,6 +400,8 @@ export class TeacherService {
     const s = raw as Record<string, unknown>;
     return {
       rowId: `sch-${index}`,
+      userSchoolID: (s['userSchoolID'] ?? s['UserSchoolID'] ?? null) as number | null,
+      userID: (s['userID'] ?? s['UserID'] ?? null) as number | null,
       srNo: Number(s['srNo'] ?? s['SrNo'] ?? index + 1),
       orgID: (s['orgID'] ?? s['OrgID'] ?? null) as number | null,
       schoolCode: (s['schoolCode'] ?? s['SchoolCode'] ?? null) as number | null,
@@ -414,5 +419,11 @@ export class TeacherService {
     if (!value) return '';
     const text = String(value);
     return text.length >= 10 ? text.slice(0, 10) : text;
+  }
+
+  private toDateTimeDisplay(value: unknown): string {
+    if (!value) return '';
+    const text = String(value).replace('T', ' ');
+    return text.length >= 19 ? text.slice(0, 19) : text;
   }
 }

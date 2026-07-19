@@ -6,8 +6,11 @@ namespace SmartEPR.Core.DTOs.Master;
 public sealed class ClassMasterDto
 {
     public long ClassID { get; init; }
+    public long OrgID { get; init; }
+    public long SrNo { get; init; }
     public string ClassName { get; init; } = string.Empty;
     public bool IsActive { get; init; }
+    public string? OrganizationName { get; init; }
 }
 
 public sealed class SaveClassRequestDto
@@ -15,11 +18,32 @@ public sealed class SaveClassRequestDto
     [JsonPropertyName("classID")]
     public long ClassID { get; set; }
 
+    [JsonPropertyName("orgID")]
+    public long OrgID { get; set; }
+
+    [JsonPropertyName("srNo")]
+    public long SrNo { get; set; }
+
     [JsonPropertyName("className")]
     public string ClassName { get; set; } = string.Empty;
 
     [JsonPropertyName("isActive")]
     public bool IsActive { get; set; } = true;
+}
+
+public sealed class ImportClassRequestDto
+{
+    [JsonPropertyName("destinationOrgID")]
+    public long DestinationOrgID { get; set; }
+
+    [JsonPropertyName("classIds")]
+    public IReadOnlyList<long> ClassIds { get; set; } = [];
+}
+
+public sealed class ImportClassResultDto
+{
+    public int ImportedCount { get; init; }
+    public int SkippedCount { get; init; }
 }
 
 public sealed class SubjectMasterDto

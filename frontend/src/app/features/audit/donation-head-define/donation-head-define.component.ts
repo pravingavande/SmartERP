@@ -46,14 +46,12 @@ export class DonationHeadDefineComponent {
     this.lookupsLoading.set(true);
     forkJoin({
       lookups: this.audit.getLookups(),
-      heads: this.donation.getDRHeadMaster(),
       profile: this.dashboardService.getProfile()
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ lookups, heads, profile }) => {
+      .subscribe(({ lookups, profile }) => {
         this.lookupsLoading.set(false);
         this.lookups.set(lookups);
-        this.allHeads.set(heads);
         if (!lookups?.orgs?.length) {
           this.errorMessage.set('No schools found for your login.');
           return;
@@ -61,7 +59,7 @@ export class DonationHeadDefineComponent {
         const orgId = this.resolveDefaultOrgId(lookups, profile);
         if (orgId) {
           this.selectedOrgID.set(orgId);
-          this.loadMapping(orgId);
+          this.loadHeadsAndMapping(orgId);
         }
       });
   }
@@ -83,8 +81,22 @@ export class DonationHeadDefineComponent {
     this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
     this.errorMessage.set(null);
     this.saveError.set(null);
-    if (orgId) this.loadMapping(orgId);
-    else this.selectedHeadIds.set(new Set());
+    if (orgId) this.loadHeadsAndMapping(orgId);
+    else {
+      this.allHeads.set([]);
+      this.selectedHeadIds.set(new Set());
+    }
+  }
+
+  private loadHeadsAndMapping(orgId: number): void {
+    // Show all active heads for define (master is UnderOrg-scoped; define maps to school).
+    this.donation
+      .getDRHeadMaster()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((heads) => {
+        this.allHeads.set(heads);
+        this.loadMapping(orgId);
+      });
   }
 
   fieldError(key: string): string | null {

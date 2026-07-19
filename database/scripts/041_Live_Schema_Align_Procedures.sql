@@ -164,7 +164,8 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        us.TID,
+        us.UserSchoolID,
+        us.UserID,
         us.SrNo,
         us.OrgID,
         CAST(NULL AS BIGINT) AS SchoolCode,
@@ -176,7 +177,7 @@ BEGIN
         CAST(NULL AS NVARCHAR(255)) AS SansthaTransferOrderNoAndDate,
         CAST(NULL AS NVARCHAR(255)) AS ZPTransferOrderNoAndDate
     FROM dbo.UserSchool us
-    WHERE us.TID = @UserID
+    WHERE us.UserID = @UserID
     ORDER BY us.SrNo;
 END
 GO
@@ -291,7 +292,7 @@ BEGIN
     END
 
     DELETE FROM dbo.UserDocument WHERE UserID = @UserID;
-    DELETE FROM dbo.UserSchool WHERE TID = @UserID;
+    DELETE FROM dbo.UserSchool WHERE UserID = @UserID;
 
     IF OBJECT_ID('dbo.UserEducation', 'U') IS NOT NULL
         DELETE FROM dbo.UserEducation WHERE UserID = @UserID;
@@ -353,7 +354,7 @@ BEGIN
     IF @SchoolsJson IS NOT NULL AND ISJSON(@SchoolsJson) = 1
     BEGIN
         INSERT INTO dbo.UserSchool (
-            TID,
+            UserID,
             SrNo,
             OrgID,
             DesignationID,

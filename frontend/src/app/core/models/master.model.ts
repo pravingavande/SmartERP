@@ -8,14 +8,24 @@ export interface ApiResponse<T> {
 
 export interface ClassMasterItem {
   classID: number;
+  orgID: number;
+  srNo: number;
   className: string;
   isActive: boolean;
+  organizationName?: string | null;
 }
 
 export interface ClassFormState {
   classID: number | null;
+  orgID: number | null;
+  srNo: number | null;
   className: string;
   isActive: boolean;
+}
+
+export interface ImportClassResult {
+  importedCount: number;
+  skippedCount: number;
 }
 
 export interface SubjectMasterItem {

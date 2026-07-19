@@ -5,8 +5,11 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 import {
   AccountRegisterDefine,
+  AccountRegisterFormState,
+  AccountRegisterMaster,
   AccountRegisterMasterOption,
   AccountRegisterOption,
+  ImportAccountRegisterResult,
   ApiResponse,
   AuditDashboardPage,
   AuditDashboardRow,
@@ -260,11 +263,87 @@ export class AuditService {
     );
   }
 
-  getAccountRegisterMaster(): Observable<AccountRegisterMasterOption[]> {
-    return this.http.get<ApiResponse<AccountRegisterMasterOption[]>>(`${this.base}/account-register-master`).pipe(
-      map((r) => (r.success && r.data ? r.data : [])),
+  getAccountRegisterMaster(underOrgId?: number | null): Observable<AccountRegisterMasterOption[]> {
+    let params = new HttpParams();
+    if (underOrgId) params = params.set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<AccountRegisterMasterOption[]>>(`${this.base}/account-register-master`, { params }).pipe(
+      map((r) =>
+        r.success && r.data
+          ? r.data.map((item) => this.normalizeAccountRegisterMasterOption(item))
+          : []
+      ),
       catchError(() => of([]))
     );
+  }
+
+  getAccountRegisterList(underOrgId: number): Observable<AccountRegisterMaster[]> {
+    const params = new HttpParams().set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<AccountRegisterMaster[]>>(`${this.base}/account-register-master/list`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data.map((item) => this.normalizeAccountRegisterMaster(item)) : [])),
+      catchError(() => of([]))
+    );
+  }
+
+  getNextAccountRegisterSrNo(underOrgId: number): Observable<number> {
+    const params = new HttpParams().set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<number>>(`${this.base}/account-register-master/next-sr-no`, { params }).pipe(
+      map((r) => (r.success && r.data ? r.data : 1)),
+      catchError(() => of(1))
+    );
+  }
+
+  saveAccountRegister(form: AccountRegisterFormState): Observable<{ data: AccountRegisterMaster | null; message: string | null }> {
+    const payload = {
+      accountRegisterID: form.accountRegisterID,
+      underOrgID: form.underOrgID,
+      srNo: form.srNo,
+      accountRegister: form.accountRegister.trim(),
+      isActive: form.isActive
+    };
+    return this.http.post<ApiResponse<AccountRegisterMaster>>(`${this.base}/account-register-master`, payload).pipe(
+      map((r) => ({
+        data: r.success && r.data ? this.normalizeAccountRegisterMaster(r.data) : null,
+        message: r.success ? null : (r.message ?? 'Unable to save account register.')
+      })),
+      catchError(() => of({ data: null, message: 'Unable to save account register.' }))
+    );
+  }
+
+  deleteAccountRegister(accountRegisterId: number): Observable<{ success: boolean; message?: string }> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.base}/account-register-master/${accountRegisterId}`).pipe(
+      map((r) => ({ success: !!r.success, message: r.message ?? undefined })),
+      catchError(() => of({ success: false, message: 'Unable to delete account register.' }))
+    );
+  }
+
+  importAccountRegisters(
+    destinationUnderOrgId: number,
+    accountRegisterIds: number[]
+  ): Observable<{ data: ImportAccountRegisterResult | null; message: string | null }> {
+    const payload = {
+      destinationUnderOrgID: destinationUnderOrgId,
+      accountRegisterIds
+    };
+    return this.http
+      .post<ApiResponse<ImportAccountRegisterResult & { ImportedCount?: number; SkippedCount?: number }>>(
+        `${this.base}/account-register-master/import`,
+        payload
+      )
+      .pipe(
+        map((r) => {
+          if (!r.success || !r.data) {
+            return { data: null, message: r.message ?? 'Unable to import account registers.' };
+          }
+          return {
+            data: {
+              importedCount: Number(r.data.importedCount ?? r.data.ImportedCount ?? 0),
+              skippedCount: Number(r.data.skippedCount ?? r.data.SkippedCount ?? 0)
+            },
+            message: r.message ?? null
+          };
+        }),
+        catchError(() => of({ data: null, message: 'Unable to import account registers.' }))
+      );
   }
 
   getAccountRegisterDefine(orgId: number): Observable<AccountRegisterDefine | null> {
@@ -346,6 +425,44 @@ export class AuditService {
       accountRegisterID: raw.accountRegisterID ?? raw.AccountRegisterID ?? 0,
       accountRegister: raw.accountRegister ?? raw.AccountRegister ?? '',
       orgID: raw.orgID ?? raw.OrgID ?? 0
+    };
+  }
+
+  private normalizeAccountRegisterMasterOption(
+    raw: AccountRegisterMasterOption & {
+      AccountRegisterID?: number;
+      UnderOrgID?: number | null;
+      SrNo?: number | null;
+      AccountRegister?: string;
+      IsActive?: boolean;
+    }
+  ): AccountRegisterMasterOption {
+    return {
+      accountRegisterID: raw.accountRegisterID ?? raw.AccountRegisterID ?? 0,
+      underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? null,
+      srNo: raw.srNo ?? raw.SrNo ?? null,
+      accountRegister: raw.accountRegister ?? raw.AccountRegister ?? '',
+      isActive: raw.isActive ?? raw.IsActive ?? true
+    };
+  }
+
+  private normalizeAccountRegisterMaster(
+    raw: AccountRegisterMaster & {
+      AccountRegisterID?: number;
+      UnderOrgID?: number;
+      SrNo?: number;
+      AccountRegister?: string;
+      IsActive?: boolean;
+      OrganizationName?: string | null;
+    }
+  ): AccountRegisterMaster {
+    return {
+      accountRegisterID: raw.accountRegisterID ?? raw.AccountRegisterID ?? 0,
+      underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? 0,
+      srNo: raw.srNo ?? raw.SrNo ?? 0,
+      accountRegister: raw.accountRegister ?? raw.AccountRegister ?? '',
+      isActive: raw.isActive ?? raw.IsActive ?? true,
+      organizationName: raw.organizationName ?? raw.OrganizationName ?? null
     };
   }
 

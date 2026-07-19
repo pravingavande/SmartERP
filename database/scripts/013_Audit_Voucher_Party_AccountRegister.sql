@@ -197,16 +197,21 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_Audit_GetAccountRegisterMaster
+    @UnderOrgID BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT
         arm.AccountRegisterID,
-        arm.AccountRegister
+        arm.UnderOrgID,
+        arm.SrNo,
+        arm.AccountRegister,
+        arm.IsActive
     FROM dbo.ACAccountRegisterMaster arm
-    WHERE arm.IsActive = 1
-    ORDER BY arm.AccountRegister;
+    WHERE ISNULL(arm.IsActive, 1) = 1
+      AND (@UnderOrgID IS NULL OR arm.UnderOrgID = @UnderOrgID)
+    ORDER BY arm.SrNo, arm.AccountRegister, arm.AccountRegisterID;
 END
 GO
 
