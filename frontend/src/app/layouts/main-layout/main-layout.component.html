@@ -14,7 +14,6 @@
       @if (!sidebarCollapsed()) {
         <div class="brand-text">
           <span class="brand-name">SmartERP</span>
-          <span class="brand-tagline">School &amp; Sanstha Portal</span>
         </div>
       }
     </div>
@@ -35,6 +34,7 @@
                 [class.nav-link-highlight]="item.highlight"
                 [routerLink]="item.route"
                 routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
                 [title]="item.label"
                 (click)="closeSidebarIfMobile()"
               >
@@ -67,13 +67,6 @@
           <span>Logout</span>
         }
       </button>
-
-      @if (!sidebarCollapsed()) {
-        <div class="sidebar-footer-note">
-          <span>Group of Schools</span>
-          <span>Sanstha Dashboard</span>
-        </div>
-      }
     </div>
   </aside>
 
@@ -86,11 +79,10 @@
           <span></span>
         </button>
         <div class="portal-title">
-          <span class="portal-heading">School + Sanstha Dashboard</span>
           @if (profile(); as p) {
-            <span class="portal-sub">{{ p.schoolName || p.sansthaName || 'Education Management Portal' }}</span>
+            <span class="portal-heading">{{ p.schoolName || p.sansthaName || 'SmartERP' }}</span>
           } @else {
-            <span class="portal-sub">Education Management Portal</span>
+            <span class="portal-heading">SmartERP</span>
           }
         </div>
       </div>
@@ -167,8 +159,6 @@
       <div class="footer-body">
         <div class="footer-brand">
           <strong>SmartERP</strong>
-          <span class="footer-tag">School &amp; Sanstha (Group of Schools) Dashboard</span>
-          <span class="footer-copy">&copy; {{ currentYear }} All Rights Reserved</span>
         </div>
 
         <div class="footer-credit">

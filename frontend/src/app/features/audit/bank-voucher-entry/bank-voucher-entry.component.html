@@ -219,7 +219,7 @@
                         <td class="ledger-col" [class.cell-invalid]="!!fieldErrors()['ledgerHeadId']">
                           <select
                             [disabled]="isViewMode()"
-                            [ngModel]="form().details[0]?.ledgerHeadId"
+                            [ngModel]="form().details[0].ledgerHeadId"
                             (ngModelChange)="onLedgerHeadChange($event ? +$event : null)"
                             name="ledgerHeadId"
                           >
@@ -237,7 +237,7 @@
                             class="narration-input"
                             list="bankNarrationList"
                             [disabled]="isViewMode()"
-                            [ngModel]="form().details[0]?.ledgerHeadNarration"
+                            [ngModel]="form().details[0].ledgerHeadNarration"
                             (ngModelChange)="onNarrationChange($event)"
                             name="narration"
                             placeholder="Narration"
@@ -253,7 +253,7 @@
                             appMarathiNumber
                             mode="decimal"
                             [disabled]="isViewMode()"
-                            [ngModel]="form().details[0]?.amount"
+                            [ngModel]="form().details[0].amount"
                             (ngModelChange)="onAmountChange($event)"
                             name="amount"
                             placeholder="0.00"
@@ -270,7 +270,7 @@
                           {{ isDeposit() ? 'Deposit Amount' : 'Withdraw Amount' }}
                         </td>
                         <td class="total-value amount-col">
-                          {{ (form().details[0]?.amount || 0) | currency:'INR':'symbol':'1.2-2' }}
+                          {{ (form().details[0].amount || 0) | currency:'INR':'symbol':'1.2-2' }}
                         </td>
                       </tr>
                     </tfoot>

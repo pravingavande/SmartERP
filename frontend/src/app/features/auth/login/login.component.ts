@@ -15,8 +15,6 @@ export type LoginPortal = 'school' | 'sanstha' | 'default';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginComponent {
-  readonly currentYear = new Date().getFullYear();
-
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);

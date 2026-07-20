@@ -6,20 +6,18 @@
       <span class="stripe green"></span>
     </div>
     <div class="banner-content">
-      <div class="banner-badges">
-        <span class="badge-item">School Dashboard</span>
-        <span class="badge-sep">+</span>
-        <span class="badge-item">Sanstha Dashboard</span>
-      </div>
-      <div class="sanstha-label">Sanstha Name</div>
-      <h2>{{ sessionUser()?.sansthaName || summary()?.sansthaName || p.sansthaName || '—' }}</h2>
+      <p class="org-line sanstha-line">
+        <span class="org-label">Sanstha Name</span>
+        <span class="org-sep">-</span>
+        <strong class="org-value">{{ sessionUser()?.sansthaName || summary()?.sansthaName || p.sansthaName || '—' }}</strong>
+      </p>
       @if (sessionUser()?.schoolName || p.schoolName) {
-        <p class="school-line">
-          <span class="school-label">School</span>
-          <strong>{{ sessionUser()?.schoolName || p.schoolName }}</strong>
+        <p class="org-line school-line">
+          <span class="org-label">School</span>
+          <span class="org-sep">-</span>
+          <strong class="org-value">{{ sessionUser()?.schoolName || p.schoolName }}</strong>
         </p>
       }
-      <p class="welcome-line">Group of Schools — Education Management Portal</p>
     </div>
   </section>
 } @else {
@@ -115,7 +113,7 @@
     @if (pendingReporting().pendingCount > 0) {
       <section class="pending-events-widget">
         <h3>Pending Event Reporting</h3>
-        <a class="pending-count-link" [routerLink]="['/event-calendar']" [queryParams]="{ pendingEventId: pendingReporting().items[0]?.eventID }">
+        <a class="pending-count-link" [routerLink]="['/event-calendar']" [queryParams]="{ pendingEventId: pendingReporting().items[0].eventID }">
           <span class="pending-count">{{ pendingReporting().pendingCount }}</span>
           <span>events need reporting</span>
         </a>

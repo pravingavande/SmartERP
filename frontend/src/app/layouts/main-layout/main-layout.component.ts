@@ -19,8 +19,6 @@ import { TicketPendingModalComponent } from '../../shared/components/ticket-pend
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MainLayoutComponent {
-  readonly currentYear = new Date().getFullYear();
-
   private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
   private readonly ticketService = inject(TicketService);
@@ -64,8 +62,7 @@ export class MainLayoutComponent {
         {
           label: 'School Dashboard',
           icon: 'school-dashboard',
-          route: '/school-dashboard',
-          highlight: true
+          route: '/school-dashboard'
         }
       ]
     },
