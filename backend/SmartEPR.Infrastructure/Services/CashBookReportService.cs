@@ -14,10 +14,14 @@ public sealed class CashBookReportService : ICashBookReportService
     private static readonly CultureInfo InCulture = CultureInfo.CreateSpecificCulture("en-IN");
 
     private readonly ICashBookReportRepository _repository;
+    private readonly IAuditVoucherRepository _auditRepository;
 
-    public CashBookReportService(ICashBookReportRepository repository)
+    public CashBookReportService(
+        ICashBookReportRepository repository,
+        IAuditVoucherRepository auditRepository)
     {
         _repository = repository;
+        _auditRepository = auditRepository;
     }
 
     public async Task<byte[]?> RenderCashBookPdfAsync(CashBookReportFilterDto filter, CancellationToken cancellationToken = default)
@@ -25,7 +29,19 @@ public sealed class CashBookReportService : ICashBookReportService
         if (filter.OrgID <= 0 || filter.FromDate is null || filter.ToDate is null)
             return null;
 
-        var (header, lines) = await _repository.GetReportAsync(filter, cancellationToken).ConfigureAwait(false);
+        var accountRegisterId = await ResolveAccountRegisterIdAsync(filter, cancellationToken).ConfigureAwait(false);
+        if (accountRegisterId <= 0)
+            return null;
+
+        var resolvedFilter = new CashBookReportFilterDto
+        {
+            OrgID = filter.OrgID,
+            FromDate = filter.FromDate,
+            ToDate = filter.ToDate,
+            AccountRegisterID = accountRegisterId
+        };
+
+        var (header, lines) = await _repository.GetReportAsync(resolvedFilter, cancellationToken).ConfigureAwait(false);
         if (header is null) return null;
 
         var displayRows = BuildDisplayRows(header, lines);
@@ -68,6 +84,39 @@ public sealed class CashBookReportService : ICashBookReportService
         }
 
         return RenderRdlc(reportRows);
+    }
+
+    /// <summary>
+    /// When AccountRegisterID is not supplied, use the school's available register
+    /// (prefer Cash Book / रोख किर्द by name; otherwise first active register for that org/sanstha).
+    /// Hard-coding ID=1 fails after import because each sanstha gets its own AccountRegisterID.
+    /// </summary>
+    private async Task<long> ResolveAccountRegisterIdAsync(
+        CashBookReportFilterDto filter,
+        CancellationToken cancellationToken)
+    {
+        if (filter.AccountRegisterID > 0)
+            return filter.AccountRegisterID;
+
+        var registers = await _auditRepository
+            .GetAccountRegistersAsync(filter.OrgID, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (registers.Count == 0)
+            return 0;
+
+        var cashBook = registers.FirstOrDefault(r => IsCashBookRegisterName(r.AccountRegister));
+        return cashBook?.AccountRegisterID ?? registers[0].AccountRegisterID;
+    }
+
+    private static bool IsCashBookRegisterName(string? name)
+    {
+        var text = (name ?? string.Empty).Trim();
+        if (text.Length == 0) return false;
+        // Prefer explicit cash-book labels (avoid matching every *किर्द* register).
+        return text.Contains("रोख", StringComparison.Ordinal)
+            || text.Contains("Cash Book", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(text, "Cash", StringComparison.OrdinalIgnoreCase);
     }
 
     private static byte[]? RenderRdlc(IReadOnlyList<CashBookReportRow> rows)

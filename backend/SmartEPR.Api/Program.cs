@@ -50,7 +50,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/ticket"))
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    (path.StartsWithSegments("/hubs/ticket") || path.StartsWithSegments("/api/hubs/ticket")))
                     context.Token = accessToken;
                 return Task.CompletedTask;
             }
@@ -90,6 +91,7 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<TicketHub>("/api/hubs/ticket");
 app.MapHub<TicketHub>("/hubs/ticket");
 
 app.Run();

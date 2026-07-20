@@ -25,8 +25,8 @@ export class TicketNotificationService {
     const hubUrl = `${environment.apiBaseUrl}/hubs/ticket`;
     this.connection = new HubConnectionBuilder()
       .withUrl(hubUrl, { accessTokenFactory: () => token })
-      .withAutomaticReconnect()
-      .configureLogging(LogLevel.Information)
+      .withAutomaticReconnect([0, 2000, 10000])
+      .configureLogging(LogLevel.None)
       .build();
 
     this.connection.on('TicketCreated', (payload: TicketNotificationPayload) => {

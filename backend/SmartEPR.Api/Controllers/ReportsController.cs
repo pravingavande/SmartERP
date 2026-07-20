@@ -42,7 +42,7 @@ public sealed class ReportsController : ControllerBase
                 OrgID = orgId.Value,
                 FromDate = fromDate,
                 ToDate = toDate,
-                AccountRegisterID = accountRegisterId is > 0 ? accountRegisterId.Value : 1
+                AccountRegisterID = accountRegisterId is > 0 ? accountRegisterId.Value : 0
             },
             cancellationToken).ConfigureAwait(false);
 

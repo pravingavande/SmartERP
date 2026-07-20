@@ -1,0 +1,37 @@
+.global-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(1px);
+}
+
+.global-loader__card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.22);
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.global-loader__spinner {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 2.5px solid #e2e8f0;
+  border-top-color: #ea580c;
+  border-radius: 50%;
+  animation: global-loader-spin 0.7s linear infinite;
+}
+
+@keyframes global-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

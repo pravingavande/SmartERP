@@ -26,7 +26,7 @@ public sealed class CashBookReportRepository : ICashBookReportRepository
         p.Add("@OrgID", filter.OrgID);
         p.Add("@FromDate", filter.FromDate?.Date);
         p.Add("@ToDate", filter.ToDate?.Date);
-        p.Add("@AccountRegisterID", filter.AccountRegisterID <= 0 ? 1 : filter.AccountRegisterID);
+        p.Add("@AccountRegisterID", filter.AccountRegisterID);
 
         using var multi = await connection.QueryMultipleAsync(
             new CommandDefinition(

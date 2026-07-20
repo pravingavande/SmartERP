@@ -24,6 +24,21 @@ if ($LASTEXITCODE -ne 0) { throw 'API publish failed.' }
 Copy-Item $prodSettings (Join-Path $apiOut 'appsettings.Production.json') -Force
 Copy-Item $iisSettings (Join-Path $apiOut 'appsettings.IIS.json') -Force
 
+# Ensure base appsettings CORS includes Firebase (IIS may run without Production env).
+$baseSettings = Join-Path $apiOut 'appsettings.json'
+if (Test-Path $baseSettings) {
+  $json = Get-Content $baseSettings -Raw | ConvertFrom-Json
+  $json.Cors = @{
+    AllowedOrigins = @(
+      'http://localhost:4200',
+      'https://smartepr.web.app',
+      'https://smartepr.firebaseapp.com',
+      'https://smarterp.pathsoft.in',
+      'http://smarterp.pathsoft.in'
+    )
+  }
+  $json | ConvertTo-Json -Depth 8 | Set-Content $baseSettings -Encoding UTF8
+}
 $note = @"
 SmartEPR API — IIS deployment
 =============================
