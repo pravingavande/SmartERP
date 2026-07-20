@@ -16,6 +16,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapBackendMessageToFieldErrors, validateLedgerHeadForm } from '../../../core/utils/master-validation.util';
+import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
@@ -51,7 +52,7 @@ export class LedgerHeadMasterComponent {
   readonly importSourceItems = signal<LedgerHeadMaster[]>([]);
   readonly importSelectedIds = signal<Set<number>>(new Set());
   /** Import popup language filter: Marathi (Devanagari) vs English (Latin) names. */
-  readonly importLanguage = signal<'M' | 'E'>('M');
+  readonly importLanguage = signal<ImportLanguage>('M');
   readonly listOrgID = signal<number | null>(null);
   readonly listLedgerTypeID = signal<number | null>(null);
   readonly listPageSize = signal(10);
@@ -67,7 +68,7 @@ export class LedgerHeadMasterComponent {
   readonly importSelectedCount = computed(() => this.importSelectedIds().size);
   readonly filteredImportSourceItems = computed(() => {
     const lang = this.importLanguage();
-    return this.importSourceItems().filter((item) => this.matchesImportLanguage(item.ledgerHead, lang));
+    return this.importSourceItems().filter((item) => matchesImportLanguage(item.ledgerHead, lang));
   });
   readonly importAllSelected = computed(() => {
     const items = this.filteredImportSourceItems();
@@ -329,7 +330,7 @@ export class LedgerHeadMasterComponent {
     this.importLanguage.set('M');
   }
 
-  onImportLanguageChange(lang: 'M' | 'E'): void {
+  onImportLanguageChange(lang: ImportLanguage): void {
     this.importLanguage.set(lang);
     const visibleIds = new Set(this.filteredImportSourceItems().map((x) => x.ledgerHeadID));
     this.importSelectedIds.update((selected) => {
@@ -360,13 +361,6 @@ export class LedgerHeadMasterComponent {
 
   unselectAllImport(): void {
     this.importSelectedIds.set(new Set());
-  }
-
-  private matchesImportLanguage(ledgerHead: string | null | undefined, lang: 'M' | 'E'): boolean {
-    const name = (ledgerHead ?? '').trim();
-    if (!name) return false;
-    const isMarathi = /[\u0900-\u097F]/.test(name);
-    return lang === 'M' ? isMarathi : !isMarathi;
   }
 
   confirmImport(): void {

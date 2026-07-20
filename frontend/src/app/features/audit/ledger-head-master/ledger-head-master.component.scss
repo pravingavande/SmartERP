@@ -8,25 +8,6 @@
   align-items: center;
 }
 
-.import-lang-field {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  min-width: 11rem;
-
-  .field-label {
-    margin: 0;
-    white-space: nowrap;
-    font-size: 0.875rem;
-  }
-
-  .field-control {
-    min-width: 7.5rem;
-  }
-}
-
 .master-modal-wide {
   width: min(100%, 640px);
 }

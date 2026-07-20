@@ -172,6 +172,11 @@
         </header>
         <div class="master-modal-form">
           <div class="import-toolbar">
+            <div class="import-toolbar-left">
+              <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !filteredImportSourceItems().length">Select All</button>
+              <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
+              <span class="hint">Showing: {{ filteredImportSourceItems().length }} · Selected: {{ importSelectedCount() }}</span>
+            </div>
             <label class="field import-lang-field">
               <span class="field-label">Language</span>
               <select
@@ -184,9 +189,6 @@
                 <option value="E">English</option>
               </select>
             </label>
-            <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !filteredImportSourceItems().length">Select All</button>
-            <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
-            <span class="hint">Showing: {{ filteredImportSourceItems().length }} · Selected: {{ importSelectedCount() }}</span>
           </div>
           @if (importSourceLoading()) {
             <p class="loading-hint">Loading source ledger heads...</p>

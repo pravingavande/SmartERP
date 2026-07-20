@@ -240,3 +240,32 @@
   align-items: center;
   margin-bottom: 0.75rem;
 }
+
+.import-toolbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.import-lang-field {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0 auto;
+  min-width: 11rem;
+  flex: 0 0 auto;
+
+  .field-label {
+    margin: 0;
+    white-space: nowrap;
+    font-size: 0.875rem;
+  }
+
+  .field-control {
+    min-width: 7.5rem;
+  }
+}

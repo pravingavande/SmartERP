@@ -880,10 +880,11 @@ BEGIN
 
     IF @StockID IS NULL OR @StockID = 0
     BEGIN
-        INSERT INTO dbo.StockRegister (OrgID, ItemID, Qty, Rate, Amount, Remark)
-        VALUES (@OrgID, @ItemID, @Qty, @Rate, @Amount, @Remark);
+        SELECT @StockID = ISNULL(MAX(st.StockID), 0) + 1
+        FROM dbo.StockRegister st WITH (UPDLOCK, HOLDLOCK);
 
-        SET @StockID = SCOPE_IDENTITY();
+        INSERT INTO dbo.StockRegister (StockID, OrgID, ItemID, Qty, Rate, Amount, Remark)
+        VALUES (@StockID, @OrgID, @ItemID, @Qty, @Rate, @Amount, @Remark);
     END
     ELSE
     BEGIN
