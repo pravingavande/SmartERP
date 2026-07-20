@@ -20,19 +20,23 @@ public sealed class MasterController : ControllerBase
     };
 
     private const string AcademicScheduleFeature = "AcademicSchedule";
+    private static readonly HashSet<int> AdminOwnerRoleIds = [1, 2];
 
     private readonly IMasterService _masterService;
     private readonly ISettingsService _settingsService;
     private readonly ILocalFileStorage _fileStorage;
+    private readonly IUserRepository _userRepository;
 
     public MasterController(
         IMasterService masterService,
         ISettingsService settingsService,
-        ILocalFileStorage fileStorage)
+        ILocalFileStorage fileStorage,
+        IUserRepository userRepository)
     {
         _masterService = masterService;
         _settingsService = settingsService;
         _fileStorage = fileStorage;
+        _userRepository = userRepository;
     }
 
     [HttpGet("class")]
@@ -245,6 +249,20 @@ public sealed class MasterController : ControllerBase
             : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete item group."));
     }
 
+    [HttpPost("item-group/import")]
+    public async Task<IActionResult> ImportItemGroups([FromBody] ImportItemGroupRequestDto request, CancellationToken cancellationToken)
+    {
+        if (!await IsAdminOrOwnerAsync(cancellationToken).ConfigureAwait(false))
+            return Ok(ApiResponse<ImportClassResultDto>.Fail("Only Admin or Owner users can import item groups."));
+
+        var (data, error) = await _masterService.ImportItemGroupsAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import item groups."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(
+                data,
+                $"Imported {data.ImportedCount} item group(s). Skipped {data.SkippedCount}."));
+    }
+
     [HttpGet("item")]
     public async Task<IActionResult> GetItemList([FromQuery] long orgId, [FromQuery] string? search, CancellationToken cancellationToken)
     {
@@ -268,6 +286,20 @@ public sealed class MasterController : ControllerBase
         return success
             ? Ok(ApiResponse<bool>.Ok(true, "Item deleted."))
             : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete item."));
+    }
+
+    [HttpPost("item/import")]
+    public async Task<IActionResult> ImportItems([FromBody] ImportItemRequestDto request, CancellationToken cancellationToken)
+    {
+        if (!await IsAdminOrOwnerAsync(cancellationToken).ConfigureAwait(false))
+            return Ok(ApiResponse<ImportClassResultDto>.Fail("Only Admin or Owner users can import items."));
+
+        var (data, error) = await _masterService.ImportItemsAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import items."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(
+                data,
+                $"Imported {data.ImportedCount} item(s). Skipped {data.SkippedCount}."));
     }
 
     [HttpGet("stock")]
@@ -337,5 +369,14 @@ public sealed class MasterController : ControllerBase
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
         return long.TryParse(claim, out userId);
+    }
+
+    private async Task<bool> IsAdminOrOwnerAsync(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return false;
+
+        var profile = await _userRepository.GetProfileByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        return profile?.UserRoleID is int roleId && AdminOwnerRoleIds.Contains(roleId);
     }
 }

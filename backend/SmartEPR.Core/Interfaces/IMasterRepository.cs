@@ -67,10 +67,12 @@ public interface IMasterService
     Task<IReadOnlyList<ItemGroupMasterDto>> GetItemGroupListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<(ItemGroupMasterDto? Data, string? Error)> SaveItemGroupAsync(SaveItemGroupRequestDto request, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteItemGroupAsync(long itemGroupId, CancellationToken cancellationToken = default);
+    Task<(ImportClassResultDto? Data, string? Error)> ImportItemGroupsAsync(ImportItemGroupRequestDto request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ItemMasterDto>> GetItemListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<(ItemMasterDto? Data, string? Error)> SaveItemAsync(SaveItemRequestDto request, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteItemAsync(long itemId, CancellationToken cancellationToken = default);
+    Task<(ImportClassResultDto? Data, string? Error)> ImportItemsAsync(ImportItemRequestDto request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<StockRegisterDto>> GetStockListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<(StockRegisterDto? Data, string? Error)> SaveStockAsync(SaveStockRequestDto request, CancellationToken cancellationToken = default);

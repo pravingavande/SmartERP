@@ -4,7 +4,12 @@
       <h1>Item Master</h1>
       <p>Manage inventory items by school</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Item</button>
+    <div class="header-actions">
+      @if (canImport()) {
+        <button type="button" class="btn btn-outline" (click)="openImport()">Import</button>
+      }
+      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Item</button>
+    </div>
   </header>
 
   <div class="list-filters">
@@ -115,6 +120,69 @@
             <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
           </footer>
         </form>
+      </div>
+    </div>
+  }
+
+  @if (importVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>Import Items</h2>
+          <p class="hint">Source: Organization 1 → Destination: {{ selectedOrgName() }}</p>
+        </header>
+        <div class="master-modal-form">
+          <div class="import-toolbar">
+            <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !importSourceItems().length">Select All</button>
+            <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
+            <span class="hint">Selected: {{ importSelectedCount() }}</span>
+          </div>
+          @if (importSourceLoading()) {
+            <p class="loading-hint">Loading source items...</p>
+          } @else {
+            <div class="records-table-wrap import-grid">
+              <table class="records-table import-table">
+                <thead>
+                  <tr>
+                    <th class="check-col">
+                      <input
+                        type="checkbox"
+                        [checked]="importAllSelected()"
+                        (change)="$any($event.target).checked ? selectAllImport() : unselectAllImport()"
+                        [attr.aria-label]="'Select all'"
+                      >
+                    </th>
+                    <th class="name-col">Item Name</th>
+                    <th>Item Group</th>
+                    <th>Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of importSourceItems(); track item.itemID) {
+                    <tr>
+                      <td class="check-col">
+                        <input
+                          type="checkbox"
+                          [checked]="isImportSelected(item.itemID)"
+                          (change)="toggleImportItem(item.itemID, $any($event.target).checked)"
+                        >
+                      </td>
+                      <td class="name-col">{{ item.itemName }}</td>
+                      <td>{{ item.itemGroupName || '—' }}</td>
+                      <td class="code">{{ item.rate | number:'1.2-2' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="4" class="empty">No source items found</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="closeImport()" [disabled]="importLoading()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirmImport()" [disabled]="importLoading() || importSelectedCount() === 0">Import</button>
+          </footer>
+        </div>
       </div>
     </div>
   }

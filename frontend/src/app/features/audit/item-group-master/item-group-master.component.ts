@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { InventoryLookups, ItemGroupFormState, ItemGroupMasterItem } from '../../../core/models/master.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { MasterService } from '../../../core/services/master.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -27,6 +28,7 @@ type FormMode = 'new' | 'edit';
 export class ItemGroupMasterComponent {
   private readonly master = inject(MasterService);
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -42,12 +44,39 @@ export class ItemGroupMasterComponent {
   readonly formSrNo = signal<number | null>(null);
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
+  readonly importVisible = signal(false);
+  readonly importLoading = signal(false);
+  readonly importSourceLoading = signal(false);
+  readonly importSourceItems = signal<ItemGroupMasterItem[]>([]);
+  readonly importSelectedIds = signal<Set<number>>(new Set());
   readonly listOrgID = signal<number | null>(null);
   readonly searchText = signal('');
   readonly sortKey = signal<keyof ItemGroupMasterItem>('itemGroupName');
   readonly sortDir = signal<SortDirection>('asc');
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
+
+  private static readonly ImportSourceOrgID = 1;
+
+  readonly canImport = computed(() => {
+    const orgId = this.listOrgID();
+    return (
+      this.auth.isSansthaAdmin() &&
+      orgId != null &&
+      orgId > 0 &&
+      orgId !== ItemGroupMasterComponent.ImportSourceOrgID
+    );
+  });
+  readonly importSelectedCount = computed(() => this.importSelectedIds().size);
+  readonly importAllSelected = computed(() => {
+    const items = this.importSourceItems();
+    const selected = this.importSelectedIds();
+    return items.length > 0 && items.every((x) => selected.has(x.itemGroupID));
+  });
+  readonly selectedOrgName = computed(() => {
+    const orgId = this.listOrgID();
+    return this.lookups()?.orgs?.find((o) => o.orgID === orgId)?.organizationName ?? '—';
+  });
 
   readonly filteredItems = computed(() => {
     const q = this.searchText().trim().toLowerCase();
@@ -88,6 +117,7 @@ export class ItemGroupMasterComponent {
     this.listOrgID.set(orgId);
     this.listPageIndex.set(0);
     this.closeForm();
+    this.closeImport();
     if (orgId) this.loadList();
     else this.items.set([]);
   }
@@ -181,6 +211,89 @@ export class ItemGroupMasterComponent {
     this.formMode.set('new');
     this.fieldErrors.set({});
     this.saveError.set(null);
+  }
+
+  openImport(): void {
+    const orgId = this.listOrgID();
+    if (!orgId) {
+      this.errorMessage.set('Select Org / School before importing.');
+      return;
+    }
+    if (!this.canImport()) {
+      this.errorMessage.set('Import is not available for your role or the source organization.');
+      return;
+    }
+    this.closeForm();
+    this.importVisible.set(true);
+    this.importSelectedIds.set(new Set());
+    this.importSourceLoading.set(true);
+    this.master
+      .getItemGroups(ItemGroupMasterComponent.ImportSourceOrgID)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((list) => {
+        this.importSourceLoading.set(false);
+        this.importSourceItems.set(list.filter((x) => x.isActive !== false));
+      });
+  }
+
+  closeImport(): void {
+    this.importVisible.set(false);
+    this.importLoading.set(false);
+    this.importSourceLoading.set(false);
+    this.importSourceItems.set([]);
+    this.importSelectedIds.set(new Set());
+  }
+
+  toggleImportItem(id: number, checked: boolean): void {
+    this.importSelectedIds.update((set) => {
+      const next = new Set(set);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  isImportSelected(id: number): boolean {
+    return this.importSelectedIds().has(id);
+  }
+
+  selectAllImport(): void {
+    this.importSelectedIds.set(new Set(this.importSourceItems().map((x) => x.itemGroupID)));
+  }
+
+  unselectAllImport(): void {
+    this.importSelectedIds.set(new Set());
+  }
+
+  confirmImport(): void {
+    const orgId = this.listOrgID();
+    const ids = Array.from(this.importSelectedIds());
+    if (!orgId || !this.canImport()) {
+      this.toast.showError('Select a destination organization first.', 'Import');
+      return;
+    }
+    if (!ids.length) {
+      this.toast.showError('Select at least one item group to import.', 'Import');
+      return;
+    }
+
+    this.importLoading.set(true);
+    this.master
+      .importItemGroups(orgId, ids)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ data, message }) => {
+        this.importLoading.set(false);
+        if (!data) {
+          this.toast.showError(message ?? 'Unable to import item groups.', 'Import failed');
+          return;
+        }
+        this.closeImport();
+        this.loadList();
+        this.toast.showSuccess(
+          message ?? `Imported ${data.importedCount} item group(s). Skipped ${data.skippedCount}.`,
+          'Imported'
+        );
+      });
   }
 
   onFormOrgChange(orgId: number | null): void {

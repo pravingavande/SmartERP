@@ -85,8 +85,22 @@
               [error]="fieldError('orgID')"
               (valueChange)="onFormOrgChange($event)"
             />
+            <label class="field">
+              <span class="field-label">Item Group</span>
+              <select
+                class="field-control"
+                [ngModel]="formItemGroupID()"
+                (ngModelChange)="onItemGroupChange($event ? +$event : null)"
+                name="itemGroupID"
+              >
+                <option [ngValue]="null">-- All Groups --</option>
+                @for (g of activeItemGroupOptions(); track g.itemGroupID) {
+                  <option [ngValue]="g.itemGroupID">{{ g.itemGroupName }}</option>
+                }
+              </select>
+            </label>
             <label class="field" [class.field-invalid]="fieldError('itemID')">
-              <span class="field-label">Item *</span>
+              <span class="field-label">Item Name *</span>
               <select class="field-control" required [ngModel]="form().itemID" (ngModelChange)="onItemChange($event ? +$event : null)" name="itemID">
                 <option [ngValue]="null">-- Select Item --</option>
                 @for (i of activeItemOptions(); track i.itemID) {

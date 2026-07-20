@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { InventoryLookups, ItemMasterItem, StockFormState, StockRegisterItem } from '../../../core/models/master.model';
+import { InventoryLookups, ItemGroupMasterItem, ItemMasterItem, StockFormState, StockRegisterItem } from '../../../core/models/master.model';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { MasterService } from '../../../core/services/master.service';
@@ -41,9 +41,12 @@ export class StockRegisterComponent {
   readonly saveError = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly lookups = signal<InventoryLookups | null>(null);
+  readonly itemGroupOptions = signal<ItemGroupMasterItem[]>([]);
   readonly itemOptions = signal<ItemMasterItem[]>([]);
   readonly items = signal<StockRegisterItem[]>([]);
   readonly form = signal<StockFormState>(this.emptyForm());
+  /** UI-only filter; not persisted on StockRegister. */
+  readonly formItemGroupID = signal<number | null>(null);
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
   readonly listOrgID = signal<number | null>(null);
@@ -53,7 +56,13 @@ export class StockRegisterComponent {
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
 
-  readonly activeItemOptions = computed(() => this.itemOptions().filter((i) => i.isActive));
+  readonly activeItemGroupOptions = computed(() => this.itemGroupOptions().filter((g) => g.isActive));
+  readonly activeItemOptions = computed(() => {
+    const groupId = this.formItemGroupID();
+    const items = this.itemOptions().filter((i) => i.isActive);
+    if (groupId == null) return items;
+    return items.filter((i) => i.itemGroupID === groupId);
+  });
 
   readonly computedAmount = computed(() => {
     const qty = Number(this.form().qty) || 0;
@@ -109,10 +118,21 @@ export class StockRegisterComponent {
     if (!orgId) {
       this.items.set([]);
       this.itemOptions.set([]);
+      this.itemGroupOptions.set([]);
       return;
     }
+    this.loadItemGroups(orgId);
     this.loadItemOptions(orgId);
     this.loadList();
+  }
+
+  loadItemGroups(orgId: number): void {
+    this.master
+      .getItemGroups(orgId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((list) => {
+        this.itemGroupOptions.set(list);
+      });
   }
 
   loadItemOptions(orgId: number): void {
@@ -174,6 +194,7 @@ export class StockRegisterComponent {
     this.errorMessage.set(null);
     this.fieldErrors.set({});
     this.saveError.set(null);
+    this.formItemGroupID.set(null);
     this.form.set({ ...this.emptyForm(), orgID: orgId });
   }
 
@@ -184,7 +205,6 @@ export class StockRegisterComponent {
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.listOrgID.set(item.orgID);
-    if (item.orgID) this.loadItemOptions(item.orgID);
     this.form.set({
       stockID: item.stockID,
       orgID: item.orgID,
@@ -194,6 +214,21 @@ export class StockRegisterComponent {
       amount: item.amount,
       remark: item.remark ?? ''
     });
+    if (!item.orgID) {
+      this.formItemGroupID.set(null);
+      return;
+    }
+    this.loadItemGroups(item.orgID);
+    this.itemsLoading.set(true);
+    this.master
+      .getItems(item.orgID)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((list) => {
+        this.itemsLoading.set(false);
+        this.itemOptions.set(list);
+        const matched = list.find((i) => i.itemID === item.itemID);
+        this.formItemGroupID.set(matched?.itemGroupID ?? null);
+      });
   }
 
   deleteEntry(item: StockRegisterItem): void {
@@ -219,22 +254,42 @@ export class StockRegisterComponent {
     this.formMode.set('new');
     this.fieldErrors.set({});
     this.saveError.set(null);
+    this.formItemGroupID.set(null);
   }
 
   onFormOrgChange(orgId: number | null): void {
     this.fieldErrors.update((e) => removeFieldError(e, 'orgID'));
     this.form.update((f) => ({ ...f, orgID: orgId, itemID: null }));
+    this.formItemGroupID.set(null);
     this.listOrgID.set(orgId);
     if (!orgId) {
       this.itemOptions.set([]);
+      this.itemGroupOptions.set([]);
       return;
     }
+    this.loadItemGroups(orgId);
     this.loadItemOptions(orgId);
+  }
+
+  onItemGroupChange(groupId: number | null): void {
+    this.formItemGroupID.set(groupId);
+    const currentItemId = this.form().itemID;
+    if (currentItemId == null) return;
+    const stillVisible = this.activeItemOptions().some((i) => i.itemID === currentItemId);
+    if (!stillVisible) {
+      this.form.update((f) => ({ ...f, itemID: null, amount: null }));
+    }
   }
 
   onItemChange(itemId: number | null): void {
     this.fieldErrors.update((e) => removeFieldError(e, 'itemID'));
-    const selected = this.activeItemOptions().find((i) => i.itemID === itemId) ?? null;
+    const selected =
+      this.itemOptions().find((i) => i.isActive && i.itemID === itemId) ??
+      this.itemOptions().find((i) => i.itemID === itemId) ??
+      null;
+    if (selected?.itemGroupID) {
+      this.formItemGroupID.set(selected.itemGroupID);
+    }
     this.form.update((f) => ({
       ...f,
       itemID: itemId,

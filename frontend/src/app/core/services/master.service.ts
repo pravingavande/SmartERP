@@ -286,6 +286,36 @@ export class MasterService {
     );
   }
 
+  importItemGroups(
+    destinationOrgId: number,
+    itemGroupIds: number[]
+  ): Observable<{ data: ImportClassResult | null; message: string | null }> {
+    const payload = {
+      destinationOrgID: destinationOrgId,
+      itemGroupIds
+    };
+    return this.http
+      .post<ApiResponse<ImportClassResult & { ImportedCount?: number; SkippedCount?: number }>>(
+        `${this.base}/item-group/import`,
+        payload
+      )
+      .pipe(
+        map((r) => {
+          if (!r.success || !r.data) {
+            return { data: null, message: r.message ?? 'Unable to import item groups.' };
+          }
+          return {
+            data: {
+              importedCount: Number(r.data.importedCount ?? r.data.ImportedCount ?? 0),
+              skippedCount: Number(r.data.skippedCount ?? r.data.SkippedCount ?? 0)
+            },
+            message: r.message ?? null
+          };
+        }),
+        catchError(() => of({ data: null, message: 'Unable to import item groups.' }))
+      );
+  }
+
   getItems(orgId: number, search?: string | null): Observable<ItemMasterItem[]> {
     let params = new HttpParams().set('orgId', orgId);
     if (search?.trim()) params = params.set('search', search.trim());
@@ -318,6 +348,36 @@ export class MasterService {
       map((r) => ({ success: !!r.success, message: r.message ?? undefined })),
       catchError(() => of({ success: false, message: 'Unable to delete item.' }))
     );
+  }
+
+  importItems(
+    destinationOrgId: number,
+    itemIds: number[]
+  ): Observable<{ data: ImportClassResult | null; message: string | null }> {
+    const payload = {
+      destinationOrgID: destinationOrgId,
+      itemIds
+    };
+    return this.http
+      .post<ApiResponse<ImportClassResult & { ImportedCount?: number; SkippedCount?: number }>>(
+        `${this.base}/item/import`,
+        payload
+      )
+      .pipe(
+        map((r) => {
+          if (!r.success || !r.data) {
+            return { data: null, message: r.message ?? 'Unable to import items.' };
+          }
+          return {
+            data: {
+              importedCount: Number(r.data.importedCount ?? r.data.ImportedCount ?? 0),
+              skippedCount: Number(r.data.skippedCount ?? r.data.SkippedCount ?? 0)
+            },
+            message: r.message ?? null
+          };
+        }),
+        catchError(() => of({ data: null, message: 'Unable to import items.' }))
+      );
   }
 
   getStockList(orgId: number, search?: string | null): Observable<StockRegisterItem[]> {

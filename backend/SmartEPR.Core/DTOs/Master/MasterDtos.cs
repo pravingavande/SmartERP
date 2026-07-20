@@ -46,6 +46,24 @@ public sealed class ImportClassResultDto
     public int SkippedCount { get; init; }
 }
 
+public sealed class ImportItemGroupRequestDto
+{
+    [JsonPropertyName("destinationOrgID")]
+    public long DestinationOrgID { get; set; }
+
+    [JsonPropertyName("itemGroupIds")]
+    public IReadOnlyList<long> ItemGroupIds { get; set; } = [];
+}
+
+public sealed class ImportItemRequestDto
+{
+    [JsonPropertyName("destinationOrgID")]
+    public long DestinationOrgID { get; set; }
+
+    [JsonPropertyName("itemIds")]
+    public IReadOnlyList<long> ItemIds { get; set; } = [];
+}
+
 public sealed class SubjectMasterDto
 {
     public long SubjectID { get; init; }

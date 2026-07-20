@@ -226,6 +226,68 @@ public sealed class MasterService : IMasterService
         }
     }
 
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportItemGroupsAsync(
+        ImportItemGroupRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.DestinationOrgID == 1)
+            return (null, "Cannot import into the source organization.");
+        if (request.ItemGroupIds is null || request.ItemGroupIds.Count == 0)
+            return (null, "Select at least one item group to import.");
+
+        try
+        {
+            const long sourceOrgId = 1;
+            var selected = request.ItemGroupIds.Where(id => id > 0).Distinct().ToHashSet();
+            var sourceRows = (await _repository.GetItemGroupListAsync(sourceOrgId, null, cancellationToken).ConfigureAwait(false))
+                .Where(x => selected.Contains(x.ItemGroupID) && x.IsActive)
+                .OrderBy(x => x.SrNo)
+                .ThenBy(x => x.ItemGroupID)
+                .ToList();
+
+            var destRows = await _repository.GetItemGroupListAsync(request.DestinationOrgID, null, cancellationToken).ConfigureAwait(false);
+            var existingNames = destRows
+                .Select(x => x.ItemGroupName.Trim())
+                .Where(x => x.Length > 0)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var imported = 0;
+            var skipped = 0;
+
+            foreach (var row in sourceRows)
+            {
+                var name = (row.ItemGroupName ?? string.Empty).Trim();
+                if (name.Length == 0 || existingNames.Contains(name))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                await _repository.SaveItemGroupAsync(new SaveItemGroupRequestDto
+                {
+                    ItemGroupID = 0,
+                    OrgID = request.DestinationOrgID,
+                    ItemGroupName = name,
+                    IsActive = row.IsActive
+                }, cancellationToken).ConfigureAwait(false);
+
+                existingNames.Add(name);
+                imported++;
+            }
+
+            // Selected IDs that were missing/inactive at source count as skipped
+            skipped += Math.Max(0, selected.Count - sourceRows.Count);
+
+            return (new ImportClassResultDto { ImportedCount = imported, SkippedCount = skipped }, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
+        }
+    }
+
     public Task<IReadOnlyList<ItemMasterDto>> GetItemListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
         => _repository.GetItemListAsync(orgId, search, cancellationToken);
 
@@ -265,6 +327,80 @@ public sealed class MasterService : IMasterService
         catch (SqlException ex)
         {
             return (false, ex.Message);
+        }
+    }
+
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportItemsAsync(
+        ImportItemRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.DestinationOrgID == 1)
+            return (null, "Cannot import into the source organization.");
+        if (request.ItemIds is null || request.ItemIds.Count == 0)
+            return (null, "Select at least one item to import.");
+
+        try
+        {
+            const long sourceOrgId = 1;
+            var selected = request.ItemIds.Where(id => id > 0).Distinct().ToHashSet();
+            var sourceRows = (await _repository.GetItemListAsync(sourceOrgId, null, cancellationToken).ConfigureAwait(false))
+                .Where(x => selected.Contains(x.ItemID) && x.IsActive)
+                .OrderBy(x => x.ItemGroupName)
+                .ThenBy(x => x.ItemName)
+                .ThenBy(x => x.ItemID)
+                .ToList();
+
+            var destGroups = await _repository.GetItemGroupListAsync(request.DestinationOrgID, null, cancellationToken).ConfigureAwait(false);
+            var destGroupByName = destGroups
+                .Where(x => !string.IsNullOrWhiteSpace(x.ItemGroupName))
+                .GroupBy(x => x.ItemGroupName.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().ItemGroupID, StringComparer.OrdinalIgnoreCase);
+
+            var destItems = await _repository.GetItemListAsync(request.DestinationOrgID, null, cancellationToken).ConfigureAwait(false);
+            var existingNames = destItems
+                .Select(x => x.ItemName.Trim())
+                .Where(x => x.Length > 0)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var imported = 0;
+            var skipped = 0;
+
+            foreach (var row in sourceRows)
+            {
+                var name = (row.ItemName ?? string.Empty).Trim();
+                var groupName = (row.ItemGroupName ?? string.Empty).Trim();
+                if (name.Length == 0
+                    || existingNames.Contains(name)
+                    || groupName.Length == 0
+                    || !destGroupByName.TryGetValue(groupName, out var destGroupId))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                await _repository.SaveItemAsync(new SaveItemRequestDto
+                {
+                    ItemID = 0,
+                    OrgID = request.DestinationOrgID,
+                    ItemGroupID = destGroupId,
+                    ItemName = name,
+                    Rate = row.Rate,
+                    IsActive = row.IsActive
+                }, cancellationToken).ConfigureAwait(false);
+
+                existingNames.Add(name);
+                imported++;
+            }
+
+            skipped += Math.Max(0, selected.Count - sourceRows.Count);
+
+            return (new ImportClassResultDto { ImportedCount = imported, SkippedCount = skipped }, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
         }
     }
 
