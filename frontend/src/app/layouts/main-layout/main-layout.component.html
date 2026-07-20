@@ -28,9 +28,6 @@
     <nav class="sidebar-nav">
       @for (section of navSections(); track section.title) {
         <div class="nav-section">
-          @if (!sidebarCollapsed()) {
-            <div class="nav-section-title">{{ section.title }}</div>
-          }
           <div class="nav-section-links">
             @for (item of section.items; track item.route) {
               <a

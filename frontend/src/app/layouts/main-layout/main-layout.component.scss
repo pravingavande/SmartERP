@@ -122,12 +122,12 @@
 }
 
 .nav-section {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.15rem;
 
   &:not(:last-child) {
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: none;
+    margin-bottom: 0.15rem;
   }
 }
 
@@ -141,15 +141,6 @@
 .layout.sidebar-collapsed .nav-section-links {
   padding: 0 0.45rem;
   align-items: center;
-}
-
-.nav-section-title {
-  padding: 0.5rem 1rem 0.45rem;
-  font-size: 0.76rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.78);
 }
 
 .sidebar-footer-note {
