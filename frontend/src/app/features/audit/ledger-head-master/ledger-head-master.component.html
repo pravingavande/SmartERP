@@ -1,10 +1,15 @@
-<section class="audit-page">
+<section class="audit-page master-page">
   <header class="page-header">
     <div>
       <h1>Ledger Head Master</h1>
       <p>School-wise ledger heads for voucher entries</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
+    <div class="header-actions">
+      @if (canImport()) {
+        <button type="button" class="btn btn-outline" (click)="openImport()">Import</button>
+      }
+      <button type="button" class="btn btn-primary" (click)="newEntry()">+ Add New</button>
+    </div>
   </header>
 
   @if (!formVisible()) {
@@ -40,6 +45,7 @@
             <tr>
               <th>Ledger Head</th>
               <th>English Name</th>
+              <th>Description</th>
               <th>Type</th>
               <th>Status</th>
               <th class="actions-col">Actions</th>
@@ -50,6 +56,7 @@
               <tr [class.active]="form().ledgerHeadID === h.ledgerHeadID">
                 <td>{{ h.ledgerHead }}</td>
                 <td>{{ h.ledgerHeadEng || '—' }}</td>
+                <td>{{ h.description || '—' }}</td>
                 <td>{{ h.ledgerType || '—' }}</td>
                 <td>{{ h.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
@@ -63,7 +70,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="5" class="empty">No ledger heads for selected school / type</td>
+                <td colspan="6" class="empty">No ledger heads for selected school / type</td>
               </tr>
             }
           </tbody>
@@ -124,6 +131,20 @@
                 <span class="field-label">Ledger Head (English)</span>
                 <input class="field-control" type="text" [ngModel]="form().ledgerHeadEng" (ngModelChange)="updateForm('ledgerHeadEng', $event)" name="ledgerHeadEng">
               </label>
+              <label class="field full" [class.field-invalid]="fieldError('description')">
+                <span class="field-label">Description</span>
+                <textarea
+                  class="field-control"
+                  rows="3"
+                  [ngModel]="form().description"
+                  (ngModelChange)="updateForm('description', $event)"
+                  name="description"
+                  placeholder="Optional description"
+                ></textarea>
+                @if (fieldError('description')) {
+                  <span class="field-error">{{ fieldError('description') }}</span>
+                }
+              </label>
               @if (formMode() === 'edit') {
               <label class="field checkbox-field master-active-field">
                 <span class="field-label">Active</span>
@@ -138,6 +159,83 @@
             <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
           </footer>
         </form>
+      </div>
+    </div>
+  }
+
+  @if (importVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>Import Ledger Heads</h2>
+          <p class="hint">Source: Organization 1 → Destination: {{ selectedOrgName() }}</p>
+        </header>
+        <div class="master-modal-form">
+          <div class="import-toolbar">
+            <label class="field import-lang-field">
+              <span class="field-label">Language</span>
+              <select
+                class="field-control"
+                [ngModel]="importLanguage()"
+                (ngModelChange)="onImportLanguageChange($event)"
+                name="importLanguage"
+              >
+                <option value="M">Marathi</option>
+                <option value="E">English</option>
+              </select>
+            </label>
+            <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !filteredImportSourceItems().length">Select All</button>
+            <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
+            <span class="hint">Showing: {{ filteredImportSourceItems().length }} · Selected: {{ importSelectedCount() }}</span>
+          </div>
+          @if (importSourceLoading()) {
+            <p class="loading-hint">Loading source ledger heads...</p>
+          } @else {
+            <div class="records-table-wrap import-grid">
+              <table class="records-table import-table">
+                <thead>
+                  <tr>
+                    <th class="check-col">
+                      <input
+                        type="checkbox"
+                        [checked]="importAllSelected()"
+                        (change)="$any($event.target).checked ? selectAllImport() : unselectAllImport()"
+                        [attr.aria-label]="'Select all'"
+                      >
+                    </th>
+                    <th class="sr-col">Sr</th>
+                    <th class="name-col">Ledger Head</th>
+                    <th>English Name</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of filteredImportSourceItems(); track item.ledgerHeadID) {
+                    <tr>
+                      <td class="check-col">
+                        <input
+                          type="checkbox"
+                          [checked]="isImportSelected(item.ledgerHeadID)"
+                          (change)="toggleImportItem(item.ledgerHeadID, $any($event.target).checked)"
+                        >
+                      </td>
+                      <td class="sr-col">{{ item.srNo }}</td>
+                      <td class="name-col">{{ item.ledgerHead }}</td>
+                      <td>{{ item.ledgerHeadEng || '—' }}</td>
+                      <td>{{ item.ledgerType || '—' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} ledger heads found</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="closeImport()" [disabled]="importLoading()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirmImport()" [disabled]="importLoading() || importSelectedCount() === 0">Import</button>
+          </footer>
+        </div>
       </div>
     </div>
   }

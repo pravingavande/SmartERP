@@ -45,12 +45,35 @@ export class LedgerHeadMasterComponent {
   readonly form = signal<LedgerHeadFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
+  readonly importVisible = signal(false);
+  readonly importLoading = signal(false);
+  readonly importSourceLoading = signal(false);
+  readonly importSourceItems = signal<LedgerHeadMaster[]>([]);
+  readonly importSelectedIds = signal<Set<number>>(new Set());
+  /** Import popup language filter: Marathi (Devanagari) vs English (Latin) names. */
+  readonly importLanguage = signal<'M' | 'E'>('M');
   readonly listOrgID = signal<number | null>(null);
   readonly listLedgerTypeID = signal<number | null>(null);
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
 
+  private static readonly ImportSourceOrgID = 1;
+
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
+  readonly canImport = computed(() => {
+    const orgId = this.listOrgID();
+    return orgId != null && orgId > 0 && orgId !== LedgerHeadMasterComponent.ImportSourceOrgID;
+  });
+  readonly importSelectedCount = computed(() => this.importSelectedIds().size);
+  readonly filteredImportSourceItems = computed(() => {
+    const lang = this.importLanguage();
+    return this.importSourceItems().filter((item) => this.matchesImportLanguage(item.ledgerHead, lang));
+  });
+  readonly importAllSelected = computed(() => {
+    const items = this.filteredImportSourceItems();
+    const selected = this.importSelectedIds();
+    return items.length > 0 && items.every((x) => selected.has(x.ledgerHeadID));
+  });
 
   readonly filteredLedgerHeads = computed(() => {
     const typeId = this.listLedgerTypeID();
@@ -116,6 +139,7 @@ export class LedgerHeadMasterComponent {
     this.listOrgID.set(orgId);
     this.listPageIndex.set(0);
     this.closeForm();
+    this.closeImport();
     if (orgId) this.loadList();
     else this.ledgerHeads.set([]);
   }
@@ -160,6 +184,7 @@ export class LedgerHeadMasterComponent {
       this.errorMessage.set('Select Org / School on the list page before adding new.');
       return;
     }
+    this.closeImport();
     this.formMode.set('new');
     this.formVisible.set(true);
     this.errorMessage.set(null);
@@ -168,12 +193,14 @@ export class LedgerHeadMasterComponent {
     this.form.set({
       ...this.emptyForm(),
       underOrgID: orgId,
+      orgID: orgId,
       ledgerTypeID: this.listLedgerTypeID() ?? this.ledgerTypes()[0]?.ledgerTypeID ?? null
     });
     this.refreshNextSrNo(orgId);
   }
 
   editEntry(item: LedgerHeadMaster): void {
+    this.closeImport();
     this.formMode.set('edit');
     this.formVisible.set(true);
     this.errorMessage.set(null);
@@ -182,9 +209,11 @@ export class LedgerHeadMasterComponent {
     this.form.set({
       ledgerHeadID: item.ledgerHeadID,
       underOrgID: item.underOrgID,
+      orgID: item.orgID ?? item.underOrgID,
       srNo: item.srNo,
       ledgerHead: item.ledgerHead,
       ledgerHeadEng: item.ledgerHeadEng ?? '',
+      description: item.description ?? '',
       ledgerTypeID: item.ledgerTypeID,
       isActive: item.isActive
     });
@@ -247,9 +276,11 @@ export class LedgerHeadMasterComponent {
       .saveLedgerHead({
         ledgerHeadID: item.ledgerHeadID,
         underOrgID: item.underOrgID,
+        orgID: item.orgID ?? item.underOrgID,
         srNo: item.srNo,
         ledgerHead: item.ledgerHead,
         ledgerHeadEng: item.ledgerHeadEng ?? '',
+        description: item.description ?? '',
         ledgerTypeID: item.ledgerTypeID,
         isActive: false
       })
@@ -262,6 +293,110 @@ export class LedgerHeadMasterComponent {
         }
         this.toast.showSuccess('Ledger head deleted.', 'Ledger Head');
         this.loadList();
+      });
+  }
+
+  openImport(): void {
+    const orgId = this.listOrgID();
+    if (!orgId) {
+      this.errorMessage.set('Select Org / School before importing.');
+      return;
+    }
+    if (!this.canImport()) {
+      this.errorMessage.set('Import is not available for the source organization.');
+      return;
+    }
+    this.closeForm();
+    this.importVisible.set(true);
+    this.importLanguage.set('M');
+    this.importSelectedIds.set(new Set());
+    this.importSourceLoading.set(true);
+    this.audit
+      .getLedgerHeadList(LedgerHeadMasterComponent.ImportSourceOrgID)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((list) => {
+        this.importSourceLoading.set(false);
+        this.importSourceItems.set(list.filter((x) => x.isActive !== false));
+      });
+  }
+
+  closeImport(): void {
+    this.importVisible.set(false);
+    this.importLoading.set(false);
+    this.importSourceLoading.set(false);
+    this.importSourceItems.set([]);
+    this.importSelectedIds.set(new Set());
+    this.importLanguage.set('M');
+  }
+
+  onImportLanguageChange(lang: 'M' | 'E'): void {
+    this.importLanguage.set(lang);
+    const visibleIds = new Set(this.filteredImportSourceItems().map((x) => x.ledgerHeadID));
+    this.importSelectedIds.update((selected) => {
+      const next = new Set<number>();
+      for (const id of selected) {
+        if (visibleIds.has(id)) next.add(id);
+      }
+      return next;
+    });
+  }
+
+  toggleImportItem(id: number, checked: boolean): void {
+    this.importSelectedIds.update((set) => {
+      const next = new Set(set);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  isImportSelected(id: number): boolean {
+    return this.importSelectedIds().has(id);
+  }
+
+  selectAllImport(): void {
+    this.importSelectedIds.set(new Set(this.filteredImportSourceItems().map((x) => x.ledgerHeadID)));
+  }
+
+  unselectAllImport(): void {
+    this.importSelectedIds.set(new Set());
+  }
+
+  private matchesImportLanguage(ledgerHead: string | null | undefined, lang: 'M' | 'E'): boolean {
+    const name = (ledgerHead ?? '').trim();
+    if (!name) return false;
+    const isMarathi = /[\u0900-\u097F]/.test(name);
+    return lang === 'M' ? isMarathi : !isMarathi;
+  }
+
+  confirmImport(): void {
+    const orgId = this.listOrgID();
+    const ids = Array.from(this.importSelectedIds());
+    if (!orgId || !this.canImport()) {
+      this.toast.showError('Select a destination organization first.', 'Import');
+      return;
+    }
+    if (!ids.length) {
+      this.toast.showError('Select at least one ledger head to import.', 'Import');
+      return;
+    }
+
+    this.importLoading.set(true);
+    this.audit
+      .importLedgerHeads(orgId, ids)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ data, message }) => {
+        this.importLoading.set(false);
+        if (!data) {
+          this.toast.showError(message ?? 'Unable to import ledger heads.', 'Import failed');
+          return;
+        }
+        this.closeImport();
+        this.loadList();
+        this.toast.showSuccess(
+          message ?? `Imported ${data.importedCount} ledger head(s). Skipped ${data.skippedCount}.`,
+          'Imported'
+        );
       });
   }
 
@@ -281,9 +416,11 @@ export class LedgerHeadMasterComponent {
     return {
       ledgerHeadID: null,
       underOrgID: null,
+      orgID: null,
       srNo: 1,
       ledgerHead: '',
       ledgerHeadEng: '',
+      description: '',
       ledgerTypeID: null,
       isActive: true
     };

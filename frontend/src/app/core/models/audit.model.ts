@@ -257,9 +257,11 @@ export interface LedgerTypeOption {
 export interface LedgerHeadMaster {
   ledgerHeadID: number;
   underOrgID: number;
+  orgID?: number | null;
   srNo: number;
   ledgerHead: string;
   ledgerHeadEng?: string | null;
+  description?: string | null;
   ledgerTypeID: number;
   ledgerType?: string | null;
   isActive: boolean;
@@ -268,9 +270,16 @@ export interface LedgerHeadMaster {
 export interface LedgerHeadFormState {
   ledgerHeadID: number | null;
   underOrgID: number | null;
+  orgID: number | null;
   srNo: number;
   ledgerHead: string;
   ledgerHeadEng: string;
+  description: string;
   ledgerTypeID: number | null;
   isActive: boolean;
+}
+
+export interface ImportLedgerHeadResult {
+  importedCount: number;
+  skippedCount: number;
 }

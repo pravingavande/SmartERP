@@ -14,14 +14,21 @@ public sealed class AuditVoucherService : IAuditVoucherService
         _repository = repository;
     }
 
-    public async Task<AuditLookupsDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<AuditLookupsDto> GetLookupsAsync(long userId, long? orgId = null, string? vType = null, CancellationToken cancellationToken = default)
     {
         var orgs = await _repository.GetUserOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
         var sansthaOrgs = await _repository.GetSansthaOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
         var paymentTypes = await _repository.GetPaymentTypesAsync(cancellationToken).ConfigureAwait(false);
         var fyList = await _repository.GetFyListAsync(cancellationToken).ConfigureAwait(false);
-        var ledgerHeads = await _repository.GetLedgerHeadsAsync(cancellationToken).ConfigureAwait(false);
-        var bankLedgerHeads = await _repository.GetBankLedgerHeadsAsync(cancellationToken).ConfigureAwait(false);
+
+        var normalizedVType = (vType ?? string.Empty).Trim().ToUpperInvariant();
+        var isBankVoucher = normalizedVType is "BD" or "BW";
+        var ledgerVType = isBankVoucher ? null : (string.IsNullOrEmpty(normalizedVType) ? null : normalizedVType);
+
+        var ledgerHeads = isBankVoucher
+            ? Array.Empty<LedgerHeadOptionDto>()
+            : await _repository.GetLedgerHeadsAsync(orgId, ledgerVType, cancellationToken).ConfigureAwait(false);
+        var bankLedgerHeads = await _repository.GetBankLedgerHeadsAsync(orgId, cancellationToken).ConfigureAwait(false);
 
         return new AuditLookupsDto
         {
@@ -233,7 +240,44 @@ public sealed class AuditVoucherService : IAuditVoucherService
         if (request.UnderOrgID <= 0 || string.IsNullOrWhiteSpace(request.LedgerHead) || request.LedgerTypeID <= 0)
             return null;
 
-        var ledgerHeadId = await _repository.SaveLedgerHeadAsync(request, cancellationToken).ConfigureAwait(false);
+        var normalized = new SaveLedgerHeadRequestDto
+        {
+            LedgerHeadID = request.LedgerHeadID,
+            UnderOrgID = request.UnderOrgID,
+            OrgID = request.OrgID is > 0 ? request.OrgID : request.UnderOrgID,
+            LedgerHead = request.LedgerHead.Trim(),
+            LedgerHeadEng = string.IsNullOrWhiteSpace(request.LedgerHeadEng) ? null : request.LedgerHeadEng.Trim(),
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            LedgerTypeID = request.LedgerTypeID,
+            IsActive = request.IsActive
+        };
+
+        var ledgerHeadId = await _repository.SaveLedgerHeadAsync(normalized, cancellationToken).ConfigureAwait(false);
         return await _repository.GetLedgerHeadByIdAsync(ledgerHeadId, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<(ImportLedgerHeadResultDto? Data, string? Error)> ImportLedgerHeadsAsync(
+        ImportLedgerHeadRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationUnderOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.DestinationUnderOrgID == 1)
+            return (null, "Cannot import into the source organization.");
+        if (request.LedgerHeadIds is null || request.LedgerHeadIds.Count == 0)
+            return (null, "Select at least one ledger head to import.");
+
+        try
+        {
+            var result = await _repository.ImportLedgerHeadsAsync(
+                request.DestinationUnderOrgID,
+                request.LedgerHeadIds,
+                cancellationToken).ConfigureAwait(false);
+            return (result, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
+        }
     }
 }

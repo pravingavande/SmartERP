@@ -156,7 +156,7 @@ export class OrganizationMasterComponent {
     const orgId =
       this.listFilter().orgId ?? resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
     if (!orgId) {
-      this.errorMessage.set('Select a school on the list page before adding a new organization.');
+      this.errorMessage.set('Select Sanstha on the list page before adding a new organization.');
       return;
     }
     this.errorMessage.set(null);

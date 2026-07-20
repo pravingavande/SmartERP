@@ -85,6 +85,9 @@ public sealed class OrgWiseMasterRulesTests
         Assert.Equal(
             "Select at least one donation head to import.",
             OrgWiseMasterRules.ValidateImport(2, [], sourceOrgId: 1, emptySelectionMessage: "Select at least one donation head to import."));
+        Assert.Equal(
+            "Select at least one ledger head to import.",
+            OrgWiseMasterRules.ValidateImport(2, [], sourceOrgId: 1, emptySelectionMessage: "Select at least one ledger head to import."));
     }
 
     [Fact]

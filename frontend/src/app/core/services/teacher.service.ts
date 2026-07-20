@@ -93,6 +93,8 @@ export class TeacherService {
       genderCode: form.genderCode,
       dob: form.dob || null,
       adharCardNo: form.adharCardNo,
+      nationalCode: form.nationalCode,
+      agid: form.agid,
       shalarthID: form.shalarthID,
       scaleOfPay: form.scaleOfPay,
       casteName: form.casteName,
@@ -115,6 +117,7 @@ export class TeacherService {
       sansthaServiceOrderNoAndDate: form.sansthaServiceOrderNoAndDate,
       zpServiceOrderNoAndDate: form.zpServiceOrderNoAndDate,
       dateOfWorkingStart: form.dateOfWorkingStart || null,
+      doWSCurrentSchool: form.doWSCurrentSchool || null,
       jtCategoryID: form.jtCategoryID,
       paymentGradeDate: form.paymentGradeDate || null,
       nivadGradeDate: form.nivadGradeDate || null,
@@ -213,7 +216,8 @@ export class TeacherService {
         categories: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'categories', 'Categories')),
         bloodGroups: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'bloodGroups', 'BloodGroups')),
         shifts: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'shifts', 'Shifts')),
-        documents: this.normalizeCodeNames(this.pickArray<CodeNameOption>(lk, 'documents', 'Documents'))
+        documents: this.normalizeCodeNames(this.pickArray<CodeNameOption>(lk, 'documents', 'Documents')),
+        appointmentGroups: this.normalizeIdNames(this.pickArray<IdNameOption>(lk, 'appointmentGroups', 'AppointmentGroups'))
       }
     };
   }
@@ -265,19 +269,21 @@ export class TeacherService {
 
   private normalizeIdNames(raw?: IdNameOption[] | null): IdNameOption[] {
     return (raw ?? []).map((x) => ({
-      id: x.id ?? (x as IdNameOption & { Id?: number; ReligionID?: number; CategoryID?: number; BloodGroupID?: number; ShiftID?: number; StaffTypeID?: number }).Id
+      id: x.id ?? (x as IdNameOption & { Id?: number; ReligionID?: number; CategoryID?: number; BloodGroupID?: number; ShiftID?: number; StaffTypeID?: number; AGID?: number }).Id
         ?? (x as { ReligionID?: number }).ReligionID
         ?? (x as { CategoryID?: number }).CategoryID
         ?? (x as { BloodGroupID?: number }).BloodGroupID
         ?? (x as { ShiftID?: number }).ShiftID
         ?? (x as { StaffTypeID?: number }).StaffTypeID
+        ?? (x as { AGID?: number }).AGID
         ?? 0,
-      name: x.name ?? (x as IdNameOption & { Name?: string; ReligionName?: string; CategoryName?: string; BloodGroupName?: string; ShiftName?: string; StaffTypeName?: string }).Name
+      name: x.name ?? (x as IdNameOption & { Name?: string; ReligionName?: string; CategoryName?: string; BloodGroupName?: string; ShiftName?: string; StaffTypeName?: string; AGName?: string }).Name
         ?? (x as { ReligionName?: string }).ReligionName
         ?? (x as { CategoryName?: string }).CategoryName
         ?? (x as { BloodGroupName?: string }).BloodGroupName
         ?? (x as { ShiftName?: string }).ShiftName
         ?? (x as { StaffTypeName?: string }).StaffTypeName
+        ?? (x as { AGName?: string }).AGName
         ?? ''
     }));
   }
@@ -340,6 +346,8 @@ export class TeacherService {
       genderCode: (r['genderCode'] ?? r['GenderCode'] ?? null) as number | null,
       dob: this.toDateInput(r['dob'] ?? r['Dob']),
       adharCardNo: String(r['adharCardNo'] ?? r['AdharCardNo'] ?? ''),
+      nationalCode: String(r['nationalCode'] ?? r['NationalCode'] ?? ''),
+      agid: (r['agid'] ?? r['AGID'] ?? null) as number | null,
       shalarthID: String(r['shalarthID'] ?? r['ShalarthID'] ?? ''),
       scaleOfPay: String(r['scaleOfPay'] ?? r['ScaleOfPay'] ?? ''),
       casteName: String(r['casteName'] ?? r['CasteName'] ?? ''),
@@ -362,6 +370,7 @@ export class TeacherService {
       sansthaServiceOrderNoAndDate: String(r['sansthaServiceOrderNoAndDate'] ?? r['SansthaServiceOrderNoAndDate'] ?? ''),
       zpServiceOrderNoAndDate: String(r['zpServiceOrderNoAndDate'] ?? r['ZPServiceOrderNoAndDate'] ?? ''),
       dateOfWorkingStart: this.toDateInput(r['dateOfWorkingStart'] ?? r['DateOfWorkingStart']),
+      doWSCurrentSchool: this.toDateInput(r['doWSCurrentSchool'] ?? r['DoWSCurrentSchool']),
       jtCategoryID: (r['jtCategoryID'] ?? r['JTCategoryID'] ?? null) as number | null,
       paymentGradeDate: this.toDateInput(r['paymentGradeDate'] ?? r['PaymentGradeDate']),
       nivadGradeDate: this.toDateInput(r['nivadGradeDate'] ?? r['NivadGradeDate']),
@@ -369,7 +378,7 @@ export class TeacherService {
       serviceOutDate: this.toDateInput(r['serviceOutDate'] ?? r['ServiceOutDate']),
       shiftID: (r['shiftID'] ?? r['ShiftID'] ?? null) as number | null,
       appUserName: String(r['appUserName'] ?? r['AppUserName'] ?? ''),
-      appPassword: '',
+      appPassword: String(r['appPassword'] ?? r['AppPassword'] ?? ''),
       closeFlag: Boolean(r['closeFlag'] ?? r['CloseFlag'] ?? false),
       isActive: Boolean(r['isActive'] ?? r['IsActive'] ?? true),
       createdDate: this.toDateTimeDisplay(r['createdDate'] ?? r['CreatedDate']),

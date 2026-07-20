@@ -26,13 +26,15 @@
         <app-org-school-select
           name="filterOrg"
           fieldClass="field-org-filter"
+          [label]="lbl('SansthaName', 'Sanstha Name')"
+          [nullLabel]="lbl('SelectSanstha', '-- Select Sanstha --')"
           [orgs]="schoolOrgs()"
           [value]="listFilter().orgId ?? null"
           (valueChange)="onFilterChange('orgId', $event)"
         />
         <label class="field field-org-search">
-          <span class="field-label">{{ lbl('OrganizationName', 'Organization Name') }}</span>
-          <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" [placeholder]="lbl('SearchOrganizationName', 'Search organization name')">
+          <span class="field-label">{{ lbl('Search', 'Search') }}</span>
+          <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" [placeholder]="lbl('Search', 'Search')">
         </label>
       </div>
 
@@ -46,8 +48,8 @@
           <thead>
             <tr>
               <th>{{ lbl('SrNo', 'Sr No') }}</th>
-              <th>{{ lbl('OrganizationName', 'Organization Name') }}</th>
-              <th>{{ lbl('UdiesNo', 'UDISE No.') }}</th>
+              <th>{{ lbl('OrgCollegeSanstha', 'School/ College/ Sanstha') }}</th>
+              <th>{{ lbl('UDiesNo', 'Udise No.') }}</th>
               <th>{{ lbl('SchoolCategoryName', 'School Category') }}</th>
               <th class="actions-col">{{ lbl('Actions', 'Actions') }}</th>
             </tr>
@@ -120,16 +122,7 @@
           <form class="voucher-form org-form" (ngSubmit)="saveBasic()">
             <fieldset [disabled]="isViewMode()">
               <div class="form-grid">
-                @if (isSchoolCategory() && isNewMode()) {
-                  <app-org-school-select
-                    name="orgID"
-                    [orgs]="schoolOrgs()"
-                    [value]="formOrgSelectValue()"
-                    [required]="true"
-                    [invalid]="!!fieldError('underOrgID')"
-                    [error]="fieldError('underOrgID')"
-                    (valueChange)="onFormOrgChange($event)"
-                  />
+                @if (isSchoolCategory()) {
                   <label class="field">
                     <span class="field-label">{{ lbl('SrNo', 'Sr No') }}</span>
                     <input class="field-control" readonly [value]="form().srNo ?? 'Auto'" name="srNoDisplay">
@@ -148,14 +141,14 @@
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('organizationName')">
-                  <span class="field-label">{{ lbl('OrganizationName', 'Organization Name') }}<span class="req">*</span></span>
+                  <span class="field-label">{{ lbl('OrgCollegeSanstha', 'School/ College/ Sanstha') }}<span class="req">*</span></span>
                   <input class="field-control" required [ngModel]="form().organizationName" (ngModelChange)="updateForm('organizationName', $event)" name="organizationName">
                   @if (fieldError('organizationName')) { <span class="field-error">{{ fieldError('organizationName') }}</span> }
                 </label>
 
-                <label class="field">
+                <label class="field field-span-full">
                   <span class="field-label">{{ lbl('Address', 'Address') }}</span>
-                  <textarea class="field-control field-text-compact" rows="1" [ngModel]="form().address" (ngModelChange)="updateForm('address', $event)" name="address"></textarea>
+                  <input class="field-control" type="text" [ngModel]="form().address" (ngModelChange)="updateForm('address', $event)" name="address">
                 </label>
 
                 <label class="field">
@@ -164,7 +157,7 @@
                 </label>
 
                 <label class="field">
-                  <span class="field-label">{{ lbl('UdiesNo', 'UDISE No') }}</span>
+                  <span class="field-label">{{ lbl('UDiesNo', 'Udise No.') }}</span>
                   <input class="field-control" [ngModel]="form().udiesNo" (ngModelChange)="updateForm('udiesNo', $event)" name="udiesNo">
                 </label>
 
@@ -174,7 +167,7 @@
                 </label>
 
                 <label class="field">
-                  <span class="field-label">{{ lbl('ShalarthID', 'Shalarth ID') }}</span>
+                  <span class="field-label">{{ lbl('DDO1Code', 'DDO1Code') }}</span>
                   <input class="field-control" [ngModel]="form().sharlarthID" (ngModelChange)="updateForm('sharlarthID', $event)" name="sharlarthID">
                 </label>
 
@@ -229,9 +222,9 @@
                   <textarea class="field-control field-text-compact" rows="1" [ngModel]="form().remark" (ngModelChange)="updateForm('remark', $event)" name="remark"></textarea>
                 </label>
 
-                @if (isEditMode()) {
+                @if (!isNewMode()) {
                   <label class="field field-check master-active-field">
-                    <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
+                    <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive" [disabled]="isViewMode()">
                     <span>{{ lbl('IsActive', 'Is Active') }}</span>
                   </label>
                 }

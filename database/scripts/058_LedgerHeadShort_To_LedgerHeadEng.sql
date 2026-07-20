@@ -16,6 +16,7 @@ BEGIN
         lh.SrNo,
         lh.LedgerHead,
         lh.LedgerHeadEng,
+        lh.Description,
         lh.LedgerTypeID,
         lh.IsActive,
         lt.LedgerType
@@ -38,6 +39,7 @@ BEGIN
         lh.SrNo,
         lh.LedgerHead,
         lh.LedgerHeadEng,
+        lh.Description,
         lh.LedgerTypeID,
         lh.IsActive,
         lt.LedgerType
@@ -52,6 +54,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_Audit_LedgerHead_Save
     @UnderOrgID BIGINT,
     @LedgerHead NVARCHAR(200),
     @LedgerHeadEng NVARCHAR(100) = NULL,
+    @Description NVARCHAR(MAX) = NULL,
     @LedgerTypeID BIGINT,
     @IsActive BIT = 1
 AS
@@ -72,6 +75,7 @@ BEGIN
             SrNo,
             LedgerHead,
             LedgerHeadEng,
+            Description,
             LedgerTypeID,
             IsActive
         )
@@ -80,6 +84,7 @@ BEGIN
             @SrNo,
             @LedgerHead,
             @LedgerHeadEng,
+            @Description,
             @LedgerTypeID,
             @IsActive
         );
@@ -91,6 +96,7 @@ BEGIN
         UPDATE dbo.ACLedgerHeadMaster
         SET LedgerHead = @LedgerHead,
             LedgerHeadEng = @LedgerHeadEng,
+            Description = @Description,
             LedgerTypeID = @LedgerTypeID,
             IsActive = @IsActive
         WHERE LedgerHeadID = @LedgerHeadID;

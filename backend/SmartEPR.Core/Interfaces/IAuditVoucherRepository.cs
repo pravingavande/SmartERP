@@ -10,8 +10,8 @@ public interface IAuditVoucherRepository
     Task<IReadOnlyList<PartyOptionDto>> GetPartiesAsync(long orgId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PaymentTypeOptionDto>> GetPaymentTypesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<FyOptionDto>> GetFyListAsync(CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<LedgerHeadOptionDto>> GetLedgerHeadsAsync(CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<LedgerHeadOptionDto>> GetBankLedgerHeadsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LedgerHeadOptionDto>> GetLedgerHeadsAsync(long? orgId = null, string? vType = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LedgerHeadOptionDto>> GetBankLedgerHeadsAsync(long? orgId = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long ledgerHeadId, CancellationToken cancellationToken = default);
     Task SaveLedgerNarrationAsync(long ledgerHeadId, string narration, CancellationToken cancellationToken = default);
     Task<long> GetNextVCodeAsync(long orgId, long accountRegisterId, long fyId, string vType, CancellationToken cancellationToken = default);
@@ -43,11 +43,12 @@ public interface IAuditVoucherRepository
     Task<LedgerHeadMasterDto?> GetLedgerHeadByIdAsync(long ledgerHeadId, CancellationToken cancellationToken = default);
     Task<long> GetNextLedgerHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
     Task<long> SaveLedgerHeadAsync(SaveLedgerHeadRequestDto request, CancellationToken cancellationToken = default);
+    Task<ImportLedgerHeadResultDto> ImportLedgerHeadsAsync(long destinationUnderOrgId, IReadOnlyList<long> ledgerHeadIds, CancellationToken cancellationToken = default);
 }
 
 public interface IAuditVoucherService
 {
-    Task<AuditLookupsDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default);
+    Task<AuditLookupsDto> GetLookupsAsync(long userId, long? orgId = null, string? vType = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<OrgOptionDto>> GetSansthaOrgsAsync(long userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AccountRegisterOptionDto>> GetAccountRegistersAsync(long orgId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PartyOptionDto>> GetPartiesAsync(long orgId, CancellationToken cancellationToken = default);
@@ -78,4 +79,5 @@ public interface IAuditVoucherService
     Task<LedgerHeadMasterDto?> GetLedgerHeadByIdAsync(long ledgerHeadId, CancellationToken cancellationToken = default);
     Task<long> GetNextLedgerHeadSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
     Task<LedgerHeadMasterDto?> SaveLedgerHeadAsync(SaveLedgerHeadRequestDto request, CancellationToken cancellationToken = default);
+    Task<(ImportLedgerHeadResultDto? Data, string? Error)> ImportLedgerHeadsAsync(ImportLedgerHeadRequestDto request, CancellationToken cancellationToken = default);
 }

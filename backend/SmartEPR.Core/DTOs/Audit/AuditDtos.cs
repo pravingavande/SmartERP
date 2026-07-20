@@ -225,9 +225,11 @@ public sealed class LedgerHeadMasterDto
 {
     public long LedgerHeadID { get; init; }
     public long UnderOrgID { get; init; }
+    public long? OrgID { get; init; }
     public long SrNo { get; init; }
     public string LedgerHead { get; init; } = string.Empty;
     public string? LedgerHeadEng { get; init; }
+    public string? Description { get; init; }
     public long LedgerTypeID { get; init; }
     public string? LedgerType { get; init; }
     public bool IsActive { get; init; }
@@ -237,10 +239,25 @@ public sealed class SaveLedgerHeadRequestDto
 {
     public long? LedgerHeadID { get; init; }
     public long UnderOrgID { get; init; }
+    public long? OrgID { get; init; }
     public string LedgerHead { get; init; } = string.Empty;
     public string? LedgerHeadEng { get; init; }
+    public string? Description { get; init; }
     public long LedgerTypeID { get; init; }
     public bool IsActive { get; init; } = true;
+}
+
+public sealed class ImportLedgerHeadRequestDto
+{
+    public long DestinationUnderOrgID { get; init; }
+    public long? DestinationOrgID { get; init; }
+    public IReadOnlyList<long> LedgerHeadIds { get; init; } = [];
+}
+
+public sealed class ImportLedgerHeadResultDto
+{
+    public int ImportedCount { get; init; }
+    public int SkippedCount { get; init; }
 }
 
 public sealed class AuditDashboardRowDto

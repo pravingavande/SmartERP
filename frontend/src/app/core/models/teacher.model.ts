@@ -41,6 +41,7 @@ export interface TeacherLookups {
   bloodGroups: IdNameOption[];
   shifts: IdNameOption[];
   documents: CodeNameOption[];
+  appointmentGroups: IdNameOption[];
 }
 
 export interface TeacherLookupsBundle {
@@ -104,6 +105,8 @@ export interface TeacherFormState {
   genderCode: number | null;
   dob: string;
   adharCardNo: string;
+  nationalCode: string;
+  agid: number | null;
   shalarthID: string;
   scaleOfPay: string;
   casteName: string;
@@ -126,6 +129,7 @@ export interface TeacherFormState {
   sansthaServiceOrderNoAndDate: string;
   zpServiceOrderNoAndDate: string;
   dateOfWorkingStart: string;
+  doWSCurrentSchool: string;
   jtCategoryID: number | null;
   paymentGradeDate: string;
   nivadGradeDate: string;

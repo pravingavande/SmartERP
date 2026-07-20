@@ -36,6 +36,7 @@ public sealed class TeacherLookupsDto
     public IReadOnlyList<IdNameOptionDto> BloodGroups { get; init; } = [];
     public IReadOnlyList<IdNameOptionDto> Shifts { get; init; } = [];
     public IReadOnlyList<CodeNameOptionDto> Documents { get; init; } = [];
+    public IReadOnlyList<IdNameOptionDto> AppointmentGroups { get; init; } = [];
 }
 
 public sealed class TeacherLookupsBundleDto
@@ -110,6 +111,8 @@ public sealed class TeacherDto
     public long? GenderCode { get; init; }
     public DateTime? Dob { get; init; }
     public string? AdharCardNo { get; init; }
+    public string? NationalCode { get; init; }
+    public long? AGID { get; init; }
     public string? ShalarthID { get; init; }
     public string? ScaleOfPay { get; init; }
     public string? CasteName { get; init; }
@@ -132,6 +135,7 @@ public sealed class TeacherDto
     public string? SansthaServiceOrderNoAndDate { get; init; }
     public string? ZPServiceOrderNoAndDate { get; init; }
     public DateTime? DateOfWorkingStart { get; init; }
+    public DateTime? DoWSCurrentSchool { get; init; }
     public int? JTCategoryID { get; init; }
     public DateTime? PaymentGradeDate { get; init; }
     public DateTime? NivadGradeDate { get; init; }
@@ -191,6 +195,8 @@ public sealed class SaveTeacherRequestDto
     public long? GenderCode { get; set; }
     public DateTime? Dob { get; set; }
     public string? AdharCardNo { get; set; }
+    public string? NationalCode { get; set; }
+    public long? AGID { get; set; }
     public string? ShalarthID { get; set; }
     public string? ScaleOfPay { get; set; }
     public string? CasteName { get; set; }
@@ -213,6 +219,7 @@ public sealed class SaveTeacherRequestDto
     public string? SansthaServiceOrderNoAndDate { get; set; }
     public string? ZPServiceOrderNoAndDate { get; set; }
     public DateTime? DateOfWorkingStart { get; set; }
+    public DateTime? DoWSCurrentSchool { get; set; }
     public int? JTCategoryID { get; set; }
     public DateTime? PaymentGradeDate { get; set; }
     public DateTime? NivadGradeDate { get; set; }

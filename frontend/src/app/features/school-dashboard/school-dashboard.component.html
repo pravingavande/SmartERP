@@ -1,0 +1,45 @@
+<section class="school-dashboard">
+  <header class="school-hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-content">
+      <span class="hero-kicker">School Workspace</span>
+      <h1>School Dashboard</h1>
+      <p>Quick access to school operations and teacher tools</p>
+    </div>
+    <div class="hero-ornament" aria-hidden="true">
+      <span class="orb orb-a"></span>
+      <span class="orb orb-b"></span>
+      <span class="orb orb-c"></span>
+    </div>
+  </header>
+
+  @for (section of sections; track section.id; let sIdx = $index) {
+    <section class="dash-section" [style.--section-delay.ms]="sIdx * 80">
+      <div class="section-heading">
+        <div class="section-mark" [attr.data-section]="section.id" aria-hidden="true"></div>
+        <div>
+          <h2>{{ section.title }}</h2>
+          <p>{{ section.subtitle }}</p>
+        </div>
+      </div>
+
+      <div class="tile-grid">
+        @for (tile of section.tiles; track tile.route; let tIdx = $index) {
+          <a
+            class="school-tile"
+            [class]="'tone-' + tile.tone"
+            [routerLink]="tile.route"
+            [style.--tile-delay.ms]="sIdx * 80 + tIdx * 55"
+          >
+            <div class="tile-top">
+              <span class="tile-icon" [attr.data-icon]="tile.icon" aria-hidden="true"></span>
+              <span class="tile-arrow" aria-hidden="true">→</span>
+            </div>
+            <span class="tile-title">{{ tile.label }}</span>
+            <span class="tile-desc">{{ tile.description }}</span>
+          </a>
+        }
+      </div>
+    </section>
+  }
+</section>

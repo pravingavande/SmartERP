@@ -138,10 +138,6 @@
   }
 }
 
-.photo-side-reset-btn {
-  width: 100%;
-}
-
 .pan-address-row {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -165,14 +161,40 @@
   }
 }
 
-.reset-password-row {
+.password-input-wrap {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: flex-end;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  align-items: center;
+
+  .field-control {
+    padding-right: 2.5rem;
+  }
+
+  .toggle-pwd {
+    position: absolute;
+    right: 0.35rem;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      color: #1e3a6e;
+      background: rgba(30, 58, 110, 0.06);
+    }
+  }
 }
 
 .file-pick-btn {

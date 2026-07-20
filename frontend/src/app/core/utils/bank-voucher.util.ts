@@ -22,14 +22,14 @@ export function bankVoucherTitle(vType: BankVoucherType): string {
   return vType === 'BD' ? 'Bank Deposit' : 'Bank Withdraw';
 }
 
+/** Prefer Bank view heads; keep type-filter fallback for older payloads. */
 export function filterBankLedgerHeads(
   ledgerHeads: LedgerHeadOption[] | null | undefined,
   bankLedgerHeads: LedgerHeadOption[] | null | undefined
 ): LedgerHeadOption[] {
+  if (bankLedgerHeads?.length) return bankLedgerHeads;
   const heads = ledgerHeads ?? [];
-  const filtered = heads.filter((h) => BANK_LEDGER_TYPE_IDS.includes((h.ledgerTypeID ?? 0) as (typeof BANK_LEDGER_TYPE_IDS)[number]));
-  if (filtered.length) return filtered;
-  return bankLedgerHeads ?? [];
+  return heads.filter((h) => BANK_LEDGER_TYPE_IDS.includes((h.ledgerTypeID ?? 0) as (typeof BANK_LEDGER_TYPE_IDS)[number]));
 }
 
 export function applyVoucherToBalance(currentBalance: number, vType: string, amount: number): number {

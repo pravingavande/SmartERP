@@ -97,23 +97,37 @@ public sealed class TeacherService : ITeacherService
             return "Designation is required.";
         if (!request.StaffTypeID.HasValue || request.StaffTypeID <= 0)
             return "User type is required.";
+        if (!request.AGID.HasValue || request.AGID <= 0)
+            return "Niyukticha Gut is required.";
         if (!request.GenderCode.HasValue || request.GenderCode <= 0)
             return "Gender is required.";
         if (string.IsNullOrWhiteSpace(request.MobileNo1))
             return "Mobile no. 1 is required.";
-        if (!MobileRegex.IsMatch(request.MobileNo1.Trim()))
-            return "Mobile no. 1 must be a 10-digit number.";
-        if (!string.IsNullOrWhiteSpace(request.MobileNo2) && !MobileRegex.IsMatch(request.MobileNo2.Trim()))
-            return "Mobile no. 2 must be a 10-digit number.";
+        if (!IsAllowedMobile(request.MobileNo1))
+            return "Mobile no. 1 must be a 10-digit number or 0.";
+        if (!string.IsNullOrWhiteSpace(request.MobileNo2) && !IsAllowedMobile(request.MobileNo2))
+            return "Mobile no. 2 must be a 10-digit number or 0.";
         if (!string.IsNullOrWhiteSpace(request.EmailID) && !EmailRegex.IsMatch(request.EmailID.Trim()))
             return "Email ID format is invalid.";
-        if (!string.IsNullOrWhiteSpace(request.AdharCardNo) && !AadharRegex.IsMatch(request.AdharCardNo.Trim()))
-            return "Aadhar card no. must be 12 digits.";
+        if (!string.IsNullOrWhiteSpace(request.AdharCardNo) && !IsAllowedAadhar(request.AdharCardNo))
+            return "Aadhar card no. must be 12 digits, 0, or -.";
         if (!string.IsNullOrWhiteSpace(request.PanNo) && !PanRegex.IsMatch(request.PanNo.Trim().ToUpperInvariant()))
             return "PAN no. format is invalid.";
         if (request.RetirementYear.HasValue && request.RetirementYear < 0)
             return "Retirement year must be numeric.";
         return null;
+    }
+
+    private static bool IsAllowedMobile(string value)
+    {
+        var trimmed = value.Trim();
+        return trimmed == "0" || MobileRegex.IsMatch(trimmed);
+    }
+
+    private static bool IsAllowedAadhar(string value)
+    {
+        var trimmed = value.Trim();
+        return trimmed == "0" || trimmed == "-" || AadharRegex.IsMatch(trimmed);
     }
 
     private static SaveTeacherRequestDto NormalizeRequest(SaveTeacherRequestDto request) => new()
@@ -133,6 +147,8 @@ public sealed class TeacherService : ITeacherService
         GenderCode = request.GenderCode,
         Dob = request.Dob,
         AdharCardNo = Trim(request.AdharCardNo),
+        NationalCode = Trim(request.NationalCode),
+        AGID = request.AGID,
         ShalarthID = Trim(request.ShalarthID),
         ScaleOfPay = Trim(request.ScaleOfPay),
         CasteName = Trim(request.CasteName),
@@ -155,6 +171,7 @@ public sealed class TeacherService : ITeacherService
         SansthaServiceOrderNoAndDate = Trim(request.SansthaServiceOrderNoAndDate),
         ZPServiceOrderNoAndDate = Trim(request.ZPServiceOrderNoAndDate),
         DateOfWorkingStart = request.DateOfWorkingStart,
+        DoWSCurrentSchool = request.DoWSCurrentSchool,
         JTCategoryID = request.JTCategoryID,
         PaymentGradeDate = request.PaymentGradeDate,
         NivadGradeDate = request.NivadGradeDate,
@@ -165,6 +182,7 @@ public sealed class TeacherService : ITeacherService
         AppPassword = request.AppPassword,
         CloseFlag = request.CloseFlag,
         IsActive = request.IsActive,
+        SrNo = request.SrNo,
         Documents = request.Documents,
         Schools = request.Schools
     };

@@ -1,0 +1,283 @@
+.school-dashboard {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.school-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 1.35rem 1.5rem 1.45rem;
+  background:
+    linear-gradient(135deg, #0f2a52 0%, #1a4578 48%, #1e5a8a 100%);
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(15, 42, 82, 0.22);
+  animation: hero-in 0.45s ease both;
+}
+
+.hero-glow {
+  position: absolute;
+  inset: -40% auto auto 55%;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 176, 92, 0.35), transparent 68%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 36rem;
+}
+
+.hero-kicker {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.school-hero h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.school-hero p {
+  margin: 0.35rem 0 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.9rem;
+}
+
+.hero-ornament {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 0.85rem;
+  display: flex;
+  gap: 0.45rem;
+  z-index: 0;
+}
+
+.orb {
+  display: block;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  animation: float-orb 3.6s ease-in-out infinite;
+}
+
+.orb-a { width: 10px; height: 10px; animation-delay: 0s; }
+.orb-b { width: 16px; height: 16px; animation-delay: 0.35s; background: rgba(255, 176, 92, 0.55); }
+.orb-c { width: 12px; height: 12px; animation-delay: 0.7s; }
+
+.dash-section {
+  animation: section-in 0.45s ease both;
+  animation-delay: calc(var(--section-delay, 0) * 1ms);
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--epr-navy);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0.2rem 0 0;
+    color: var(--epr-muted);
+    font-size: 0.82rem;
+  }
+}
+
+.section-mark {
+  width: 4px;
+  min-height: 2.4rem;
+  border-radius: 999px;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+
+  &[data-section='school'] {
+    background: linear-gradient(180deg, #1a4578, #e87722);
+  }
+
+  &[data-section='teacher'] {
+    background: linear-gradient(180deg, #0d7377, #2e7d32);
+  }
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.9rem;
+}
+
+.school-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.05rem 1.1rem 1.15rem;
+  border: 1px solid #d0dae8;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+  box-shadow: 0 2px 10px rgba(15, 35, 65, 0.06);
+  text-decoration: none;
+  color: inherit;
+  min-height: 9rem;
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  animation: tile-in 0.4s ease both;
+  animation-delay: calc(var(--tile-delay, 0) * 1ms);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--tile-accent, #1a4578);
+  }
+
+  &:hover {
+    border-color: var(--tile-accent, #e87722);
+    box-shadow: 0 8px 22px rgba(15, 42, 82, 0.12);
+    transform: translateY(-3px);
+
+    .tile-arrow {
+      transform: translateX(3px);
+      color: var(--tile-accent, #e87722);
+    }
+  }
+
+  &.tone-school { --tile-accent: #1a4578; }
+  &.tone-event { --tile-accent: #e87722; }
+  &.tone-academic { --tile-accent: #1565c0; }
+  &.tone-ticket { --tile-accent: #c62828; }
+  &.tone-teacher { --tile-accent: #0d7377; }
+  &.tone-leave { --tile-accent: #2e7d32; }
+}
+
+.tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+.tile-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--tile-accent, #1a4578) 14%, #fff);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0.45rem;
+    background: var(--tile-accent, #1a4578);
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+  }
+
+  &[data-icon='school']::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 3 1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 3 1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z'/%3E%3C/svg%3E");
+  }
+
+  &[data-icon='event-calendar']::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z'/%3E%3C/svg%3E");
+  }
+
+  &[data-icon='academic-calendar']::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z'/%3E%3C/svg%3E");
+  }
+
+  &[data-icon='ticket']::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4zM11 14H9v2H7v-2H5v-2h2V10h2v2h2v2z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4zM11 14H9v2H7v-2H5v-2h2V10h2v2h2v2z'/%3E%3C/svg%3E");
+  }
+
+  &[data-icon='staff']::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E");
+  }
+
+  &[data-icon='attendance']::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z'/%3E%3C/svg%3E");
+  }
+}
+
+.tile-arrow {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #94a3b8;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.tile-title {
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--epr-navy);
+}
+
+.tile-desc {
+  font-size: 0.8rem;
+  color: var(--epr-muted);
+  line-height: 1.4;
+}
+
+@keyframes hero-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes section-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tile-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes float-orb {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@media (max-width: 640px) {
+  .school-hero {
+    padding: 1.15rem 1.1rem 1.25rem;
+  }
+
+  .school-hero h1 {
+    font-size: 1.3rem;
+  }
+
+  .hero-ornament {
+    display: none;
+  }
+}

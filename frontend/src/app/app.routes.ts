@@ -21,6 +21,11 @@ export const routes: Routes = [
           import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent)
       },
       {
+        path: 'school-dashboard',
+        loadComponent: () =>
+          import('./features/school-dashboard/school-dashboard.component').then((m) => m.SchoolDashboardComponent)
+      },
+      {
         path: 'academic-calendar',
         loadComponent: () =>
           import('./features/audit/academic-schedule/academic-schedule.component').then((m) => m.AcademicScheduleComponent)

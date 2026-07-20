@@ -21,7 +21,7 @@ public sealed class DonationService : IDonationService
         var drHeads = await _donationRepository.GetDRHeadsAsync(null, cancellationToken).ConfigureAwait(false);
         var paymentTypes = await _auditRepository.GetPaymentTypesAsync(cancellationToken).ConfigureAwait(false);
         var fyList = await _auditRepository.GetFyListAsync(cancellationToken).ConfigureAwait(false);
-        var bankLedgerHeads = await _auditRepository.GetBankLedgerHeadsAsync(cancellationToken).ConfigureAwait(false);
+        var bankLedgerHeads = await _auditRepository.GetBankLedgerHeadsAsync(orgId: null, cancellationToken).ConfigureAwait(false);
 
         return new DonationLookupsDto
         {

@@ -12,6 +12,7 @@ public sealed class TeacherServiceValidationTests
         StaffTypeID = 2,
         DesignationCode = 1,
         GenderCode = 1,
+        AGID = 1,
         Firstname = "Ramesh",
         LastName = "Patil",
         MobileNo1 = "9876543210",
@@ -81,7 +82,7 @@ public sealed class TeacherServiceValidationTests
     {
         var request = ValidRequest();
         request.MobileNo2 = "123";
-        Assert.Equal("Mobile no. 2 must be a 10-digit number.", TeacherService.ValidateSave(request));
+        Assert.Equal("Mobile no. 2 must be a 10-digit number or 0.", TeacherService.ValidateSave(request));
     }
 
     [Fact]
@@ -117,11 +118,36 @@ public sealed class TeacherServiceValidationTests
     }
 
     [Fact]
+    public void ValidateSave_RejectsMissingAgid()
+    {
+        var request = ValidRequest();
+        request.AGID = null;
+        Assert.Equal("Niyukticha Gut is required.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
     public void ValidateSave_RejectsInvalidMobile()
     {
         var request = ValidRequest();
         request.MobileNo1 = "12345";
-        Assert.Equal("Mobile no. 1 must be a 10-digit number.", TeacherService.ValidateSave(request));
+        Assert.Equal("Mobile no. 1 must be a 10-digit number or 0.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_AcceptsMobileZeroPlaceholder()
+    {
+        var request = ValidRequest();
+        request.MobileNo1 = "0";
+        Assert.Null(TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_AcceptsDashTextNames()
+    {
+        var request = ValidRequest();
+        request.Firstname = "-";
+        request.LastName = "-";
+        Assert.Null(TeacherService.ValidateSave(request));
     }
 
     [Fact]
@@ -137,7 +163,19 @@ public sealed class TeacherServiceValidationTests
     {
         var request = ValidRequest();
         request.AdharCardNo = "1234";
-        Assert.Equal("Aadhar card no. must be 12 digits.", TeacherService.ValidateSave(request));
+        Assert.Equal("Aadhar card no. must be 12 digits, 0, or -.", TeacherService.ValidateSave(request));
+    }
+
+    [Fact]
+    public void ValidateSave_AcceptsAadharZeroOrDash()
+    {
+        var zero = ValidRequest();
+        zero.AdharCardNo = "0";
+        Assert.Null(TeacherService.ValidateSave(zero));
+
+        var dash = ValidRequest();
+        dash.AdharCardNo = "-";
+        Assert.Null(TeacherService.ValidateSave(dash));
     }
 
     [Fact]

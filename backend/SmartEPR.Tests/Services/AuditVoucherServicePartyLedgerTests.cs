@@ -151,6 +151,106 @@ public sealed class AuditVoucherServicePartyLedgerTests
     }
 
     [Fact]
+    public async Task SaveLedgerHeadAsync_TrimsAndPersistsDescription()
+    {
+        SaveLedgerHeadRequestDto? captured = null;
+        _repository
+            .Setup(r => r.SaveLedgerHeadAsync(It.IsAny<SaveLedgerHeadRequestDto>(), It.IsAny<CancellationToken>()))
+            .Callback<SaveLedgerHeadRequestDto, CancellationToken>((dto, _) => captured = dto)
+            .ReturnsAsync(15);
+        _repository
+            .Setup(r => r.GetLedgerHeadByIdAsync(15, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new LedgerHeadMasterDto
+            {
+                LedgerHeadID = 15,
+                UnderOrgID = 4,
+                LedgerHead = "Fees",
+                Description = "School fees",
+                LedgerTypeID = 2,
+                IsActive = true
+            });
+
+        await CreateService().SaveLedgerHeadAsync(new SaveLedgerHeadRequestDto
+        {
+            UnderOrgID = 4,
+            LedgerHead = "  Fees  ",
+            LedgerHeadEng = "  Fees Eng  ",
+            Description = "  School fees  ",
+            LedgerTypeID = 2
+        });
+
+        Assert.Equal("Fees", captured?.LedgerHead);
+        Assert.Equal("Fees Eng", captured?.LedgerHeadEng);
+        Assert.Equal("School fees", captured?.Description);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task ImportLedgerHeadsAsync_RejectsMissingDestinationOrg(long destination)
+    {
+        var (data, error) = await CreateService().ImportLedgerHeadsAsync(new ImportLedgerHeadRequestDto
+        {
+            DestinationUnderOrgID = destination,
+            LedgerHeadIds = [1]
+        });
+
+        Assert.Null(data);
+        Assert.Equal("Organization is required.", error);
+    }
+
+    [Fact]
+    public async Task ImportLedgerHeadsAsync_RejectsDestinationOrgOne()
+    {
+        var (data, error) = await CreateService().ImportLedgerHeadsAsync(new ImportLedgerHeadRequestDto
+        {
+            DestinationUnderOrgID = 1,
+            LedgerHeadIds = [1, 2]
+        });
+
+        Assert.Null(data);
+        Assert.Equal("Cannot import into the source organization.", error);
+        _repository.Verify(
+            r => r.ImportLedgerHeadsAsync(It.IsAny<long>(), It.IsAny<IReadOnlyList<long>>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ImportLedgerHeadsAsync_RejectsEmptyIds()
+    {
+        var (data, error) = await CreateService().ImportLedgerHeadsAsync(new ImportLedgerHeadRequestDto
+        {
+            DestinationUnderOrgID = 5,
+            LedgerHeadIds = []
+        });
+
+        Assert.Null(data);
+        Assert.Equal("Select at least one ledger head to import.", error);
+    }
+
+    [Fact]
+    public async Task ImportLedgerHeadsAsync_CallsRepositoryAndReturnsCounts()
+    {
+        _repository
+            .Setup(r => r.ImportLedgerHeadsAsync(6, It.IsAny<IReadOnlyList<long>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ImportLedgerHeadResultDto { ImportedCount = 2, SkippedCount = 1 });
+
+        var (data, error) = await CreateService().ImportLedgerHeadsAsync(new ImportLedgerHeadRequestDto
+        {
+            DestinationUnderOrgID = 6,
+            LedgerHeadIds = [10, 11, 12]
+        });
+
+        Assert.Null(error);
+        Assert.NotNull(data);
+        Assert.Equal(2, data!.ImportedCount);
+        Assert.Equal(1, data.SkippedCount);
+        _repository.Verify(
+            r => r.ImportLedgerHeadsAsync(6, It.Is<IReadOnlyList<long>>(ids => ids.Count == 3), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task DeleteVoucherAsync_CallsRepositoryAndReturnsTrue()
     {
         _repository

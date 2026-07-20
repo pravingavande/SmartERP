@@ -61,16 +61,12 @@ export class MainLayoutComponent {
       title: 'Main',
       items: [
         { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
-        { label: 'Teacher Master', icon: 'staff', route: '/teacher-master' },
-        { label: 'Employee Leave Apply', icon: 'attendance', route: '/staff/leave-apply' }
-      ]
-    },
-    {
-      title: 'Academic',
-      items: [
-        { label: 'Academic Scheduler', icon: 'academic-calendar', route: '/academic-calendar' },
-        { label: 'Event Calendar', icon: 'event-calendar', route: '/event-calendar' },
-        { label: 'Schools', icon: 'school', route: '/schools' }
+        {
+          label: 'School Dashboard',
+          icon: 'school-dashboard',
+          route: '/school-dashboard',
+          highlight: true
+        }
       ]
     },
     {
@@ -87,10 +83,7 @@ export class MainLayoutComponent {
     },
     {
       title: 'Operations',
-      items: [
-        { label: 'Ticket Raise', icon: 'ticket', route: '/tickets' },
-        { label: 'Reports', icon: 'reports', route: '/reports' }
-      ]
+      items: [{ label: 'Reports', icon: 'reports', route: '/reports' }]
     },
     {
       title: 'Administration',

@@ -35,6 +35,7 @@
             @for (item of section.items; track item.route) {
               <a
                 class="nav-link"
+                [class.nav-link-highlight]="item.highlight"
                 [routerLink]="item.route"
                 routerLinkActive="active"
                 [title]="item.label"

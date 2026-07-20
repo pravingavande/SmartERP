@@ -18,7 +18,7 @@ import {
   VoucherListItem
 } from '../../../core/models/audit.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
-import { validateBankVoucherForm, filterBankLedgerHeads } from '../../../core/utils/bank-voucher.util';
+import { validateBankVoucherForm } from '../../../core/utils/bank-voucher.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import { coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
@@ -100,9 +100,7 @@ export class BankVoucherEntryComponent {
     Math.min(this.displayedVouchers().length, (this.listPageIndex() + 1) * this.listPageSize())
   );
 
-  readonly bankLedgerHeads = computed(() =>
-    filterBankLedgerHeads(this.lookups()?.ledgerHeads, this.lookups()?.bankLedgerHeads)
-  );
+  readonly bankLedgerHeads = computed(() => this.lookups()?.bankLedgerHeads ?? []);
 
   constructor() {
     this.audit
@@ -117,7 +115,10 @@ export class BankVoucherEntryComponent {
         const fyId = fyList[0]?.fyID ?? null;
         this.listOrgID.set(orgId);
         this.listFyID.set(fyId);
-        if (orgId) this.loadAccountRegisters(orgId, true);
+        if (orgId) {
+          this.refreshLedgerLookups(orgId);
+          this.loadAccountRegisters(orgId, true);
+        }
         this.listReload$.next();
       });
 
@@ -143,8 +144,31 @@ export class BankVoucherEntryComponent {
     this.listOrgID.set(orgId);
     this.listAccountRegisterID.set(null);
     this.accountRegisters.set([]);
-    if (orgId) this.loadAccountRegisters(orgId, true);
+    if (orgId) {
+      this.refreshLedgerLookups(orgId);
+      this.loadAccountRegisters(orgId, true);
+    }
     this.listReload$.next();
+  }
+
+  /** Reload bank ledger heads from VW_LedgerHeadList_Bank for the selected school. */
+  private refreshLedgerLookups(orgId: number | null): void {
+    if (!orgId) return;
+    this.audit
+      .getLookups(orgId, this.vType())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((data) => {
+        if (!data) return;
+        this.lookups.update((prev) =>
+          prev
+            ? {
+                ...prev,
+                ledgerHeads: data.ledgerHeads ?? [],
+                bankLedgerHeads: data.bankLedgerHeads ?? []
+              }
+            : data
+        );
+      });
   }
 
   onListFyChange(fyId: number | null): void {
@@ -345,7 +369,10 @@ export class BankVoucherEntryComponent {
           }
         ]
       });
-      if (v.orgID) this.loadAccountRegisters(v.orgID, false);
+      if (v.orgID) {
+        this.refreshLedgerLookups(v.orgID);
+        this.loadAccountRegisters(v.orgID, false);
+      }
       if (detail?.ledgerHeadID) {
         this.audit
           .getLedgerNarrations(detail.ledgerHeadID)

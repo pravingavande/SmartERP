@@ -10,6 +10,7 @@ import {
   AccountRegisterMasterOption,
   AccountRegisterOption,
   ImportAccountRegisterResult,
+  ImportLedgerHeadResult,
   ApiResponse,
   AuditDashboardPage,
   AuditDashboardRow,
@@ -21,6 +22,7 @@ import {
   PartyFormState,
   LedgerHeadFormState,
   LedgerHeadMaster,
+  LedgerHeadOption,
   LedgerTypeOption,
   OrgOption,
   PartyMaster,
@@ -144,16 +146,29 @@ export class AuditService {
     };
   }
 
-  getLookups(): Observable<AuditLookups | null> {
-    return this.http.get<ApiResponse<AuditLookups>>(`${this.base}/lookups`).pipe(
+  getLookups(orgId?: number | null, vType?: string | null): Observable<AuditLookups | null> {
+    let params = new HttpParams();
+    if (orgId) params = params.set('orgId', orgId.toString());
+    if (vType?.trim()) params = params.set('vType', vType.trim());
+
+    return this.http.get<ApiResponse<AuditLookups>>(`${this.base}/lookups`, { params }).pipe(
       map((r) => {
         if (!r.success || !r.data) return null;
-        const data = r.data as AuditLookups & { Orgs?: OrgOption[]; SansthaOrgs?: OrgOption[] };
+        const data = r.data as AuditLookups & {
+          Orgs?: OrgOption[];
+          SansthaOrgs?: OrgOption[];
+          LedgerHeads?: LedgerHeadOption[];
+          BankLedgerHeads?: LedgerHeadOption[];
+        };
         const rawOrgs = data.orgs ?? data.Orgs ?? [];
+        const rawLedgerHeads = data.ledgerHeads ?? data.LedgerHeads ?? [];
+        const rawBankLedgerHeads = data.bankLedgerHeads ?? data.BankLedgerHeads ?? [];
         return {
           ...data,
           orgs: this.auth.filterSchoolOrgs(rawOrgs.map((o) => this.normalizeOrgOption(o))),
-          sansthaOrgs: (data.sansthaOrgs ?? data.SansthaOrgs ?? []).map((o) => this.normalizeOrgOption(o))
+          sansthaOrgs: (data.sansthaOrgs ?? data.SansthaOrgs ?? []).map((o) => this.normalizeOrgOption(o)),
+          ledgerHeads: rawLedgerHeads.map((h) => this.normalizeLedgerHead(h)),
+          bankLedgerHeads: rawBankLedgerHeads.map((h) => this.normalizeLedgerHead(h))
         };
       }),
       catchError(() => of(null))
@@ -429,6 +444,22 @@ export class AuditService {
     };
   }
 
+  private normalizeLedgerHead(
+    raw: LedgerHeadOption & {
+      LedgerHeadID?: number;
+      LedgerHead?: string;
+      LedgerHeadEng?: string | null;
+      LedgerTypeID?: number | null;
+    }
+  ): LedgerHeadOption {
+    return {
+      ledgerHeadID: raw.ledgerHeadID ?? raw.LedgerHeadID ?? 0,
+      ledgerHead: raw.ledgerHead ?? raw.LedgerHead ?? '',
+      ledgerHeadEng: raw.ledgerHeadEng ?? raw.LedgerHeadEng ?? null,
+      ledgerTypeID: raw.ledgerTypeID ?? raw.LedgerTypeID ?? null
+    };
+  }
+
   private normalizeAccountRegisterMasterOption(
     raw: AccountRegisterMasterOption & {
       AccountRegisterID?: number;
@@ -471,22 +502,27 @@ export class AuditService {
     raw: LedgerHeadMaster & {
       LedgerHeadID?: number;
       UnderOrgID?: number;
+      OrgID?: number | null;
       SrNo?: number;
       LedgerHead?: string;
       LedgerHeadEng?: string | null;
       ledgerHeadShort?: string | null;
       LedgerHeadShort?: string | null;
+      Description?: string | null;
       LedgerTypeID?: number;
       LedgerType?: string | null;
       IsActive?: boolean;
     }
   ): LedgerHeadMaster {
+    const underOrgID = raw.underOrgID ?? raw.UnderOrgID ?? 0;
     return {
       ledgerHeadID: raw.ledgerHeadID ?? raw.LedgerHeadID ?? 0,
-      underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? 0,
+      underOrgID,
+      orgID: raw.orgID ?? raw.OrgID ?? underOrgID,
       srNo: raw.srNo ?? raw.SrNo ?? 0,
       ledgerHead: raw.ledgerHead ?? raw.LedgerHead ?? '',
       ledgerHeadEng: raw.ledgerHeadEng ?? raw.LedgerHeadEng ?? raw.ledgerHeadShort ?? raw.LedgerHeadShort ?? null,
+      description: raw.description ?? raw.Description ?? null,
       ledgerTypeID: raw.ledgerTypeID ?? raw.LedgerTypeID ?? 0,
       ledgerType: raw.ledgerType ?? raw.LedgerType ?? null,
       isActive: raw.isActive ?? raw.IsActive ?? true
@@ -601,20 +637,54 @@ export class AuditService {
   }
 
   saveLedgerHead(form: LedgerHeadFormState): Observable<{ data: LedgerHeadMaster | null; message: string | null }> {
+    const orgId = form.orgID ?? form.underOrgID;
     const payload = {
       ledgerHeadID: form.ledgerHeadID,
       underOrgID: form.underOrgID,
+      orgID: orgId,
       ledgerHead: form.ledgerHead.trim(),
       ledgerHeadEng: form.ledgerHeadEng.trim() || null,
+      description: form.description.trim() || null,
       ledgerTypeID: form.ledgerTypeID,
       isActive: form.isActive
     };
     return this.http.post<ApiResponse<LedgerHeadMaster>>(`${this.base}/ledger-head-master`, payload).pipe(
       map((r) => ({
-        data: r.success && r.data ? r.data : null,
+        data: r.success && r.data ? this.normalizeLedgerHeadMaster(r.data) : null,
         message: r.success ? null : (r.message ?? 'Unable to save ledger head.')
       })),
       catchError(() => of({ data: null, message: 'Unable to save ledger head.' }))
     );
+  }
+
+  importLedgerHeads(
+    destinationUnderOrgId: number,
+    ledgerHeadIds: number[]
+  ): Observable<{ data: ImportLedgerHeadResult | null; message: string | null }> {
+    const payload = {
+      destinationUnderOrgID: destinationUnderOrgId,
+      destinationOrgID: destinationUnderOrgId,
+      ledgerHeadIds
+    };
+    return this.http
+      .post<ApiResponse<ImportLedgerHeadResult & { ImportedCount?: number; SkippedCount?: number }>>(
+        `${this.base}/ledger-head-master/import`,
+        payload
+      )
+      .pipe(
+        map((r) => {
+          if (!r.success || !r.data) {
+            return { data: null, message: r.message ?? 'Unable to import ledger heads.' };
+          }
+          return {
+            data: {
+              importedCount: Number(r.data.importedCount ?? r.data.ImportedCount ?? 0),
+              skippedCount: Number(r.data.skippedCount ?? r.data.SkippedCount ?? 0)
+            },
+            message: r.message ?? null
+          };
+        }),
+        catchError(() => of({ data: null, message: 'Unable to import ledger heads.' }))
+      );
   }
 }

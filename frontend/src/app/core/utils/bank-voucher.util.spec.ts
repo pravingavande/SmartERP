@@ -99,7 +99,12 @@ describe('bank-voucher.util', () => {
       { ledgerHeadID: 4, ledgerHead: 'Salary', ledgerTypeID: 1 }
     ];
 
-    it('returns only bank-type ledger heads (types 5-9)', () => {
+    it('prefers bankLedgerHeads from Bank view when provided', () => {
+      const fromView: LedgerHeadOption[] = [{ ledgerHeadID: 99, ledgerHead: 'View Bank', ledgerTypeID: null }];
+      expect(filterBankLedgerHeads(heads, fromView)).toEqual(fromView);
+    });
+
+    it('falls back to bank-type ledger heads (types 5-9) when bank view empty', () => {
       const result = filterBankLedgerHeads(heads, []);
       expect(result.map((h) => h.ledgerHeadID)).toEqual([2, 3]);
     });

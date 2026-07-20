@@ -8,7 +8,7 @@ using SmartEPR.Core.Interfaces;
 using SmartEPR.Core.Validation;
 
 namespace SmartEPR.Api.Controllers;
-
+    
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
@@ -45,12 +45,15 @@ public sealed class AuditController : ControllerBase
     }
 
     [HttpGet("lookups")]
-    public async Task<IActionResult> GetLookups(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetLookups(
+        [FromQuery] long? orgId,
+        [FromQuery] string? vType,
+        CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
             return Unauthorized(ApiResponse<AuditLookupsDto>.Fail("Invalid token."));
 
-        var lookups = await _auditService.GetLookupsAsync(userId, cancellationToken).ConfigureAwait(false);
+        var lookups = await _auditService.GetLookupsAsync(userId, orgId, vType, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<AuditLookupsDto>.Ok(lookups));
     }
 
@@ -271,6 +274,17 @@ public sealed class AuditController : ControllerBase
         return saved is null
             ? Ok(ApiResponse<LedgerHeadMasterDto>.Fail("Unable to save ledger head. School, name and type are required."))
             : Ok(ApiResponse<LedgerHeadMasterDto>.Ok(saved, "Ledger head saved."));
+    }
+
+    [HttpPost("ledger-head-master/import")]
+    public async Task<IActionResult> ImportLedgerHeads([FromBody] ImportLedgerHeadRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _auditService.ImportLedgerHeadsAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportLedgerHeadResultDto>.Fail(error ?? "Unable to import ledger heads."))
+            : Ok(ApiResponse<ImportLedgerHeadResultDto>.Ok(
+                data,
+                $"Imported {data.ImportedCount} ledger head(s). Skipped {data.SkippedCount}."));
     }
 
     private bool TryGetUserId(out long userId)

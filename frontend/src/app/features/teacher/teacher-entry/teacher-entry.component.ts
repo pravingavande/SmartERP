@@ -93,7 +93,7 @@ export class TeacherEntryComponent {
   readonly listFilter = signal<TeacherListFilter>({ isActive: null });
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
-  readonly resetPasswordValue = signal('');
+  readonly showAppPassword = signal(false);
   readonly userProfile = signal<UserProfile | null>(null);
 
   readonly masterLookups = computed(() => this.lookups()?.lookups);
@@ -175,24 +175,31 @@ export class TeacherEntryComponent {
       language: this.languageService.load(underOrgID)
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ lookups: data, profile }) => {
-        this.lookupsLoading.set(false);
-        this.userProfile.set(profile);
-        if (!data) {
+      .subscribe({
+        next: ({ lookups: data, profile }) => {
+          this.lookupsLoading.set(false);
+          this.userProfile.set(profile);
+          if (!data) {
+            this.errorMessage.set('Unable to load teacher masters. Please refresh or contact admin.');
+            this.teachers.set([]);
+            return;
+          }
+          this.lookups.set(data);
+          if (!data.orgs?.length) {
+            this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
+            this.teachers.set([]);
+            return;
+          }
+
+          const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
+          this.listFilter.update((f) => ({ ...f, orgId }));
+          this.loadList();
+        },
+        error: () => {
+          this.lookupsLoading.set(false);
           this.errorMessage.set('Unable to load teacher masters. Please refresh or contact admin.');
           this.teachers.set([]);
-          return;
         }
-        this.lookups.set(data);
-        if (!data.orgs?.length) {
-          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
-          this.teachers.set([]);
-          return;
-        }
-
-        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
-        this.listFilter.update((f) => ({ ...f, orgId }));
-        this.loadList();
       });
   }
 
@@ -238,7 +245,7 @@ export class TeacherEntryComponent {
     this.highestUnlockedStep.set(1);
     this.fieldErrors.set({});
     this.saveError.set(null);
-    this.resetPasswordValue.set('');
+    this.showAppPassword.set(false);
     const empty = this.emptyForm();
     this.form.set(empty);
     if (orgId) this.onOrgChange(orgId);
@@ -272,7 +279,7 @@ export class TeacherEntryComponent {
         this.highestUnlockedStep.set(3);
         this.fieldErrors.set({});
         this.saveError.set(null);
-        this.resetPasswordValue.set('');
+        this.showAppPassword.set(false);
         this.form.set(this.ensureChildRows(data));
         this.refreshPhotoPreview(data.photoPath);
       });
@@ -290,6 +297,7 @@ export class TeacherEntryComponent {
     this.activeSection.set('basic');
     this.fieldErrors.set({});
     this.saveError.set(null);
+    this.showAppPassword.set(false);
     this.loadList();
   }
 
@@ -654,25 +662,8 @@ export class TeacherEntryComponent {
       });
   }
 
-  resetPassword(): void {
-    const userId = this.form().userID;
-    const password = this.resetPasswordValue().trim();
-    if (!userId) return;
-    if (!password) {
-      this.fieldErrors.update((e) => ({ ...e, resetPassword: 'Enter a new password.' }));
-      return;
-    }
-    this.teacherService
-      .resetPassword(userId, password)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((ok) => {
-        if (ok) {
-          this.toast.showSuccess('Password reset.');
-          this.resetPasswordValue.set('');
-        } else {
-          this.toast.showError('Unable to reset password.');
-        }
-      });
+  toggleAppPassword(): void {
+    this.showAppPassword.update((v) => !v);
   }
 
   printTeacher(): void {
@@ -754,6 +745,8 @@ export class TeacherEntryComponent {
       genderCode: null,
       dob: todayIsoDate(),
       adharCardNo: '',
+      nationalCode: '',
+      agid: null,
       shalarthID: '',
       scaleOfPay: '',
       casteName: '',
@@ -776,6 +769,7 @@ export class TeacherEntryComponent {
       sansthaServiceOrderNoAndDate: '',
       zpServiceOrderNoAndDate: '',
       dateOfWorkingStart: todayIsoDate(),
+      doWSCurrentSchool: todayIsoDate(),
       jtCategoryID: null,
       paymentGradeDate: todayIsoDate(),
       nivadGradeDate: todayIsoDate(),

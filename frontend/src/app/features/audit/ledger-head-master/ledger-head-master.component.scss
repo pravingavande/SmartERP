@@ -1,8 +1,40 @@
 @import '../../../shared/styles/master-shared.scss';
 @import '../party-master/party-master.component.scss';
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.import-lang-field {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  min-width: 11rem;
+
+  .field-label {
+    margin: 0;
+    white-space: nowrap;
+    font-size: 0.875rem;
+  }
+
+  .field-control {
+    min-width: 7.5rem;
+  }
+}
+
 .master-modal-wide {
-  width: min(100%, 620px);
+  width: min(100%, 640px);
+}
+
+.master-modal-header .hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.8;
 }
 
 /* Keep View/Edit/Delete on one row */

@@ -47,23 +47,15 @@ export class MasterHubComponent {
     },
     {
       label: 'Account Register Master',
-      description: 'School-wise account registers for vouchers',
+      description: 'Sanstha-wise account registers for vouchers',
       icon: 'register',
       route: '/audit/account-register-master',
       tone: 'account',
       adminOnly: true
     },
     {
-      label: 'Account Register Define',
-      description: 'Map account registers to each Sanstha',
-      icon: 'register',
-      route: '/audit/account-register-define',
-      tone: 'account',
-      adminOnly: true
-    },
-    {
       label: 'Donation Head Master',
-      description: 'School-wise donation heads',
+      description: 'Sanstha-wise donation heads',
       icon: 'donation-head',
       route: '/audit/donation-head-master',
       tone: 'donation',

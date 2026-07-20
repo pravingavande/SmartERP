@@ -43,6 +43,11 @@ public sealed class TeacherRepository : ITeacherRepository
         var bloodGroups = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();
         var shifts = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();
         var documents = (await multi.ReadAsync<CodeNameRow>().ConfigureAwait(false)).AsList();
+        var appointmentGroups = new List<AppointmentGroupRow>();
+        if (!multi.IsConsumed)
+        {
+            appointmentGroups = (await multi.ReadAsync<AppointmentGroupRow>().ConfigureAwait(false)).AsList();
+        }
 
         return new TeacherLookupsDto
         {
@@ -62,7 +67,11 @@ public sealed class TeacherRepository : ITeacherRepository
             Categories = MapIdName(categories, x => x.CategoryID, x => x.CategoryName),
             BloodGroups = MapIdName(bloodGroups, x => x.BloodGroupID, x => x.BloodGroupName),
             Shifts = MapIdName(shifts, x => x.ShiftID, x => x.ShiftName),
-            Documents = MapCodeName(documents, x => x.DocumentCode, x => x.DocumentName)
+            Documents = MapCodeName(documents, x => x.DocumentCode, x => x.DocumentName),
+            AppointmentGroups = appointmentGroups
+                .Where(x => x.AGID.HasValue)
+                .Select(x => new IdNameOptionDto { Id = (int)x.AGID!.Value, Name = x.AGName ?? string.Empty })
+                .ToList()
         };
     }
 
@@ -111,6 +120,8 @@ public sealed class TeacherRepository : ITeacherRepository
             GenderCode = header.GenderCode,
             Dob = header.Dob,
             AdharCardNo = header.AdharCardNo,
+            NationalCode = header.NationalCode,
+            AGID = header.AGID,
             ShalarthID = header.ShalarthID,
             ScaleOfPay = header.ScaleOfPay,
             CasteName = header.CasteName,
@@ -133,6 +144,7 @@ public sealed class TeacherRepository : ITeacherRepository
             SansthaServiceOrderNoAndDate = header.SansthaServiceOrderNoAndDate,
             ZPServiceOrderNoAndDate = header.ZPServiceOrderNoAndDate,
             DateOfWorkingStart = header.DateOfWorkingStart,
+            DoWSCurrentSchool = header.DoWSCurrentSchool,
             JTCategoryID = header.JTCategoryID,
             PaymentGradeDate = header.PaymentGradeDate,
             NivadGradeDate = header.NivadGradeDate,
@@ -189,6 +201,8 @@ public sealed class TeacherRepository : ITeacherRepository
         p.Add("@GenderCode", request.GenderCode);
         p.Add("@Dob", request.Dob);
         p.Add("@AdharCardNo", request.AdharCardNo);
+        p.Add("@NationalCode", request.NationalCode);
+        p.Add("@AGID", request.AGID);
         p.Add("@ShalarthID", request.ShalarthID);
         p.Add("@ScaleOfPay", request.ScaleOfPay);
         p.Add("@CasteName", request.CasteName);
@@ -211,6 +225,7 @@ public sealed class TeacherRepository : ITeacherRepository
         p.Add("@SansthaServiceOrderNoAndDate", request.SansthaServiceOrderNoAndDate);
         p.Add("@ZPServiceOrderNoAndDate", request.ZPServiceOrderNoAndDate);
         p.Add("@DateOfWorkingStart", request.DateOfWorkingStart);
+        p.Add("@DoWSCurrentSchool", request.DoWSCurrentSchool);
         p.Add("@JTCategoryID", request.JTCategoryID);
         p.Add("@PaymentGradeDate", request.PaymentGradeDate);
         p.Add("@NivadGradeDate", request.NivadGradeDate);
@@ -295,6 +310,12 @@ public sealed class TeacherRepository : ITeacherRepository
         public string? BloodGroupName { get; init; }
         public int? ShiftID { get; init; }
         public string? ShiftName { get; init; }
+    }
+
+    private sealed class AppointmentGroupRow
+    {
+        public long? AGID { get; init; }
+        public string? AGName { get; init; }
     }
 
     private sealed class DuplicateRow

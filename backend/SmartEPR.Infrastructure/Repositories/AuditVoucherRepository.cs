@@ -56,14 +56,19 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         return _executor.QueryListAsync<FyOptionDto>("dbo.sp_Audit_GetFyList", null, cancellationToken);
     }
 
-    public Task<IReadOnlyList<LedgerHeadOptionDto>> GetLedgerHeadsAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<LedgerHeadOptionDto>> GetLedgerHeadsAsync(long? orgId = null, string? vType = null, CancellationToken cancellationToken = default)
     {
-        return _executor.QueryListAsync<LedgerHeadOptionDto>("dbo.sp_Audit_GetLedgerHeads", null, cancellationToken);
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        p.Add("@VType", string.IsNullOrWhiteSpace(vType) ? null : vType.Trim());
+        return _executor.QueryListAsync<LedgerHeadOptionDto>("dbo.sp_Audit_GetLedgerHeads", p, cancellationToken);
     }
 
-    public Task<IReadOnlyList<LedgerHeadOptionDto>> GetBankLedgerHeadsAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<LedgerHeadOptionDto>> GetBankLedgerHeadsAsync(long? orgId = null, CancellationToken cancellationToken = default)
     {
-        return _executor.QueryListAsync<LedgerHeadOptionDto>("dbo.sp_Audit_GetBankLedgerHeads", null, cancellationToken);
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        return _executor.QueryListAsync<LedgerHeadOptionDto>("dbo.sp_Audit_GetBankLedgerHeads", p, cancellationToken);
     }
 
     public async Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long ledgerHeadId, CancellationToken cancellationToken = default)
@@ -377,13 +382,39 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         var p = new DynamicParameters();
         p.Add("@LedgerHeadID", request.LedgerHeadID > 0 ? request.LedgerHeadID : null, dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.InputOutput);
         p.Add("@UnderOrgID", request.UnderOrgID);
+        p.Add("@OrgID", request.OrgID is > 0 ? request.OrgID : request.UnderOrgID);
         p.Add("@LedgerHead", request.LedgerHead);
         p.Add("@LedgerHeadEng", request.LedgerHeadEng);
+        p.Add("@Description", request.Description);
         p.Add("@LedgerTypeID", request.LedgerTypeID);
         p.Add("@IsActive", request.IsActive);
 
         await _executor.ExecuteAsync("dbo.sp_Audit_LedgerHead_Save", p, cancellationToken).ConfigureAwait(false);
         return p.Get<long>("@LedgerHeadID");
+    }
+
+    public async Task<ImportLedgerHeadResultDto> ImportLedgerHeadsAsync(
+        long destinationUnderOrgId,
+        IReadOnlyList<long> ledgerHeadIds,
+        CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DestinationUnderOrgID", destinationUnderOrgId);
+        p.Add("@DestinationOrgID", destinationUnderOrgId);
+        p.Add("@LedgerHeadIdsJson", JsonSerializer.Serialize(ledgerHeadIds));
+        p.Add("@ImportedCount", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+        p.Add("@SkippedCount", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+
+        var row = await _executor.QuerySingleOrDefaultAsync<ImportLedgerHeadResultDto>(
+            "dbo.sp_Audit_LedgerHead_Import",
+            p,
+            cancellationToken).ConfigureAwait(false);
+
+        return row ?? new ImportLedgerHeadResultDto
+        {
+            ImportedCount = p.Get<int?>("@ImportedCount") ?? 0,
+            SkippedCount = p.Get<int?>("@SkippedCount") ?? 0
+        };
     }
 
     private sealed class NarrationRow

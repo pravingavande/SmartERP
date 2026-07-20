@@ -1,14 +1,14 @@
 <section class="teacher-page">
   <header class="page-header">
     <div>
-      <h1>Teacher Master</h1>
+      <h1>{{ lbl('Teacher Master', 'Teacher Master') }}</h1>
       <p>UserMaster — teacher records with basic details, documents and school history</p>
     </div>
     <div class="header-actions">
       @if (!formVisible()) {
         <button type="button" class="btn btn-primary" (click)="newTeacher()">+ Add Teacher</button>
       } @else {
-        <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← Back to List</button>
+        <button type="button" class="btn btn-outline btn-back" (click)="cancel()">← {{ lbl('BackToList', 'Back to List') }}</button>
       }
     </div>
   </header>
@@ -18,16 +18,18 @@
       <app-org-school-select
         fieldClass="field-org-wide"
         name="filterOrg"
+        label="शाळा / कॉलेज / संस्था"
+        [nullLabel]="lbl('SelectSanstha', '-- Select Sanstha --')"
         [orgs]="schoolOrgs()"
         [value]="listFilter().orgId ?? null"
         (valueChange)="updateListFilter('orgId', $event)"
       />
       <label class="field field-search">
-        <span class="field-label">Teacher Name</span>
-        <input class="field-control" type="search" [ngModel]="listFilter().search" (ngModelChange)="onSearchChange($event)" name="filterSearch" placeholder="Name">
+        <span class="field-label">{{ lbl('TeacherName', 'Teacher Name') }}</span>
+        <input class="field-control" type="search" [ngModel]="listFilter().search" (ngModelChange)="onSearchChange($event)" name="filterSearch" [placeholder]="lbl('Search', 'Search')">
       </label>
       <label class="field">
-        <span class="field-label">Designation</span>
+        <span class="field-label">{{ lbl('DesignationName', 'Designation') }}</span>
         <select class="field-control" [ngModel]="listFilter().designationCode" (ngModelChange)="updateListFilter('designationCode', $event ? +$event : null)" name="filterDesignation">
           <option [ngValue]="null">-- All --</option>
           @for (d of masterLookups()?.designations ?? []; track d.code) {
@@ -36,7 +38,7 @@
         </select>
       </label>
       <label class="field">
-        <span class="field-label">User Role</span>
+        <span class="field-label">{{ lbl('UserRoleName', 'User Role') }}</span>
         <select class="field-control" [ngModel]="listFilter().userRoleID" (ngModelChange)="updateListFilter('userRoleID', $event ? +$event : null)" name="filterUserRole">
           <option [ngValue]="null">-- All --</option>
           @for (ur of selectableUserRoles(); track ur.userRoleID) {
@@ -45,7 +47,7 @@
         </select>
       </label>
       <label class="field">
-        <span class="field-label">Active Status</span>
+        <span class="field-label">{{ lbl('ActiveStatus', 'Active Status') }}</span>
         <select class="field-control" [ngModel]="listFilter().isActive" (ngModelChange)="updateListFilter('isActive', $event)" name="filterActive">
           <option [ngValue]="true">Active</option>
           <option [ngValue]="false">Inactive</option>
@@ -62,7 +64,7 @@
   <div class="teacher-layout" [class.list-only]="!formVisible()" [class.form-only]="formVisible()">
     @if (!formVisible()) {
       <aside class="list-panel">
-        <h3>Teachers @if (!listLoading()) { <span class="list-count">({{ teachers().length }})</span> }</h3>
+        <h3>{{ lbl('TeacherName', 'Teachers') }} @if (!listLoading()) { <span class="list-count">({{ teachers().length }})</span> }</h3>
         @if (listLoading()) {
           <p class="loading-hint list-loading">Loading teachers...</p>
         }
@@ -71,12 +73,12 @@
             <table class="records-table">
               <thead>
                 <tr>
-                  <th>Sr No</th>
-                  <th>Teacher Name</th>
-                  <th>Designation</th>
-                  <th>Mobile No.</th>
-                  <th>User Role</th>
-                  <th class="actions-col">Actions</th>
+                  <th>{{ lbl('SrNo', 'Sr No') }}</th>
+                  <th>{{ lbl('TeacherName', 'Teacher Name') }}</th>
+                  <th>{{ lbl('DesignationName', 'Designation') }}</th>
+                  <th>{{ lbl('MobileNo1', 'Mobile No.1') }}</th>
+                  <th>{{ lbl('UserRoleName', 'User Role') }}</th>
+                  <th class="actions-col">{{ lbl('Actions', 'Actions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -178,11 +180,13 @@
                       <div class="teacher-field-section-title">{{ lbl('BasicDetails', 'Basic Details') }}</div>
                       <div class="form-grid">
                     <label class="field">
-                      <span class="field-label">User ID</span>
+                      <span class="field-label">{{ lbl('UserID', 'User ID') }}</span>
                       <input class="field-control" readonly [value]="form().userID ?? 'Auto'" name="userID">
                     </label>
                     <app-org-school-select
                       name="orgID"
+                      label="शाळा / कॉलेज / संस्था"
+                      [nullLabel]="lbl('SelectSanstha', '-- Select Sanstha --')"
                       [orgs]="schoolOrgs()"
                       [value]="form().orgID ?? null"
                       [required]="true"
@@ -233,14 +237,33 @@
                       </select>
                       @if (fieldError('staffTypeID')) { <span class="field-error">{{ fieldError('staffTypeID') }}</span> }
                     </label>
+                    <label class="field" [class.field-invalid]="fieldError('agid')">
+                      <span class="field-label">{{ lbl('AGID', 'Niyukticha Gut') }}<span class="req">*</span></span>
+                      <select class="field-control" [ngModel]="form().agid" (ngModelChange)="updateForm('agid', $event == null || $event === '' ? null : +$event)" name="agid">
+                        <option [ngValue]="null">-- Select --</option>
+                        @for (ag of masterLookups()?.appointmentGroups ?? []; track ag.id) {
+                          <option [ngValue]="ag.id">{{ ag.name }}</option>
+                        }
+                      </select>
+                      @if (fieldError('agid')) { <span class="field-error">{{ fieldError('agid') }}</span> }
+                    </label>
+                    <label class="field">
+                      <span class="field-label">{{ lbl('NationalCode', 'National Code') }}</span>
+                      <input class="field-control" [ngModel]="form().nationalCode" (ngModelChange)="updateForm('nationalCode', $event)" name="nationalCode">
+                    </label>
                     <label class="field">
                       <span class="field-label">{{ lbl('ShalarthID', 'Shalarth ID') }}</span>
                       <input class="field-control" [ngModel]="form().shalarthID" (ngModelChange)="updateForm('shalarthID', $event)" name="shalarthID">
                     </label>
                     <label class="field" [class.field-invalid]="fieldError('adharCardNo')">
                       <span class="field-label">{{ lbl('AdharCardNo', 'Aadhaar No') }}</span>
-                      <input class="field-control" appMarathiNumber mode="int" [maxLength]="12" inputmode="numeric" [ngModel]="form().adharCardNo" (ngModelChange)="updateForm('adharCardNo', $event)" name="adharCardNo" placeholder="12 digits">
+                      <input class="field-control" maxlength="12" [ngModel]="form().adharCardNo" (ngModelChange)="updateForm('adharCardNo', $event)" name="adharCardNo" placeholder="12 digits / 0 / -">
                       @if (fieldError('adharCardNo')) { <span class="field-error">{{ fieldError('adharCardNo') }}</span> }
+                    </label>
+                    <label class="field" [class.field-invalid]="fieldError('panNo')">
+                      <span class="field-label">{{ lbl('PanNo', 'PAN No') }}</span>
+                      <input class="field-control" maxlength="10" [ngModel]="form().panNo" (ngModelChange)="updateForm('panNo', $event)" name="panNo">
+                      @if (fieldError('panNo')) { <span class="field-error">{{ fieldError('panNo') }}</span> }
                     </label>
                     <label class="field">
                       <span class="field-label">{{ lbl('ScaleOfPay', 'Scale of Pay') }}</span>
@@ -335,11 +358,6 @@
                       <input class="field-control" [ngModel]="form().afterDegreePassedSubjects" (ngModelChange)="updateForm('afterDegreePassedSubjects', $event)" name="afterDegreePassedSubjects">
                     </label>
                     <div class="pan-address-row">
-                      <label class="field" [class.field-invalid]="fieldError('panNo')">
-                        <span class="field-label">{{ lbl('PanNo', 'PAN No') }}</span>
-                        <input class="field-control" maxlength="10" [ngModel]="form().panNo" (ngModelChange)="updateForm('panNo', $event)" name="panNo">
-                        @if (fieldError('panNo')) { <span class="field-error">{{ fieldError('panNo') }}</span> }
-                      </label>
                       <label class="field">
                         <span class="field-label">{{ lbl('Address', 'Address') }}</span>
                         <input class="field-control" [ngModel]="form().permanentAddress" (ngModelChange)="updateForm('permanentAddress', $event)" name="permanentAddress">
@@ -377,6 +395,10 @@
                         <label class="field">
                           <span class="field-label">{{ lbl('DateOfWorkingStart', 'Date of Working Start') }}</span>
                           <input class="field-control" type="date" [ngModel]="form().dateOfWorkingStart" (ngModelChange)="updateForm('dateOfWorkingStart', $event)" name="dateOfWorkingStart">
+                        </label>
+                        <label class="field">
+                          <span class="field-label">{{ lbl('DoWSCurrentSchool', 'School Join Date') }}</span>
+                          <input class="field-control" type="date" [ngModel]="form().doWSCurrentSchool" (ngModelChange)="updateForm('doWSCurrentSchool', $event)" name="doWSCurrentSchool">
                         </label>
                         <label class="field" [class.field-invalid]="fieldError('jtCategoryID')">
                           <span class="field-label">{{ lbl('JTCategoryName', 'JT Category') }}<span class="req">*</span></span>
@@ -453,23 +475,36 @@
                       </label>
                       <label class="field" [class.field-invalid]="fieldError('appPassword')">
                         <span class="field-label">{{ lbl('AppPassword', 'App Password') }} @if (!form().userID) { <span class="req">*</span> }</span>
-                        <input
-                          class="field-control"
-                          type="password"
-                          [ngModel]="form().appPassword"
-                          (ngModelChange)="updateForm('appPassword', $event)"
-                          name="appPassword"
-                          [readonly]="!!form().userID"
-                          [placeholder]="form().userID ? 'Use Reset Password below' : ''">
+                        <div class="password-input-wrap">
+                          <input
+                            class="field-control"
+                            [type]="showAppPassword() ? 'text' : 'password'"
+                            [ngModel]="form().appPassword"
+                            (ngModelChange)="updateForm('appPassword', $event)"
+                            name="appPassword"
+                            [readonly]="isViewMode()"
+                            autocomplete="new-password">
+                          <button
+                            type="button"
+                            class="toggle-pwd"
+                            (click)="toggleAppPassword()"
+                            [attr.aria-label]="showAppPassword() ? 'Hide password' : 'Show password'">
+                            @if (showAppPassword()) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                                <line x1="1" y1="1" x2="23" y2="23" />
+                              </svg>
+                            } @else {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                            }
+                          </button>
+                        </div>
                         @if (fieldError('appPassword')) { <span class="field-error">{{ fieldError('appPassword') }}</span> }
                       </label>
-                      @if (form().userID && !isViewMode()) {
-                        <label class="field">
-                          <span class="field-label">Reset App Password</span>
-                          <input class="field-control" type="password" [ngModel]="resetPasswordValue()" (ngModelChange)="resetPasswordValue.set($event)" name="resetPassword">
-                        </label>
-                        <button type="button" class="btn btn-outline btn-sm photo-side-reset-btn" (click)="resetPassword()">Reset Password</button>
-                      }
                       <label class="field field-check">
                         <input type="checkbox" [ngModel]="form().closeFlag" (ngModelChange)="updateForm('closeFlag', $event)" name="closeFlag">
                         <span>Close Flag</span>
@@ -486,12 +521,6 @@
                           <input class="field-control" readonly [value]="form().createdDate" name="createdDate">
                         </label>
                       }
-                      @if (form().modifiedDate) {
-                        <label class="field">
-                          <span class="field-label">{{ lbl('ModifiedDate', 'Modified Date') }}</span>
-                          <input class="field-control" readonly [value]="form().modifiedDate" name="modifiedDate">
-                        </label>
-                      }
                     </div>
                   </aside>
                 </div>
@@ -501,7 +530,7 @@
             @if (activeSection() === 'schools') {
               <div class="form-section">
                 <div class="section-head">
-                  <h4>School History</h4>
+                  <h4>{{ lbl('SchoolHistory', 'School/College Info') }}</h4>
                   @if (!isViewMode()) {
                     <button type="button" class="btn btn-outline btn-sm btn-add-row" (click)="addSchoolRow()">+ Add Row</button>
                   }
@@ -510,13 +539,13 @@
                   <table class="detail-table detail-table-wide">
                     <thead>
                       <tr>
-                        <th>School / Org</th>
-                        <th>Designation</th>
-                        <th>Class</th>
-                        <th>Subject</th>
-                        <th>Join Date</th>
-                        <th>Leave Date</th>
-                        @if (!isViewMode()) { <th>Actions</th> }
+                        <th>{{ lbl('OrgCollegeSanstha', 'School/ College/ Sanstha') }}</th>
+                        <th>{{ lbl('DesignationName', 'Designation') }}</th>
+                        <th>{{ lbl('ClassName', 'Class Name') }}</th>
+                        <th>{{ lbl('SubjectName', 'Subject Name') }}</th>
+                        <th>{{ lbl('JoinDate', 'School Joining Date') }}</th>
+                        <th>{{ lbl('LeaveDate', 'School Leave Date') }}</th>
+                        @if (!isViewMode()) { <th>{{ lbl('Actions', 'Actions') }}</th> }
                       </tr>
                     </thead>
                     <tbody>

@@ -1,19 +1,19 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
-import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { AuditLookups } from '../../../core/models/audit.model';
+import { AuditLookups, OrgOption } from '../../../core/models/audit.model';
+import { UserProfile } from '../../../core/models/dashboard.model';
 import { DRHeadFormState, DRHeadMaster, DRHeadOption } from '../../../core/models/donation.model';
 import { AuditService } from '../../../core/services/audit.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { DonationService } from '../../../core/services/donation.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateDRHeadForm } from '../../../core/utils/master-validation.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
@@ -21,7 +21,7 @@ type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-donation-head-master',
-  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent, OrgSchoolSelectComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './donation-head-master.component.html',
   styleUrl: './donation-head-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -29,6 +29,7 @@ type FormMode = 'new' | 'edit';
 export class DonationHeadMasterComponent {
   private readonly donation = inject(DonationService);
   private readonly audit = inject(AuditService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -58,10 +59,11 @@ export class DonationHeadMasterComponent {
 
   private static readonly ImportSourceUnderOrgID = 1;
 
-  readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
+  /** Sanstha-only options for this form (not school orgs / shared school select). */
+  readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
   readonly selectedOrgName = computed(() => {
     const orgId = this.listOrgID();
-    return this.schoolOrgs().find((o) => o.orgID === orgId)?.organizationName ?? '—';
+    return this.sansthaOrgs().find((o) => o.orgID === orgId)?.organizationName ?? '—';
   });
   readonly canImport = computed(() => {
     const orgId = this.listOrgID();
@@ -98,15 +100,57 @@ export class DonationHeadMasterComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ lookups: data, profile }) => {
         this.lookupsLoading.set(false);
-        this.lookups.set(data);
-        if (!data?.orgs?.length) {
-          this.errorMessage.set('No schools found for your login.');
+        const sansthaOrgs = this.resolveSansthaOrgs(data?.sansthaOrgs ?? []);
+        this.lookups.set(data ? { ...data, sansthaOrgs } : null);
+        if (!sansthaOrgs.length) {
+          this.errorMessage.set('No Sanstha found for your login.');
           return;
         }
-        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
+        const orgId = this.resolveDefaultSansthaOrgId(sansthaOrgs, profile);
         this.listOrgID.set(orgId);
         if (orgId) this.loadList();
       });
+  }
+
+  private resolveSansthaOrgs(fromApi: OrgOption[]): OrgOption[] {
+    if (fromApi.length) return fromApi;
+
+    const session = this.auth.currentUser();
+    const orgs: OrgOption[] = [];
+
+    for (const ctx of session?.schoolContexts ?? []) {
+      if (!ctx.sansthaId || !ctx.sansthaName) continue;
+      if (!orgs.some((o) => o.orgID === ctx.sansthaId)) {
+        orgs.push({
+          orgID: ctx.sansthaId,
+          organizationName: ctx.sansthaName,
+          schoolCode: ctx.sansthaId
+        });
+      }
+    }
+
+    if (!orgs.length && session?.sansthaId && session.sansthaName) {
+      orgs.push({
+        orgID: session.sansthaId,
+        organizationName: session.sansthaName,
+        schoolCode: session.sansthaId
+      });
+    }
+
+    return orgs;
+  }
+
+  private resolveDefaultSansthaOrgId(orgs: OrgOption[], profile: UserProfile | null): number | null {
+    const session = this.auth.currentUser();
+    if (session?.sansthaId) {
+      const match = orgs.find((o) => o.orgID === session.sansthaId);
+      if (match) return match.orgID;
+    }
+    if (profile?.orgId) {
+      const match = orgs.find((o) => o.orgID === profile.orgId);
+      if (match) return match.orgID;
+    }
+    return orgs[0]?.orgID ?? null;
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -158,7 +202,7 @@ export class DonationHeadMasterComponent {
   newItem(): void {
     const orgId = this.listOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select Org / School on the list page before adding new.');
+      this.errorMessage.set('Select Org / Sanstha on the list page before adding new.');
       return;
     }
     this.formMode.set('new');
@@ -212,7 +256,7 @@ export class DonationHeadMasterComponent {
   openImport(): void {
     const orgId = this.listOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select Org / School before importing.');
+      this.errorMessage.set('Select Org / Sanstha before importing.');
       return;
     }
     if (!this.canImport()) {

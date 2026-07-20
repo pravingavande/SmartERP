@@ -53,12 +53,18 @@ export function validatePartyForm(form: Pick<PartyFormState, 'orgID' | 'partyNam
   };
 }
 
-export function validateLedgerHeadForm(form: Pick<LedgerHeadFormState, 'underOrgID' | 'ledgerHead' | 'ledgerTypeID'>): FieldErrors {
-  return {
+export function validateLedgerHeadForm(
+  form: Pick<LedgerHeadFormState, 'underOrgID' | 'ledgerHead' | 'ledgerTypeID' | 'description'>
+): FieldErrors {
+  const errors: FieldErrors = {
     ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
     ...requireText(form.ledgerHead, 'ledgerHead', 'Ledger head'),
     ...requireId(form.ledgerTypeID, 'ledgerTypeID', 'Ledger type')
   };
+  if (trimText(form.description).length > 2000) {
+    errors['description'] = 'Description must be 2000 characters or fewer.';
+  }
+  return errors;
 }
 
 export function validateAccountRegisterForm(form: AccountRegisterFormState): FieldErrors {

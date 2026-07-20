@@ -177,8 +177,29 @@ export class VoucherEntryComponent {
         this.form.update((f) => ({ ...f, orgID: orgId, fyID: fyId }));
 
         if (orgId) {
+          this.refreshLedgerLookups(orgId);
           this.loadOrgDependents(orgId, false);
         }
+      });
+  }
+
+  /** Reload ledger/bank heads from voucher views for the selected school. */
+  private refreshLedgerLookups(orgId: number | null): void {
+    if (!orgId) return;
+    this.audit
+      .getLookups(orgId, this.vType())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((data) => {
+        if (!data) return;
+        this.lookups.update((prev) =>
+          prev
+            ? {
+                ...prev,
+                ledgerHeads: data.ledgerHeads ?? [],
+                bankLedgerHeads: data.bankLedgerHeads ?? []
+              }
+            : data
+        );
       });
   }
 
@@ -196,7 +217,7 @@ export class VoucherEntryComponent {
     if (!registers.length) {
       this.listAccountRegisterID.set(null);
       if (this.formVisible()) {
-        this.errorMessage.set('No account register mapped for this school. Configure under Account Register Define.');
+        this.errorMessage.set('No account register found for this school. Add registers under Account Register Master.');
       }
       return;
     }
@@ -237,6 +258,7 @@ export class VoucherEntryComponent {
       return;
     }
     this.closeForm();
+    this.refreshLedgerLookups(orgId);
     this.loadOrgDependents(orgId, true);
   }
 
@@ -281,6 +303,7 @@ export class VoucherEntryComponent {
       this.parties.set([]);
       return;
     }
+    this.refreshLedgerLookups(orgId);
     this.loadOrgDependents(orgId, false);
   }
 
@@ -360,7 +383,7 @@ export class VoucherEntryComponent {
       return;
     }
     if (!accountRegisterId) {
-      this.errorMessage.set('No account register mapped for this school. Configure under Account Register Define.');
+      this.errorMessage.set('No account register found for this school. Add registers under Account Register Master.');
       return;
     }
     const fy = this.activeFy();
@@ -431,6 +454,7 @@ export class VoucherEntryComponent {
           .getAccountRegisters(v.orgID)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe((r) => this.accountRegisters.set(r));
+        this.refreshLedgerLookups(v.orgID);
         this.loadParties(v.orgID, v.partyTID ?? null);
         v.details.forEach((d) => this.loadNarrations(d.ledgerHeadID));
       });
@@ -649,15 +673,10 @@ export class VoucherEntryComponent {
   }
 
   ledgerHeads(): LedgerHeadOption[] {
-    const heads = this.lookups()?.ledgerHeads ?? [];
-    if (!this.isReceiptVoucher()) return heads;
-    return heads.filter((h) => h.ledgerTypeID === 2 || h.ledgerTypeID === 4);
+    return this.lookups()?.ledgerHeads ?? [];
   }
 
   bankLedgerHeads(): LedgerHeadOption[] {
-    const heads = this.lookups()?.ledgerHeads ?? [];
-    const filtered = heads.filter((h) => [5, 6, 7, 8, 9].includes(h.ledgerTypeID ?? 0));
-    if (filtered.length) return filtered;
     return this.lookups()?.bankLedgerHeads ?? [];
   }
 
