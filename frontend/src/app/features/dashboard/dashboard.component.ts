@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, viewChild } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, map } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { EventCalendarService } from '../../core/services/event-calendar.service';
+import { ToastService } from '../../core/services/toast.service';
 import { DashboardSummary } from '../../core/models/dashboard.model';
 import { PendingEventReportingSummary } from '../../core/models/calendar.model';
 
@@ -36,6 +38,8 @@ interface BreakdownCard {
 export class DashboardComponent {
   private readonly dashboardService = inject(DashboardService);
   private readonly eventCalendarService = inject(EventCalendarService);
+  private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly noticeListRef = viewChild<ElementRef<HTMLElement>>('noticeList');
 
@@ -170,5 +174,24 @@ export class DashboardComponent {
     const el = this.noticeListRef()?.nativeElement;
     if (!el) return;
     el.scrollBy({ top: 120, behavior: 'smooth' });
+  }
+
+  openAttachment(fileName?: string | null): void {
+    if (!fileName?.trim()) return;
+    const url = this.eventCalendarService.fileUrl(fileName);
+    this.eventCalendarService.downloadFile(url).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      },
+      error: () => this.toast.showError('Unable to open file.')
+    });
+  }
+
+  attachmentLabel(path?: string | null): string {
+    if (!path?.trim()) return 'Attachment';
+    const name = path.split(/[/\\]/).pop() ?? path;
+    return name.length > 28 ? `${name.slice(0, 25)}...` : name;
   }
 }

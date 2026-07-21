@@ -200,6 +200,11 @@ export class VoucherEntryComponent {
               }
             : data
         );
+        const banks = data.bankLedgerHeads ?? [];
+        const selectedBankId = this.form().ledgerHeadBankID;
+        if (selectedBankId && !banks.some((b) => b.ledgerHeadID === selectedBankId)) {
+          this.form.update((f) => ({ ...f, ledgerHeadBankID: null }));
+        }
       });
   }
 

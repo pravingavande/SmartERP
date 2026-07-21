@@ -127,6 +127,25 @@
               <div class="notice-content">
                 <time class="notice-date">{{ formatDate(item.noticeDate) }}</time>
                 <p class="notice-title">{{ item.title }}</p>
+                @if (item.eventPhotoAttachment || item.eventNewsAttachment || item.attachment) {
+                  <div class="notice-attachments">
+                    @if (item.eventPhotoAttachment) {
+                      <button type="button" class="notice-attachment-link" (click)="openAttachment(item.eventPhotoAttachment)">
+                        Photo: {{ attachmentLabel(item.eventPhotoAttachment) }}
+                      </button>
+                    }
+                    @if (item.eventNewsAttachment) {
+                      <button type="button" class="notice-attachment-link" (click)="openAttachment(item.eventNewsAttachment)">
+                        News: {{ attachmentLabel(item.eventNewsAttachment) }}
+                      </button>
+                    }
+                    @if (!item.eventPhotoAttachment && !item.eventNewsAttachment && item.attachment) {
+                      <button type="button" class="notice-attachment-link" (click)="openAttachment(item.attachment)">
+                        {{ attachmentLabel(item.attachment) }}
+                      </button>
+                    }
+                  </div>
+                }
                 @if (item.isNew) {
                   <span class="notice-badge">NEW</span>
                 }

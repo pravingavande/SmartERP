@@ -14,13 +14,14 @@ public sealed class NoticeRepository : INoticeRepository
         _executor = executor;
     }
 
-    public Task<IReadOnlyList<NoticeItem>> GetRecentAsync(int topCount, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<NoticeItem>> GetRecentAsync(long userId, int topCount, CancellationToken cancellationToken = default)
     {
         var parameters = new DynamicParameters();
+        parameters.Add("@UserID", userId);
         parameters.Add("@TopCount", topCount);
 
         return _executor.QueryListAsync<NoticeItem>(
-            "dbo.sp_Notice_GetRecent",
+            "dbo.sp_Event_GetRecentNotices",
             parameters,
             cancellationToken);
     }

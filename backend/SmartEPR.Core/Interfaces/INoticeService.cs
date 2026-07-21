@@ -4,5 +4,5 @@ namespace SmartEPR.Core.Interfaces;
 
 public interface INoticeService
 {
-    Task<IReadOnlyList<NoticeItemDto>> GetRecentAsync(int topCount = 10, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<NoticeItemDto>> GetRecentAsync(long userId, int topCount = 10, CancellationToken cancellationToken = default);
 }

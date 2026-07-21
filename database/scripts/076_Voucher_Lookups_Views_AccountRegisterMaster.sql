@@ -97,9 +97,11 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @LookupOrgID BIGINT = NULL;
+    DECLARE @OrgRequested BIT = 0;
 
     IF @OrgID IS NOT NULL AND @OrgID > 0
     BEGIN
+        SET @OrgRequested = 1;
         SET @LookupOrgID = @OrgID;
 
         WHILE @LookupOrgID IS NOT NULL
@@ -131,9 +133,10 @@ BEGIN
         CAST(NULL AS BIGINT) AS LedgerTypeID
     FROM dbo.VW_LedgerHeadList_Bank v
     WHERE ISNULL(v.IsActive, 1) = 1
+      AND @OrgRequested = 1
+      AND @LookupOrgID IS NOT NULL
       AND (
-            @LookupOrgID IS NULL
-            OR v.UnderOrgID = @LookupOrgID
+            v.UnderOrgID = @LookupOrgID
             OR v.OrgID = @LookupOrgID
           )
     ORDER BY v.LedgerHead;

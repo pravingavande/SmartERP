@@ -44,8 +44,14 @@ public sealed class DashboardController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<NoticeItemDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetNotices([FromQuery] int count = 10, CancellationToken cancellationToken = default)
     {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (!long.TryParse(userIdClaim, out var userId))
+            return Unauthorized(ApiResponse<IReadOnlyList<NoticeItemDto>>.Fail("Invalid token."));
+
         var safeCount = count is < 1 or > 50 ? 10 : count;
-        var notices = await _noticeService.GetRecentAsync(safeCount, cancellationToken).ConfigureAwait(false);
+        var notices = await _noticeService.GetRecentAsync(userId, safeCount, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<IReadOnlyList<NoticeItemDto>>.Ok(notices));
     }
 }

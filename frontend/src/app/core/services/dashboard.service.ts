@@ -33,8 +33,28 @@ export class DashboardService {
         params: { count: count.toString() }
       })
       .pipe(
-        map((r) => (r.success && r.data ? r.data : [])),
+        map((r) => (r.success && r.data ? r.data.map((x) => this.normalizeNotice(x)) : [])),
         catchError(() => of([]))
       );
+  }
+
+  private normalizeNotice(raw: NoticeItem & {
+    Tid?: number;
+    NoticeDate?: string;
+    Title?: string;
+    Attachment?: string;
+    EventPhotoAttachment?: string;
+    EventNewsAttachment?: string;
+    IsNew?: boolean;
+  }): NoticeItem {
+    return {
+      tid: Number(raw.tid ?? raw.Tid ?? 0),
+      noticeDate: String(raw.noticeDate ?? raw.NoticeDate ?? ''),
+      title: String(raw.title ?? raw.Title ?? ''),
+      attachment: raw.attachment ?? raw.Attachment,
+      eventPhotoAttachment: raw.eventPhotoAttachment ?? raw.EventPhotoAttachment,
+      eventNewsAttachment: raw.eventNewsAttachment ?? raw.EventNewsAttachment,
+      isNew: Boolean(raw.isNew ?? raw.IsNew)
+    };
   }
 }

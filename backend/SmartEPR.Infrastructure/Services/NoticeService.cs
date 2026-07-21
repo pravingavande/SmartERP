@@ -12,16 +12,19 @@ public sealed class NoticeService : INoticeService
         _noticeRepository = noticeRepository;
     }
 
-    public async Task<IReadOnlyList<NoticeItemDto>> GetRecentAsync(int topCount = 10, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<NoticeItemDto>> GetRecentAsync(long userId, int topCount = 10, CancellationToken cancellationToken = default)
     {
-        var items = await _noticeRepository.GetRecentAsync(topCount, cancellationToken).ConfigureAwait(false);
+        if (userId <= 0) return [];
+
+        var items = await _noticeRepository.GetRecentAsync(userId, topCount, cancellationToken).ConfigureAwait(false);
 
         return items.Select(n => new NoticeItemDto
         {
-            Tid = n.TID,
-            NoticeDate = n.TDate,
-            Title = n.Notice,
-            Attachment = n.Attachment,
+            Tid = n.EventID,
+            NoticeDate = n.EventDate,
+            Title = n.Title,
+            EventPhotoAttachment = n.EventPhotoAttachment,
+            EventNewsAttachment = n.EventNewsAttachment,
             IsNew = n.IsNew == 1
         }).ToList();
     }

@@ -43,5 +43,7 @@ export interface NoticeItem {
   noticeDate: string;
   title: string;
   attachment?: string;
+  eventPhotoAttachment?: string;
+  eventNewsAttachment?: string;
   isNew: boolean;
 }
