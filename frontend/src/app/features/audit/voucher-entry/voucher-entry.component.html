@@ -276,14 +276,14 @@
                     }
                   </label>
                   <label class="field" [class.field-invalid]="fieldError('transactionNo')">
-                    <span class="field-label">Transaction/UTR/Cheque No@if (isChequePayment()) { * }</span>
+                    <span class="field-label">Trans/UTR/Cheque No@if (isChequePayment()) { * }</span>
                     <input class="field-control" type="text" [disabled]="isViewMode()" [ngModel]="form().transactionNo" (ngModelChange)="updateForm('transactionNo', $event)" name="transactionNo">
                     @if (fieldError('transactionNo')) {
                       <span class="field-error">{{ fieldError('transactionNo') }}</span>
                     }
                   </label>
                   <label class="field" [class.field-invalid]="fieldError('transactionDate')">
-                    <span class="field-label">Transaction/UTR/Cheque Date@if (isChequePayment()) { * }</span>
+                    <span class="field-label">Trans/UTR/Cheque Date@if (isChequePayment()) { * }</span>
                     <input class="field-control" type="date" [disabled]="isViewMode()" [ngModel]="form().transactionDate" (ngModelChange)="updateForm('transactionDate', $event)" name="transactionDate">
                     @if (fieldError('transactionDate')) {
                       <span class="field-error">{{ fieldError('transactionDate') }}</span>

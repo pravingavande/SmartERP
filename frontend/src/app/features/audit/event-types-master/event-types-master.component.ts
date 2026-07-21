@@ -6,6 +6,7 @@ import { EventCalendarService } from '../../../core/services/event-calendar.serv
 import { ToastService } from '../../../core/services/toast.service';
 import { EventLookups, EventType, SaveEventTypeRequest } from '../../../core/models/calendar.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
+import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapEventTicketBackendMessage, validateEventTypeForm } from '../../../core/utils/event-ticket-validation.util';
 import { pageCount, paginateRows } from '../../../core/utils/master-list.util';
@@ -37,13 +38,38 @@ export class EventTypesMasterComponent {
   readonly form = signal<SaveEventTypeRequest>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
+  readonly importVisible = signal(false);
+  readonly importLoading = signal(false);
+  readonly importSourceLoading = signal(false);
+  readonly importSourceItems = signal<EventType[]>([]);
+  readonly importSelectedIds = signal<Set<number>>(new Set());
+  readonly importLanguage = signal<ImportLanguage>('M');
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
 
+  private static readonly ImportSourceOrgID = 1;
+
   readonly listPageCount = computed(() => pageCount(this.items().length, this.listPageSize()));
   readonly paginatedItems = computed(() => paginateRows(this.items(), this.listPageIndex(), this.listPageSize()));
-
   readonly canManage = computed(() => this.lookups()?.canManageEvents ?? false);
+  readonly canImport = computed(() => {
+    const orgId = this.filterOrgId();
+    return this.canManage() && orgId != null && orgId > 0 && orgId !== EventTypesMasterComponent.ImportSourceOrgID;
+  });
+  readonly importSelectedCount = computed(() => this.importSelectedIds().size);
+  readonly filteredImportSourceItems = computed(() => {
+    const lang = this.importLanguage();
+    return this.importSourceItems().filter((item) => matchesImportLanguage(item.eventType, lang));
+  });
+  readonly importAllSelected = computed(() => {
+    const items = this.filteredImportSourceItems();
+    const selected = this.importSelectedIds();
+    return items.length > 0 && items.every((x) => selected.has(x.eventTypeID));
+  });
+  readonly selectedOrgName = computed(() => {
+    const orgId = this.filterOrgId();
+    return this.sansthaOrgs().find((o) => o.orgID === orgId)?.organizationName ?? '—';
+  });
 
   constructor() {
     this.calendarService.getLookups().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
@@ -86,6 +112,7 @@ export class EventTypesMasterComponent {
     this.filterOrgId.set(orgId);
     this.listPageIndex.set(0);
     this.closeForm();
+    this.closeImport();
     this.loadList();
   }
 
@@ -135,6 +162,103 @@ export class EventTypesMasterComponent {
       this.toast.showSuccess('Event type deactivated.', 'Deleted');
       this.loadList();
     });
+  }
+
+  openImport(): void {
+    const orgId = this.filterOrgId();
+    if (!orgId) {
+      this.errorMessage.set('Select organization before importing.');
+      return;
+    }
+    if (!this.canImport()) {
+      this.errorMessage.set('Import is not available for the source organization.');
+      return;
+    }
+    this.closeForm();
+    this.importVisible.set(true);
+    this.importLanguage.set('M');
+    this.importSelectedIds.set(new Set());
+    this.importSourceLoading.set(true);
+    this.calendarService
+      .getEventTypes(EventTypesMasterComponent.ImportSourceOrgID)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((list) => {
+        this.importSourceLoading.set(false);
+        this.importSourceItems.set(list.filter((x) => x.isActive !== false));
+      });
+  }
+
+  closeImport(): void {
+    this.importVisible.set(false);
+    this.importLoading.set(false);
+    this.importSourceLoading.set(false);
+    this.importSourceItems.set([]);
+    this.importSelectedIds.set(new Set());
+    this.importLanguage.set('M');
+  }
+
+  onImportLanguageChange(lang: ImportLanguage): void {
+    this.importLanguage.set(lang);
+    const visibleIds = new Set(this.filteredImportSourceItems().map((x) => x.eventTypeID));
+    this.importSelectedIds.update((selected) => {
+      const next = new Set<number>();
+      for (const id of selected) {
+        if (visibleIds.has(id)) next.add(id);
+      }
+      return next;
+    });
+  }
+
+  toggleImportItem(id: number, checked: boolean): void {
+    this.importSelectedIds.update((set) => {
+      const next = new Set(set);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  isImportSelected(id: number): boolean {
+    return this.importSelectedIds().has(id);
+  }
+
+  selectAllImport(): void {
+    this.importSelectedIds.set(new Set(this.filteredImportSourceItems().map((x) => x.eventTypeID)));
+  }
+
+  unselectAllImport(): void {
+    this.importSelectedIds.set(new Set());
+  }
+
+  confirmImport(): void {
+    const orgId = this.filterOrgId();
+    const ids = Array.from(this.importSelectedIds());
+    if (!orgId || !this.canImport()) {
+      this.toast.showError('Select a destination organization first.', 'Import');
+      return;
+    }
+    if (!ids.length) {
+      this.toast.showError('Select at least one event type to import.', 'Import');
+      return;
+    }
+
+    this.importLoading.set(true);
+    this.calendarService
+      .importEventTypes(orgId, ids)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ data, message }) => {
+        this.importLoading.set(false);
+        if (!data) {
+          this.toast.showError(message ?? 'Unable to import event types.', 'Import failed');
+          return;
+        }
+        this.closeImport();
+        this.loadList();
+        this.toast.showSuccess(
+          message ?? `Imported ${data.importedCount} event type(s). Skipped ${data.skippedCount}.`,
+          'Imported'
+        );
+      });
   }
 
   save(): void {

@@ -16,6 +16,7 @@ public interface IEventCalendarService
     Task<EventLookupsDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<EventTypeDto>> GetEventTypeMasterListAsync(long userId, long? underOrgId, CancellationToken cancellationToken = default);
     Task<EventTypeDto?> SaveEventTypeAsync(long userId, SaveEventTypeRequestDto request, CancellationToken cancellationToken = default);
+    Task<(SmartEPR.Core.DTOs.Master.ImportClassResultDto? Data, string? Error)> ImportEventTypesAsync(long userId, ImportEventTypeRequestDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteEventTypeAsync(long userId, int eventTypeId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<LocationDto>> SearchLocationsAsync(long userId, long underOrgId, string? search, CancellationToken cancellationToken = default);
     Task<LocationDto?> SaveLocationAsync(long userId, SaveLocationRequestDto request, CancellationToken cancellationToken = default);

@@ -83,6 +83,15 @@ public sealed class SaveEventRequestDto
     public string? EventNewsAttachment { get; init; }
 }
 
+public sealed class ImportEventTypeRequestDto
+{
+    [System.Text.Json.Serialization.JsonPropertyName("destinationOrgID")]
+    public long DestinationOrgID { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("eventTypeIds")]
+    public IReadOnlyList<int> EventTypeIds { get; set; } = [];
+}
+
 public sealed class EventLookupsDto
 {
     public IReadOnlyList<EventTypeDto> EventTypes { get; init; } = [];

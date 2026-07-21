@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartEPR.Core.Common;
 using SmartEPR.Core.DTOs.Calendar;
+using SmartEPR.Core.DTOs.Master;
 using SmartEPR.Core.Interfaces;
 
 namespace SmartEPR.Api.Controllers;
@@ -82,6 +83,18 @@ public sealed class EventCalendarController : ControllerBase
         return deleted
             ? Ok(ApiResponse<bool>.Ok(true, "Event type deleted."))
             : Ok(ApiResponse<bool>.Fail("Unable to delete event type."));
+    }
+
+    [HttpPost("event-types/import")]
+    public async Task<IActionResult> ImportEventTypes([FromBody] ImportEventTypeRequestDto request, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(ApiResponse<ImportClassResultDto>.Fail("Invalid token."));
+
+        var (data, error) = await _service.ImportEventTypesAsync(userId, request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import event types."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(data, "Event types imported."));
     }
 
     [HttpGet("locations")]

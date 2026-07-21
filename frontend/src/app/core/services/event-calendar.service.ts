@@ -71,6 +71,33 @@ export class EventCalendarService {
     );
   }
 
+  importEventTypes(
+    destinationOrgId: number,
+    eventTypeIds: number[]
+  ): Observable<{ data: { importedCount: number; skippedCount: number } | null; message: string | null }> {
+    const payload = { destinationOrgID: destinationOrgId, eventTypeIds };
+    return this.http
+      .post<ApiResponse<{ importedCount: number; skippedCount: number; ImportedCount?: number; SkippedCount?: number }>>(
+        `${this.base}/event-types/import`,
+        payload
+      )
+      .pipe(
+        map((r) => {
+          if (!r.success || !r.data) {
+            return { data: null, message: r.message ?? 'Unable to import event types.' };
+          }
+          return {
+            data: {
+              importedCount: Number(r.data.importedCount ?? r.data.ImportedCount ?? 0),
+              skippedCount: Number(r.data.skippedCount ?? r.data.SkippedCount ?? 0)
+            },
+            message: r.message ?? null
+          };
+        }),
+        catchError(() => of({ data: null, message: 'Unable to import event types.' }))
+      );
+  }
+
   searchLocations(underOrgId: number, search?: string): Observable<LocationOption[]> {
     let params = new HttpParams().set('underOrgId', underOrgId.toString());
     if (search?.trim()) params = params.set('search', search.trim());

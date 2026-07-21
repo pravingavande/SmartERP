@@ -1,4 +1,5 @@
 using SmartEPR.Core.DTOs.Leave;
+using SmartEPR.Core.DTOs.Master;
 using SmartEPR.Core.Interfaces;
 
 namespace SmartEPR.Infrastructure.Services;
@@ -19,16 +20,51 @@ public sealed class LeaveService : ILeaveService
         _employeeRepository = employeeRepository;
     }
 
-    public Task<IReadOnlyList<LeaveTypeDto>> GetLeaveTypeListAsync(CancellationToken cancellationToken = default)
-        => _leaveRepository.GetLeaveTypeListAsync(cancellationToken);
+    public Task<IReadOnlyList<LeaveTypeDto>> GetLeaveTypeListAsync(long orgId, string? search = null, CancellationToken cancellationToken = default)
+        => _leaveRepository.GetLeaveTypeListAsync(orgId, search, cancellationToken);
+
+    public Task<long> GetLeaveTypeNextSrNoAsync(long orgId, CancellationToken cancellationToken = default)
+        => _leaveRepository.GetLeaveTypeNextSrNoAsync(orgId, cancellationToken);
 
     public async Task<LeaveTypeDto?> SaveLeaveTypeAsync(SaveLeaveTypeRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.LeaveTypeName))
+        if (request.UnderOrgID <= 0 || string.IsNullOrWhiteSpace(request.LeaveTypeName))
             return null;
 
         var id = await _leaveRepository.SaveLeaveTypeAsync(request, cancellationToken).ConfigureAwait(false);
         return await _leaveRepository.GetLeaveTypeByIdAsync(id, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<bool> DeleteLeaveTypeAsync(long leaveTypeId, CancellationToken cancellationToken = default)
+    {
+        if (leaveTypeId <= 0) return false;
+        await _leaveRepository.DeleteLeaveTypeAsync(leaveTypeId, cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportLeaveTypesAsync(
+        ImportLeaveTypeRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.DestinationOrgID == 1)
+            return (null, "Cannot import into the source organization.");
+        if (request.LeaveTypeIds is null || request.LeaveTypeIds.Count == 0)
+            return (null, "Select at least one leave type to import.");
+
+        try
+        {
+            var result = await _leaveRepository.ImportLeaveTypesAsync(
+                request.DestinationOrgID,
+                request.LeaveTypeIds,
+                cancellationToken).ConfigureAwait(false);
+            return (result, null);
+        }
+        catch (Microsoft.Data.SqlClient.SqlException ex)
+        {
+            return (null, ex.Message);
+        }
     }
 
     public async Task<LeaveApplyLookupsBundleDto> GetLeaveApplyLookupsAsync(long userId, CancellationToken cancellationToken = default)

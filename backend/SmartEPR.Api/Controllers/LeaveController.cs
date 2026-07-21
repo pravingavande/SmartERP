@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartEPR.Core.Common;
 using SmartEPR.Core.DTOs.Leave;
+using SmartEPR.Core.DTOs.Master;
 using SmartEPR.Core.Interfaces;
 
 namespace SmartEPR.Api.Controllers;
@@ -21,10 +22,21 @@ public sealed class LeaveController : ControllerBase
     }
 
     [HttpGet("types")]
-    public async Task<IActionResult> GetLeaveTypes(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetLeaveTypes([FromQuery] long orgId, [FromQuery] string? search, CancellationToken cancellationToken)
     {
-        var items = await _leaveService.GetLeaveTypeListAsync(cancellationToken).ConfigureAwait(false);
+        if (orgId <= 0)
+            return Ok(ApiResponse<IReadOnlyList<LeaveTypeDto>>.Fail("Organization is required."));
+        var items = await _leaveService.GetLeaveTypeListAsync(orgId, search, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<IReadOnlyList<LeaveTypeDto>>.Ok(items));
+    }
+
+    [HttpGet("types/next-srno")]
+    public async Task<IActionResult> GetLeaveTypeNextSrNo([FromQuery] long orgId, CancellationToken cancellationToken)
+    {
+        if (orgId <= 0)
+            return Ok(ApiResponse<NextSrNoDto>.Fail("Organization is required."));
+        var next = await _leaveService.GetLeaveTypeNextSrNoAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<NextSrNoDto>.Ok(new NextSrNoDto { NextSrNo = (int)next }));
     }
 
     [HttpPost("types")]
@@ -32,8 +44,28 @@ public sealed class LeaveController : ControllerBase
     {
         var saved = await _leaveService.SaveLeaveTypeAsync(request, cancellationToken).ConfigureAwait(false);
         return saved is null
-            ? Ok(ApiResponse<LeaveTypeDto>.Fail("Leave type name is required."))
+            ? Ok(ApiResponse<LeaveTypeDto>.Fail("Leave type name and organization are required."))
             : Ok(ApiResponse<LeaveTypeDto>.Ok(saved, "Leave type saved."));
+    }
+
+    [HttpDelete("types/{id:long}")]
+    public async Task<IActionResult> DeleteLeaveType(long id, CancellationToken cancellationToken)
+    {
+        var ok = await _leaveService.DeleteLeaveTypeAsync(id, cancellationToken).ConfigureAwait(false);
+        return ok
+            ? Ok(ApiResponse<bool>.Ok(true, "Leave type deactivated."))
+            : Ok(ApiResponse<bool>.Fail("Unable to delete leave type."));
+    }
+
+    [HttpPost("types/import")]
+    public async Task<IActionResult> ImportLeaveTypes([FromBody] ImportLeaveTypeRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _leaveService.ImportLeaveTypesAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import leave types."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(
+                data,
+                $"Imported {data.ImportedCount} leave type(s). Skipped {data.SkippedCount}."));
     }
 
     [HttpGet("lookups")]

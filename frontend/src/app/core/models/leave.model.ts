@@ -8,14 +8,24 @@ export interface ApiResponse<T> {
 
 export interface LeaveTypeItem {
   leaveTypeID: number;
+  underOrgID: number;
+  srNo: number;
   leaveTypeName: string;
   isActive: boolean;
+  organizationName?: string;
 }
 
 export interface LeaveTypeFormState {
   leaveTypeID: number | null;
+  underOrgID: number | null;
+  srNo: number | null;
   leaveTypeName: string;
   isActive: boolean;
+}
+
+export interface ImportLeaveTypeResult {
+  importedCount: number;
+  skippedCount: number;
 }
 
 export interface LeaveOption {

@@ -1,19 +1,34 @@
 namespace SmartEPR.Core.DTOs.Leave;
 
+using System.Text.Json.Serialization;
 using SmartEPR.Core.DTOs.Audit;
 
 public sealed class LeaveTypeDto
 {
     public long LeaveTypeID { get; init; }
+    public long UnderOrgID { get; init; }
+    public int SrNo { get; init; }
     public string LeaveTypeName { get; init; } = string.Empty;
     public bool IsActive { get; init; }
+    public string? OrganizationName { get; init; }
 }
 
 public sealed class SaveLeaveTypeRequestDto
 {
     public long LeaveTypeID { get; init; }
+    public long UnderOrgID { get; init; }
+    public int SrNo { get; init; }
     public string LeaveTypeName { get; init; } = string.Empty;
     public bool IsActive { get; init; } = true;
+}
+
+public sealed class ImportLeaveTypeRequestDto
+{
+    [JsonPropertyName("destinationOrgID")]
+    public long DestinationOrgID { get; set; }
+
+    [JsonPropertyName("leaveTypeIds")]
+    public IReadOnlyList<long> LeaveTypeIds { get; set; } = [];
 }
 
 public sealed class LeaveOptionDto

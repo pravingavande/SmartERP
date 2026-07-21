@@ -4,45 +4,62 @@
       <h1>Leave Type Master</h1>
       <p>Manage leave types for employee leave applications</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Leave Type</button>
+    <div class="header-actions">
+      @if (canImport()) {
+        <button type="button" class="btn btn-outline" (click)="openImport()">Import</button>
+      }
+      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Leave Type</button>
+    </div>
   </header>
 
+  <div class="list-filters">
+    <app-org-school-select
+      name="listOrgID"
+      [orgs]="lookups()?.orgs ?? []"
+      [value]="listOrgID()"
+      (valueChange)="onListOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Search</span>
+      <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search leave type name">
+    </label>
+  </div>
   @if (errorMessage()) {
     <p class="error list-error">{{ errorMessage() }}</p>
   }
 
   <div class="audit-layout list-only">
     <aside class="list-panel">
-      <h3>Leave Types</h3>
-      @if (listLoading()) {
-        <p class="loading-hint">Loading leave types...</p>
-      }
+      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading leave types...</p> }
       <div class="records-table-wrap">
         <table class="records-table">
           <thead>
             <tr>
-              <th>Leave Type Name</th>
-              <th>Status</th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('leaveTypeName')">Leave Type Name</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             @for (item of paginatedItems(); track item.leaveTypeID) {
               <tr>
+                <td>{{ item.srNo }}</td>
                 <td>{{ item.leaveTypeName }}</td>
                 <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
                   <app-list-action-btn action="edit" (clicked)="editItem(item)" />
+                  <app-list-action-btn action="delete" (clicked)="deleteItem(item)" />
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="3" class="empty">No leave types found</td></tr>
+              <tr><td colspan="4" class="empty">No leave types for selected school</td></tr>
             }
           </tbody>
         </table>
       </div>
       <app-master-list-pagination
-        [total]="items().length"
+        [total]="filteredItems().length"
         [pageIndex]="listPageIndex()"
         [pageSize]="listPageSize()"
         (pageIndexChange)="goToListPage($event)"
@@ -58,16 +75,36 @@
           <h2>{{ formMode() === 'edit' ? 'Edit Leave Type' : 'New Leave Type' }}</h2>
         </header>
         <form class="master-modal-form voucher-form" (ngSubmit)="save()">
-          @if (saveError()) {
-            <p class="form-save-error">{{ saveError() }}</p>
-          }
+          @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
           <div class="form-grid">
+            <app-org-school-select
+              name="formUnderOrgID"
+              [orgs]="lookups()?.orgs ?? []"
+              [value]="form().underOrgID ?? null"
+              [required]="true"
+              [invalid]="!!fieldError('underOrgID')"
+              [error]="fieldError('underOrgID')"
+              (valueChange)="onFormOrgChange($event)"
+            />
+            <label class="field" [class.field-invalid]="fieldError('srNo')">
+              <span class="field-label">Sr No *</span>
+              <input
+                class="field-control"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                step="1"
+                required
+                [ngModel]="form().srNo"
+                (ngModelChange)="onSrNoChange($event)"
+                name="srNo"
+              >
+              @if (fieldError('srNo')) { <span class="field-error">{{ fieldError('srNo') }}</span> }
+            </label>
             <label class="field full" [class.field-invalid]="fieldError('leaveTypeName')">
               <span class="field-label">Leave Type Name *</span>
               <input class="field-control" required [ngModel]="form().leaveTypeName" (ngModelChange)="updateForm('leaveTypeName', $event)" name="leaveTypeName">
-              @if (fieldError('leaveTypeName')) {
-                <span class="field-error">{{ fieldError('leaveTypeName') }}</span>
-              }
+              @if (fieldError('leaveTypeName')) { <span class="field-error">{{ fieldError('leaveTypeName') }}</span> }
             </label>
             @if (formMode() === 'edit') {
               <label class="field field-check master-active-field">
@@ -81,6 +118,81 @@
             <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
           </footer>
         </form>
+      </div>
+    </div>
+  }
+
+  @if (importVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>Import Leave Types</h2>
+          <p class="hint">Source: Organization 1 → Destination: {{ selectedOrgName() }}</p>
+        </header>
+        <div class="master-modal-form">
+          <div class="import-toolbar">
+            <div class="import-toolbar-left">
+              <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !filteredImportSourceItems().length">Select All</button>
+              <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
+              <span class="hint">Showing: {{ filteredImportSourceItems().length }} · Selected: {{ importSelectedCount() }}</span>
+            </div>
+            <label class="field import-lang-field">
+              <span class="field-label">Language</span>
+              <select
+                class="field-control"
+                [ngModel]="importLanguage()"
+                (ngModelChange)="onImportLanguageChange($event)"
+                name="importLanguage"
+              >
+                <option value="M">Marathi</option>
+                <option value="E">English</option>
+              </select>
+            </label>
+          </div>
+          @if (importSourceLoading()) {
+            <p class="loading-hint">Loading source leave types...</p>
+          } @else {
+            <div class="records-table-wrap import-grid">
+              <table class="records-table import-table">
+                <thead>
+                  <tr>
+                    <th class="check-col">
+                      <input
+                        type="checkbox"
+                        [checked]="importAllSelected()"
+                        (change)="$any($event.target).checked ? selectAllImport() : unselectAllImport()"
+                        [attr.aria-label]="'Select all'"
+                      >
+                    </th>
+                    <th class="sr-col">Sr</th>
+                    <th class="name-col">Leave Type Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of filteredImportSourceItems(); track item.leaveTypeID) {
+                    <tr>
+                      <td class="check-col">
+                        <input
+                          type="checkbox"
+                          [checked]="isImportSelected(item.leaveTypeID)"
+                          (change)="toggleImportItem(item.leaveTypeID, $any($event.target).checked)"
+                        >
+                      </td>
+                      <td class="sr-col">{{ item.srNo }}</td>
+                      <td class="name-col">{{ item.leaveTypeName }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="3" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} leave types found</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="closeImport()" [disabled]="importLoading()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirmImport()" [disabled]="importLoading() || importSelectedCount() === 0">Import</button>
+          </footer>
+        </div>
       </div>
     </div>
   }

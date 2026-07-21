@@ -12,6 +12,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateItemGroupForm } from '../../../core/utils/master-validation.util';
+import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
@@ -49,6 +50,7 @@ export class ItemGroupMasterComponent {
   readonly importSourceLoading = signal(false);
   readonly importSourceItems = signal<ItemGroupMasterItem[]>([]);
   readonly importSelectedIds = signal<Set<number>>(new Set());
+  readonly importLanguage = signal<ImportLanguage>('M');
   readonly listOrgID = signal<number | null>(null);
   readonly searchText = signal('');
   readonly sortKey = signal<keyof ItemGroupMasterItem>('itemGroupName');
@@ -68,8 +70,12 @@ export class ItemGroupMasterComponent {
     );
   });
   readonly importSelectedCount = computed(() => this.importSelectedIds().size);
+  readonly filteredImportSourceItems = computed(() => {
+    const lang = this.importLanguage();
+    return this.importSourceItems().filter((item) => matchesImportLanguage(item.itemGroupName, lang));
+  });
   readonly importAllSelected = computed(() => {
-    const items = this.importSourceItems();
+    const items = this.filteredImportSourceItems();
     const selected = this.importSelectedIds();
     return items.length > 0 && items.every((x) => selected.has(x.itemGroupID));
   });
@@ -225,6 +231,7 @@ export class ItemGroupMasterComponent {
     }
     this.closeForm();
     this.importVisible.set(true);
+    this.importLanguage.set('M');
     this.importSelectedIds.set(new Set());
     this.importSourceLoading.set(true);
     this.master
@@ -242,6 +249,19 @@ export class ItemGroupMasterComponent {
     this.importSourceLoading.set(false);
     this.importSourceItems.set([]);
     this.importSelectedIds.set(new Set());
+    this.importLanguage.set('M');
+  }
+
+  onImportLanguageChange(lang: ImportLanguage): void {
+    this.importLanguage.set(lang);
+    const visibleIds = new Set(this.filteredImportSourceItems().map((x) => x.itemGroupID));
+    this.importSelectedIds.update((selected) => {
+      const next = new Set<number>();
+      for (const id of selected) {
+        if (visibleIds.has(id)) next.add(id);
+      }
+      return next;
+    });
   }
 
   toggleImportItem(id: number, checked: boolean): void {
@@ -258,7 +278,7 @@ export class ItemGroupMasterComponent {
   }
 
   selectAllImport(): void {
-    this.importSelectedIds.set(new Set(this.importSourceItems().map((x) => x.itemGroupID)));
+    this.importSelectedIds.set(new Set(this.filteredImportSourceItems().map((x) => x.itemGroupID)));
   }
 
   unselectAllImport(): void {

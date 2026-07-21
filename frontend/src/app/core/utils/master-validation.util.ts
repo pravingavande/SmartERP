@@ -89,8 +89,15 @@ export function validateDRHeadForm(form: DRHeadFormState): FieldErrors {
   return errors;
 }
 
-export function validateLeaveTypeForm(form: Pick<LeaveTypeFormState, 'leaveTypeName'>): FieldErrors {
-  return requireText(form.leaveTypeName, 'leaveTypeName', 'Leave type name');
+export function validateLeaveTypeForm(form: LeaveTypeFormState): FieldErrors {
+  const errors: FieldErrors = {
+    ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
+    ...requireText(form.leaveTypeName, 'leaveTypeName', 'Leave type name')
+  };
+  if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {
+    errors['srNo'] = 'Sr No is required and must be a positive whole number.';
+  }
+  return errors;
 }
 
 export function validateOrgSelection(orgId: number | null | undefined): FieldErrors {

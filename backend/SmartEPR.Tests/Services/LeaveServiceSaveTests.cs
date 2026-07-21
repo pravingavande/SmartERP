@@ -23,7 +23,23 @@ public sealed class LeaveServiceSaveTests
     {
         var result = await CreateService().SaveLeaveTypeAsync(new SaveLeaveTypeRequestDto
         {
+            UnderOrgID = 2,
             LeaveTypeName = name!
+        });
+
+        Assert.Null(result);
+        _leaveRepository.Verify(
+            r => r.SaveLeaveTypeAsync(It.IsAny<SaveLeaveTypeRequestDto>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SaveLeaveTypeAsync_RejectsMissingOrg()
+    {
+        var result = await CreateService().SaveLeaveTypeAsync(new SaveLeaveTypeRequestDto
+        {
+            UnderOrgID = 0,
+            LeaveTypeName = "Casual"
         });
 
         Assert.Null(result);
@@ -40,10 +56,12 @@ public sealed class LeaveServiceSaveTests
             .ReturnsAsync(5);
         _leaveRepository
             .Setup(r => r.GetLeaveTypeByIdAsync(5, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new LeaveTypeDto { LeaveTypeID = 5, LeaveTypeName = "Casual", IsActive = true });
+            .ReturnsAsync(new LeaveTypeDto { LeaveTypeID = 5, UnderOrgID = 2, SrNo = 1, LeaveTypeName = "Casual", IsActive = true });
 
         var result = await CreateService().SaveLeaveTypeAsync(new SaveLeaveTypeRequestDto
         {
+            UnderOrgID = 2,
+            SrNo = 1,
             LeaveTypeName = "Casual",
             IsActive = true
         });
@@ -63,11 +81,13 @@ public sealed class LeaveServiceSaveTests
             .ReturnsAsync(9);
         _leaveRepository
             .Setup(r => r.GetLeaveTypeByIdAsync(9, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new LeaveTypeDto { LeaveTypeID = 9, LeaveTypeName = "Sick", IsActive = true });
+            .ReturnsAsync(new LeaveTypeDto { LeaveTypeID = 9, UnderOrgID = 2, SrNo = 2, LeaveTypeName = "Sick", IsActive = true });
 
         await CreateService().SaveLeaveTypeAsync(new SaveLeaveTypeRequestDto
         {
             LeaveTypeID = 9,
+            UnderOrgID = 2,
+            SrNo = 2,
             LeaveTypeName = "Sick"
         });
 

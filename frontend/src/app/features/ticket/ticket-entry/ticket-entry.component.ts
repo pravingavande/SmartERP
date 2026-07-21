@@ -110,9 +110,6 @@ export class TicketEntryComponent {
 
         const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
         this.listOrgID.set(orgId);
-        if (orgId) {
-          this.selectedOrgIds.set([orgId]);
-        }
         this.loadList();
       });
   }
@@ -174,32 +171,29 @@ export class TicketEntryComponent {
       .subscribe((list) => this.tickets.set(list));
   }
 
+  closeSchoolPickerPanel(event: Event): void {
+    event.stopPropagation();
+    this.schoolPickerOpen.set(false);
+  }
+
   newEntry(): void {
     if (!this.canRaiseTicket()) return;
     const lookups = this.lookups();
-    const defaultOrgIds = this.selectedOrgIds().length
-      ? this.selectedOrgIds()
-      : this.listOrgID()
-        ? [this.listOrgID()!]
+    const orgIds =
+      this.isSingleSchoolUser() && lookups?.orgs.length === 1
+        ? [lookups.orgs[0].orgID]
         : [];
-
-    if (!defaultOrgIds.length) {
-      this.errorMessage.set('Select at least one school before raising a ticket.');
-      return;
-    }
 
     this.formMode.set('new');
     this.formVisible.set(true);
     this.detail.set(null);
     this.errorMessage.set(null);
     this.schoolPickerOpen.set(false);
-    this.selectedOrgIds.set(defaultOrgIds);
+    this.selectedOrgIds.set(orgIds);
     this.form.set({
       ...this.emptyForm(),
-      orgIDs: defaultOrgIds,
-      priority: lookups?.priorities[1] ?? 'Medium',
-      replyRequired: lookups?.replyRequiredOptions[0] ?? 'Instant',
-      module: lookups?.modules[0]?.moduleName ?? ''
+      orgIDs: orgIds,
+      replyRequired: lookups?.replyRequiredOptions[0] ?? 'Instant'
     });
     this.replyForm.set({ replyText: '', replyStatus: '', attachment: '' });
     this.selectedFileName.set(null);

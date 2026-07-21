@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using SmartEPR.Core.DTOs.Calendar;
+using SmartEPR.Core.DTOs.Master;
 using SmartEPR.Core.Entities;
 using SmartEPR.Core.Interfaces;
 using SmartEPR.Infrastructure.Data;
@@ -92,6 +93,73 @@ public sealed class EventCalendarService : IEventCalendarService
         if (!context.CanManageEvents) return false;
         await _eventRepository.DeleteEventTypeAsync(eventTypeId, cancellationToken).ConfigureAwait(false);
         return true;
+    }
+
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportEventTypesAsync(
+        long userId,
+        ImportEventTypeRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (!context.CanManageEvents)
+            return (null, "You do not have permission to import event types.");
+
+        if (request.DestinationOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.DestinationOrgID == 1)
+            return (null, "Cannot import into the source organization.");
+        if (request.EventTypeIds is null || request.EventTypeIds.Count == 0)
+            return (null, "Select at least one event type to import.");
+
+        try
+        {
+            const long sourceOrgId = 1;
+            var selected = request.EventTypeIds.Where(id => id > 0).Distinct().ToHashSet();
+            var sourceRows = (await _eventRepository.GetEventTypeListAsync(sourceOrgId, cancellationToken).ConfigureAwait(false))
+                .Where(x => selected.Contains(x.EventTypeID) && x.IsActive)
+                .OrderBy(x => x.SrNo)
+                .ThenBy(x => x.EventTypeID)
+                .ToList();
+
+            var destRows = await _eventRepository.GetEventTypeListAsync(request.DestinationOrgID, cancellationToken).ConfigureAwait(false);
+            var existingNames = destRows
+                .Select(x => x.EventType.Trim())
+                .Where(x => x.Length > 0)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var imported = 0;
+            var skipped = 0;
+
+            foreach (var row in sourceRows)
+            {
+                var name = (row.EventType ?? string.Empty).Trim();
+                if (name.Length == 0 || existingNames.Contains(name))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                await _eventRepository.SaveEventTypeAsync(new SaveEventTypeEntity
+                {
+                    EventTypeID = null,
+                    UnderOrgID = request.DestinationOrgID,
+                    EventType = name,
+                    IsActive = row.IsActive,
+                    UserID = userId
+                }, cancellationToken).ConfigureAwait(false);
+
+                existingNames.Add(name);
+                imported++;
+            }
+
+            skipped += Math.Max(0, selected.Count - sourceRows.Count);
+
+            return (new ImportClassResultDto { ImportedCount = imported, SkippedCount = skipped }, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, SqlErrorMapper.ToUserMessage(ex, "Event Types"));
+        }
     }
 
     public async Task<IReadOnlyList<LocationDto>> SearchLocationsAsync(long userId, long underOrgId, string? search, CancellationToken cancellationToken = default)

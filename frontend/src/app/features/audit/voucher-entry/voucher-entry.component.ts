@@ -580,10 +580,10 @@ export class VoucherEntryComponent {
         errors['ledgerHeadBankID'] = 'Please select Deposit Bank.';
       }
       if (!f.transactionNo?.trim()) {
-        errors['transactionNo'] = 'Please enter Transaction/UTR/Cheque No.';
+        errors['transactionNo'] = 'Please enter Trans/UTR/Cheque No.';
       }
       if (!f.transactionDate?.trim()) {
-        errors['transactionDate'] = 'Please enter Transaction/UTR/Cheque Date.';
+        errors['transactionDate'] = 'Please enter Trans/UTR/Cheque Date.';
       }
       if (!f.depositDate?.trim()) {
         errors['depositDate'] = 'Please enter Deposit Date.';

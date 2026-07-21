@@ -4,7 +4,12 @@
       <h1>Event Types Master</h1>
       <p>Organization-wise event type definitions</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="newItem()" [disabled]="!canManage()">+ Add Event Type</button>
+    <div class="header-actions">
+      @if (canImport()) {
+        <button type="button" class="btn btn-outline" (click)="openImport()">Import</button>
+      }
+      <button type="button" class="btn btn-primary" (click)="newItem()" [disabled]="!canManage()">+ Add Event Type</button>
+    </div>
   </header>
 
   @if (errorMessage()) {
@@ -100,6 +105,81 @@
             <button type="submit" class="btn btn-primary" [disabled]="loading() || !canManage()">Save</button>
           </footer>
         </form>
+      </div>
+    </div>
+  }
+
+  @if (importVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>Import Event Types</h2>
+          <p class="hint">Source: Organization 1 → Destination: {{ selectedOrgName() }}</p>
+        </header>
+        <div class="master-modal-form">
+          <div class="import-toolbar">
+            <div class="import-toolbar-left">
+              <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !filteredImportSourceItems().length">Select All</button>
+              <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
+              <span class="hint">Showing: {{ filteredImportSourceItems().length }} · Selected: {{ importSelectedCount() }}</span>
+            </div>
+            <label class="field import-lang-field">
+              <span class="field-label">Language</span>
+              <select
+                class="field-control"
+                [ngModel]="importLanguage()"
+                (ngModelChange)="onImportLanguageChange($event)"
+                name="importLanguage"
+              >
+                <option value="M">Marathi</option>
+                <option value="E">English</option>
+              </select>
+            </label>
+          </div>
+          @if (importSourceLoading()) {
+            <p class="loading-hint">Loading source event types...</p>
+          } @else {
+            <div class="records-table-wrap import-grid">
+              <table class="records-table import-table">
+                <thead>
+                  <tr>
+                    <th class="check-col">
+                      <input
+                        type="checkbox"
+                        [checked]="importAllSelected()"
+                        (change)="$any($event.target).checked ? selectAllImport() : unselectAllImport()"
+                        [attr.aria-label]="'Select all'"
+                      >
+                    </th>
+                    <th class="sr-col">Sr</th>
+                    <th class="name-col">Event Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of filteredImportSourceItems(); track item.eventTypeID) {
+                    <tr>
+                      <td class="check-col">
+                        <input
+                          type="checkbox"
+                          [checked]="isImportSelected(item.eventTypeID)"
+                          (change)="toggleImportItem(item.eventTypeID, $any($event.target).checked)"
+                        >
+                      </td>
+                      <td class="sr-col">{{ item.srNo }}</td>
+                      <td class="name-col">{{ item.eventType }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="3" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} event types found</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="closeImport()" [disabled]="importLoading()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirmImport()" [disabled]="importLoading() || importSelectedCount() === 0">Import</button>
+          </footer>
+        </div>
       </div>
     </div>
   }

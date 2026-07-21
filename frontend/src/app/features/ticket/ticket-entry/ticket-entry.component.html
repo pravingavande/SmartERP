@@ -35,8 +35,6 @@
                 <th>Ticket No</th>
                 <th>School(s)</th>
                 <th>Subject</th>
-                <th>Module</th>
-                <th>Priority</th>
                 <th>Status</th>
                 <th>Reply Req.</th>
                 <th>Submitted</th>
@@ -49,8 +47,6 @@
                   <td>{{ t.ticketNo || t.ticketID }}</td>
                   <td class="school">{{ t.schoolNames || t.organizationName }}</td>
                   <td class="desc">{{ t.subject || '—' }}</td>
-                  <td>{{ t.module || '—' }}</td>
-                  <td><span class="priority-pill" [class]="priorityClass(t.priority)">{{ t.priority || '—' }}</span></td>
                   <td>{{ statusLabel(t) }}</td>
                   <td>{{ t.replyRequired || '—' }}</td>
                   <td>{{ t.submittedDate || t.createdDate | date:'dd/MM/yy HH:mm' }}</td>
@@ -64,7 +60,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="9" class="empty">No tickets found</td>
+                  <td colspan="7" class="empty">No tickets found</td>
                 </tr>
               }
             </tbody>
@@ -132,6 +128,7 @@
                         <div class="multiselect-toolbar">
                           <button type="button" class="link-btn" (click)="selectAllSchools()">Select all</button>
                           <button type="button" class="link-btn" (click)="clearSchools()">Clear</button>
+                          <button type="button" class="link-btn multiselect-close" (click)="closeSchoolPickerPanel($event)">Close</button>
                         </div>
                         <ul class="multiselect-options">
                           @for (o of lookups()?.orgs ?? []; track o.orgID) {
@@ -188,35 +185,6 @@
                   @if (fieldError('subject')) {
                     <span class="field-error">{{ fieldError('subject') }}</span>
                   }
-                </label>
-
-                <label class="field">
-                  <span class="field-label">Module</span>
-                  <select
-                    class="field-control"
-                    [ngModel]="form().module"
-                    (ngModelChange)="updateForm('module', $event)"
-                    name="module"
-                  >
-                    <option value="">-- Select Module --</option>
-                    @for (m of lookups()?.modules ?? []; track m.ticketModuleID) {
-                      <option [value]="m.moduleName">{{ m.moduleName }}</option>
-                    }
-                  </select>
-                </label>
-
-                <label class="field">
-                  <span class="field-label">Priority</span>
-                  <select
-                    class="field-control"
-                    [ngModel]="form().priority"
-                    (ngModelChange)="updateForm('priority', $event)"
-                    name="priority"
-                  >
-                    @for (p of lookups()?.priorities ?? []; track p) {
-                      <option [value]="p">{{ p }}</option>
-                    }
-                  </select>
                 </label>
 
                 <label class="field" [class.field-invalid]="fieldError('replyRequired')">

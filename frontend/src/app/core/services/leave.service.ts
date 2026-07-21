@@ -13,7 +13,8 @@ import {
   LeaveApplyLookupsBundle,
   LeaveOption,
   LeaveTypeFormState,
-  LeaveTypeItem
+  LeaveTypeItem,
+  ImportLeaveTypeResult
 } from '../models/leave.model';
 
 @Injectable({ providedIn: 'root' })
@@ -25,16 +26,32 @@ export class LeaveService {
     private readonly auth: AuthService
   ) {}
 
-  getLeaveTypes(): Observable<LeaveTypeItem[]> {
-    return this.http.get<ApiResponse<LeaveTypeItem[]>>(`${this.base}/types`).pipe(
+  getLeaveTypes(orgId: number, search?: string | null): Observable<LeaveTypeItem[]> {
+    let params = new HttpParams().set('orgId', String(orgId));
+    if (search?.trim()) params = params.set('search', search.trim());
+    return this.http.get<ApiResponse<LeaveTypeItem[]>>(`${this.base}/types`, { params }).pipe(
       map((r) => (r.success && r.data ? r.data.map((x) => this.normalizeLeaveType(x)) : [])),
       catchError(() => of([]))
+    );
+  }
+
+  getLeaveTypeNextSrNo(orgId: number): Observable<number | null> {
+    const params = new HttpParams().set('orgId', String(orgId));
+    return this.http.get<ApiResponse<{ nextSrNo?: number; NextSrNo?: number }>>(`${this.base}/types/next-srno`, { params }).pipe(
+      map((r) => {
+        if (!r.success || !r.data) return null;
+        const n = r.data.nextSrNo ?? r.data.NextSrNo;
+        return n != null ? Number(n) : null;
+      }),
+      catchError(() => of(null))
     );
   }
 
   saveLeaveType(form: LeaveTypeFormState): Observable<{ data: LeaveTypeItem | null; message: string | null }> {
     const payload = {
       leaveTypeID: form.leaveTypeID ?? 0,
+      underOrgID: form.underOrgID ?? 0,
+      srNo: form.srNo ?? 0,
       leaveTypeName: form.leaveTypeName.trim(),
       isActive: form.isActive
     };
@@ -45,6 +62,41 @@ export class LeaveService {
       })),
       catchError(() => of({ data: null, message: 'Unable to save leave type.' }))
     );
+  }
+
+  deleteLeaveType(leaveTypeId: number): Observable<{ success: boolean; message?: string }> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.base}/types/${leaveTypeId}`).pipe(
+      map((r) => ({ success: !!r.success, message: r.message ?? undefined })),
+      catchError(() => of({ success: false, message: 'Unable to delete leave type.' }))
+    );
+  }
+
+  importLeaveTypes(
+    destinationOrgId: number,
+    leaveTypeIds: number[]
+  ): Observable<{ data: ImportLeaveTypeResult | null; message: string | null }> {
+    const payload = {
+      destinationOrgID: destinationOrgId,
+      leaveTypeIds
+    };
+    return this.http
+      .post<ApiResponse<ImportLeaveTypeResult & { ImportedCount?: number; SkippedCount?: number }>>(
+        `${this.base}/types/import`,
+        payload
+      )
+      .pipe(
+        map((r) => ({
+          data:
+            r.success && r.data
+              ? {
+                  importedCount: r.data.importedCount ?? r.data.ImportedCount ?? 0,
+                  skippedCount: r.data.skippedCount ?? r.data.SkippedCount ?? 0
+                }
+              : null,
+          message: r.success ? null : (r.message ?? 'Unable to import leave types.')
+        })),
+        catchError(() => of({ data: null, message: 'Unable to import leave types.' }))
+      );
   }
 
   getLookups(): Observable<LeaveApplyLookupsBundle | null> {
@@ -155,11 +207,21 @@ export class LeaveService {
     }));
   }
 
-  private normalizeLeaveType(raw: LeaveTypeItem & { LeaveTypeID?: number; LeaveTypeName?: string; IsActive?: boolean }): LeaveTypeItem {
+  private normalizeLeaveType(raw: LeaveTypeItem & {
+    LeaveTypeID?: number;
+    UnderOrgID?: number;
+    SrNo?: number;
+    LeaveTypeName?: string;
+    IsActive?: boolean;
+    OrganizationName?: string;
+  }): LeaveTypeItem {
     return {
       leaveTypeID: raw.leaveTypeID ?? raw.LeaveTypeID ?? 0,
+      underOrgID: raw.underOrgID ?? raw.UnderOrgID ?? 0,
+      srNo: raw.srNo ?? raw.SrNo ?? 0,
       leaveTypeName: raw.leaveTypeName ?? raw.LeaveTypeName ?? '',
-      isActive: raw.isActive ?? raw.IsActive ?? true
+      isActive: raw.isActive ?? raw.IsActive ?? true,
+      organizationName: raw.organizationName ?? raw.OrganizationName
     };
   }
 
