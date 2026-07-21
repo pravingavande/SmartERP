@@ -70,8 +70,16 @@ public sealed class DocumentMasterDto
     public long UnderOrgID { get; init; }
     public long SrNo { get; init; }
     public string DocumentName { get; init; } = string.Empty;
+    public int? DocumentTypeID { get; init; }
+    public string? DocumentTypeName { get; init; }
     public bool IsActive { get; init; }
     public string? OrganizationName { get; init; }
+}
+
+public sealed class DocumentTypeOptionDto
+{
+    public int DocumentTypeID { get; init; }
+    public string DocumentTypeName { get; init; } = string.Empty;
 }
 
 public sealed class SaveDocumentRequestDto
@@ -87,6 +95,9 @@ public sealed class SaveDocumentRequestDto
 
     [JsonPropertyName("documentName")]
     public string DocumentName { get; set; } = string.Empty;
+
+    [JsonPropertyName("documentTypeID")]
+    public int DocumentTypeID { get; set; }
 
     [JsonPropertyName("isActive")]
     public bool IsActive { get; set; } = true;

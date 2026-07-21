@@ -15,6 +15,7 @@ public interface IMasterRepository
     Task<IReadOnlyList<DocumentMasterDto>> GetDocumentListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<DocumentMasterDto?> GetDocumentByIdAsync(long documentId, CancellationToken cancellationToken = default);
     Task<long?> GetDocumentNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DocumentTypeOptionDto>> GetDocumentTypesAsync(CancellationToken cancellationToken = default);
     Task<long> SaveDocumentAsync(SaveDocumentRequestDto request, CancellationToken cancellationToken = default);
     Task DeleteDocumentAsync(long documentId, CancellationToken cancellationToken = default);
     Task<ImportClassResultDto> ImportDocumentsAsync(long destinationOrgId, IReadOnlyList<long> documentIds, CancellationToken cancellationToken = default);
@@ -68,6 +69,7 @@ public interface IMasterService
 
     Task<IReadOnlyList<DocumentMasterDto>> GetDocumentListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<long?> GetDocumentNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DocumentTypeOptionDto>> GetDocumentTypesAsync(CancellationToken cancellationToken = default);
     Task<(DocumentMasterDto? Data, string? Error)> SaveDocumentAsync(SaveDocumentRequestDto request, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteDocumentAsync(long documentId, CancellationToken cancellationToken = default);
     Task<(ImportClassResultDto? Data, string? Error)> ImportDocumentsAsync(ImportDocumentRequestDto request, CancellationToken cancellationToken = default);

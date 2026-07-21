@@ -46,6 +46,7 @@
             <tr>
               <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('documentName')">Document Name</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('documentTypeName')">Document Type</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
               <th>Actions</th>
             </tr>
@@ -55,6 +56,7 @@
               <tr>
                 <td>{{ item.srNo }}</td>
                 <td>{{ item.documentName }}</td>
+                <td>{{ item.documentTypeName || item.documentTypeID || '—' }}</td>
                 <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
                   <app-list-action-btn action="edit" (clicked)="editItem(item)" />
@@ -62,7 +64,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="4" class="empty">No documents for selected organization</td></tr>
+              <tr><td colspan="5" class="empty">No documents for selected organization</td></tr>
             }
           </tbody>
         </table>
@@ -104,6 +106,22 @@
                 name="srNo"
               >
               @if (fieldError('srNo')) { <span class="field-error">{{ fieldError('srNo') }}</span> }
+            </label>
+            <label class="field full" [class.field-invalid]="fieldError('documentTypeID')">
+              <span class="field-label">Document Type *</span>
+              <select
+                class="field-control"
+                required
+                [ngModel]="form().documentTypeID"
+                (ngModelChange)="updateForm('documentTypeID', $event ? +$event : null)"
+                name="documentTypeID"
+              >
+                <option [ngValue]="null">-- Select Document Type --</option>
+                @for (t of documentTypes(); track t.documentTypeID) {
+                  <option [ngValue]="t.documentTypeID">{{ t.documentTypeName }}</option>
+                }
+              </select>
+              @if (fieldError('documentTypeID')) { <span class="field-error">{{ fieldError('documentTypeID') }}</span> }
             </label>
             <label class="field full" [class.field-invalid]="fieldError('documentName')">
               <span class="field-label">Document Name *</span>
@@ -170,6 +188,8 @@
                     </th>
                     <th class="sr-col">Sr</th>
                     <th class="name-col">Document Name</th>
+                    <th class="type-id-col">Type ID</th>
+                    <th class="type-name-col">Document Type</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -184,9 +204,11 @@
                       </td>
                       <td class="sr-col">{{ item.srNo }}</td>
                       <td class="name-col">{{ item.documentName }}</td>
+                      <td class="type-id-col">{{ item.documentTypeID ?? '—' }}</td>
+                      <td class="type-name-col">{{ item.documentTypeName || '—' }}</td>
                     </tr>
                   } @empty {
-                    <tr><td colspan="3" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} documents found</td></tr>
+                    <tr><td colspan="5" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} documents found</td></tr>
                   }
                 </tbody>
               </table>

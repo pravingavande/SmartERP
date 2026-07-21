@@ -170,7 +170,7 @@ export class TeacherEntryComponent {
     this.ensureSearchDebounce();
     const underOrgID = this.auth.currentUser()?.sansthaId ?? 0;
     forkJoin({
-      lookups: this.teacherService.getLookups(),
+      lookups: this.teacherService.getLookups(underOrgID > 0 ? underOrgID : null),
       profile: this.dashboardService.getProfile(),
       language: this.languageService.load(underOrgID)
     })
@@ -193,6 +193,7 @@ export class TeacherEntryComponent {
 
           const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
           this.listFilter.update((f) => ({ ...f, orgId }));
+          this.ensureDocumentLookups(data, orgId, underOrgID);
           this.loadList();
         },
         error: () => {
@@ -200,6 +201,25 @@ export class TeacherEntryComponent {
           this.errorMessage.set('Unable to load teacher masters. Please refresh or contact admin.');
           this.teachers.set([]);
         }
+      });
+  }
+
+  /** Reload employee document options when session sansthaId is missing but school maps to a parent sanstha. */
+  private ensureDocumentLookups(bundle: TeacherLookupsBundle, orgId: number | null, sessionSansthaId: number): void {
+    if ((bundle.lookups?.documents?.length ?? 0) > 0) return;
+    const school = bundle.orgs.find((o) => o.orgID === orgId);
+    const fallbackUnder = school?.underOrgID;
+    if (!fallbackUnder || fallbackUnder <= 0 || fallbackUnder === sessionSansthaId) return;
+    this.teacherService
+      .getLookups(fallbackUnder)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((reloaded) => {
+        if (!reloaded?.lookups?.documents?.length) return;
+        this.lookups.update((current) =>
+          current
+            ? { ...current, lookups: { ...current.lookups, documents: reloaded.lookups.documents } }
+            : current
+        );
       });
   }
 

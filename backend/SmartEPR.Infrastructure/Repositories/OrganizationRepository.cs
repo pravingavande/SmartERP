@@ -60,10 +60,11 @@ public sealed class OrganizationRepository : IOrganizationRepository
         };
     }
 
-    public Task<IReadOnlyList<OrganizationDocumentOptionDto>> GetDocumentsByBusinessCategoryAsync(int businessCategoryId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<OrganizationDocumentOptionDto>> GetDocumentsByBusinessCategoryAsync(int businessCategoryId, long underOrgId, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
         p.Add("@BusinessCategoryID", businessCategoryId);
+        p.Add("@UnderOrgID", underOrgId);
         return _executor.QueryListAsync<OrganizationDocumentOptionDto>("dbo.sp_Organization_GetDocumentsByBusinessCategory", p, cancellationToken);
     }
 

@@ -88,12 +88,16 @@ public sealed class MasterService : IMasterService
     public Task<long?> GetDocumentNextSrNoAsync(long orgId, CancellationToken cancellationToken = default)
         => _repository.GetDocumentNextSrNoAsync(orgId, cancellationToken);
 
+    public Task<IReadOnlyList<DocumentTypeOptionDto>> GetDocumentTypesAsync(CancellationToken cancellationToken = default)
+        => _repository.GetDocumentTypesAsync(cancellationToken);
+
     public async Task<(DocumentMasterDto? Data, string? Error)> SaveDocumentAsync(SaveDocumentRequestDto request, CancellationToken cancellationToken = default)
     {
         request.DocumentName = MasterValidators.Trim(request.DocumentName);
         var error = MasterValidators.FirstError(
             MasterValidators.RequirePositiveId(request.UnderOrgID, "Organization"),
             MasterValidators.RequirePositiveId(request.SrNo, "Sr No"),
+            MasterValidators.RequirePositiveId(request.DocumentTypeID, "Document type"),
             MasterValidators.RequireText(request.DocumentName, "Document name"));
         if (error is not null) return (null, error);
         try

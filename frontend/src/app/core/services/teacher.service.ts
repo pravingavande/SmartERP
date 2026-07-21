@@ -31,8 +31,12 @@ export class TeacherService {
     private readonly auth: AuthService
   ) {}
 
-  getLookups(): Observable<TeacherLookupsBundle | null> {
-    return this.http.get<ApiResponse<TeacherLookupsBundle>>(`${this.base}/lookups`).pipe(
+  getLookups(underOrgId?: number | null): Observable<TeacherLookupsBundle | null> {
+    let params = new HttpParams();
+    if (underOrgId != null && underOrgId > 0) {
+      params = params.set('underOrgId', underOrgId.toString());
+    }
+    return this.http.get<ApiResponse<TeacherLookupsBundle>>(`${this.base}/lookups`, { params }).pipe(
       map((r) => (r.success && r.data ? this.normalizeLookupsBundle(r.data) : null)),
       catchError(() => of(null))
     );

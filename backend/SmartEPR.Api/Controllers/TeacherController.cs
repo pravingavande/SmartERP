@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SmartEPR.Core.Common;
 using SmartEPR.Core.DTOs.Teacher;
 using SmartEPR.Core.Interfaces;
@@ -39,13 +40,20 @@ public sealed class TeacherController : ControllerBase
     }
 
     [HttpGet("lookups")]
-    public async Task<IActionResult> GetLookups(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetLookups([FromQuery] long? underOrgId, CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
             return Unauthorized(ApiResponse<TeacherLookupsBundleDto>.Fail("Invalid token."));
 
-        var lookups = await _teacherService.GetLookupsAsync(userId, cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<TeacherLookupsBundleDto>.Ok(lookups));
+        try
+        {
+            var lookups = await _teacherService.GetLookupsAsync(userId, underOrgId, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<TeacherLookupsBundleDto>.Ok(lookups));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<TeacherLookupsBundleDto>.Fail(ex.Message));
+        }
     }
 
     [HttpGet("next-srno")]

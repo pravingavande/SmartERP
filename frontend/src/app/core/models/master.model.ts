@@ -33,8 +33,15 @@ export interface DocumentMasterItem {
   underOrgID: number;
   srNo: number;
   documentName: string;
+  documentTypeID: number | null;
+  documentTypeName?: string | null;
   isActive: boolean;
   organizationName?: string | null;
+}
+
+export interface DocumentTypeOption {
+  documentTypeID: number;
+  documentTypeName: string;
 }
 
 export interface DocumentFormState {
@@ -42,6 +49,7 @@ export interface DocumentFormState {
   underOrgID: number | null;
   srNo: number | null;
   documentName: string;
+  documentTypeID: number | null;
   isActive: boolean;
 }
 

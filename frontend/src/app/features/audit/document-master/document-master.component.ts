@@ -2,9 +2,10 @@ import { ListActionBtnComponent } from '../../../shared/components/list-action-b
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuditLookups } from '../../../core/models/audit.model';
-import { DocumentFormState, DocumentMasterItem } from '../../../core/models/master.model';
+import { DocumentFormState, DocumentMasterItem, DocumentTypeOption } from '../../../core/models/master.model';
 import { AuditService } from '../../../core/services/audit.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
@@ -42,6 +43,7 @@ export class DocumentMasterComponent {
   readonly saveError = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly lookups = signal<AuditLookups | null>(null);
+  readonly documentTypes = signal<DocumentTypeOption[]>([]);
   readonly items = signal<DocumentMasterItem[]>([]);
   readonly form = signal<DocumentFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
@@ -98,23 +100,44 @@ export class DocumentMasterComponent {
 
   loadLookups(): void {
     this.lookupsLoading.set(true);
+    this.errorMessage.set(null);
     forkJoin({
       lookups: this.audit.getLookups(),
       profile: this.dashboardService.getProfile()
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ lookups: data, profile }) => {
-        this.lookupsLoading.set(false);
-        const sansthaOrgs = resolveSansthaOrgs(data?.sansthaOrgs ?? [], this.auth.currentUser());
-        this.lookups.set(data ? { ...data, sansthaOrgs } : null);
-        if (!sansthaOrgs.length) {
-          this.errorMessage.set('No Sanstha found for your login.');
-          return;
+      .subscribe({
+        next: ({ lookups: data, profile }) => {
+          this.lookupsLoading.set(false);
+          const sansthaOrgs = resolveSansthaOrgs(data?.sansthaOrgs ?? [], this.auth.currentUser());
+          this.lookups.set(data ? { ...data, sansthaOrgs } : null);
+          if (!sansthaOrgs.length) {
+            this.errorMessage.set('No Sanstha found for your login.');
+            return;
+          }
+          const orgId = resolveDefaultSansthaOrgId(sansthaOrgs, profile, this.auth.currentUser());
+          this.listOrgID.set(orgId);
+          if (orgId) this.loadList();
+          this.loadDocumentTypes();
+        },
+        error: (err: Error) => {
+          this.lookupsLoading.set(false);
+          this.errorMessage.set(err?.message ?? 'Unable to load organization list.');
         }
-        const orgId = resolveDefaultSansthaOrgId(sansthaOrgs, profile, this.auth.currentUser());
-        this.listOrgID.set(orgId);
-        if (orgId) this.loadList();
       });
+  }
+
+  private loadDocumentTypes(): void {
+    this.master
+      .getDocumentTypes()
+      .pipe(
+        catchError((err: Error) => {
+          this.toast.showError(err?.message ?? 'Unable to load document types.', 'Document types');
+          return of([] as DocumentTypeOption[]);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((types) => this.documentTypes.set(types));
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -175,12 +198,19 @@ export class DocumentMasterComponent {
       this.errorMessage.set('Select Org / Sanstha on the list page before adding new.');
       return;
     }
+    if (!this.documentTypes().length) {
+      this.loadDocumentTypes();
+    }
     this.formMode.set('new');
     this.formVisible.set(true);
     this.errorMessage.set(null);
     this.fieldErrors.set({});
     this.saveError.set(null);
-    this.form.set({ ...this.emptyForm(), underOrgID: orgId });
+    this.form.set({
+      ...this.emptyForm(),
+      underOrgID: orgId,
+      documentTypeID: this.documentTypes()[0]?.documentTypeID ?? null
+    });
     this.loadNextSrNo(orgId);
   }
 
@@ -195,6 +225,7 @@ export class DocumentMasterComponent {
       underOrgID: item.underOrgID,
       srNo: item.srNo,
       documentName: item.documentName,
+      documentTypeID: item.documentTypeID,
       isActive: item.isActive
     });
   }
@@ -378,6 +409,13 @@ export class DocumentMasterComponent {
   }
 
   private emptyForm(): DocumentFormState {
-    return { documentID: null, underOrgID: null, srNo: null, documentName: '', isActive: true };
+    return {
+      documentID: null,
+      underOrgID: null,
+      srNo: null,
+      documentName: '',
+      documentTypeID: null,
+      isActive: true
+    };
   }
 }

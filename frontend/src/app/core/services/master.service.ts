@@ -14,6 +14,7 @@ import {
   ClassMasterItem,
   DocumentFormState,
   DocumentMasterItem,
+  DocumentTypeOption,
   ImportClassResult,
   InventoryLookups,
   ItemFormState,
@@ -131,6 +132,18 @@ export class MasterService {
     );
   }
 
+  getDocumentTypes(): Observable<DocumentTypeOption[]> {
+    return this.http.get<ApiResponse<DocumentTypeOption[]>>(`${this.base}/document/types`).pipe(
+      map((r) => {
+        if (!r.success) throw new Error(r.message ?? 'Unable to load document types.');
+        return r.data ? r.data.map((x) => this.normalizeDocumentType(x)) : [];
+      }),
+      catchError((err: { message?: string; error?: { message?: string } }) =>
+        throwError(() => new Error(err?.error?.message ?? err?.message ?? 'Unable to load document types.'))
+      )
+    );
+  }
+
   getDocumentNextSrNo(orgId: number): Observable<number | null> {
     const params = new HttpParams().set('orgId', String(orgId));
     return this.http.get<ApiResponse<{ nextSrNo?: number; NextSrNo?: number }>>(`${this.base}/document/next-srno`, { params }).pipe(
@@ -149,6 +162,7 @@ export class MasterService {
       underOrgID: form.underOrgID ?? 0,
       srNo: form.srNo ?? 0,
       documentName: trimText(form.documentName),
+      documentTypeID: form.documentTypeID ?? 0,
       isActive: form.isActive
     };
     return this.http.post<ApiResponse<DocumentMasterItem>>(`${this.base}/document`, payload).pipe(
@@ -555,14 +569,34 @@ export class MasterService {
   }
 
   private normalizeDocument(raw: unknown): DocumentMasterItem {
-    const r = raw as DocumentMasterItem & { DocumentID?: number; UnderOrgID?: number; SrNo?: number; DocumentName?: string; IsActive?: boolean; OrganizationName?: string | null };
+    const r = raw as DocumentMasterItem & {
+      DocumentID?: number;
+      UnderOrgID?: number;
+      SrNo?: number;
+      DocumentName?: string;
+      DocumentTypeID?: number | null;
+      DocumentTypeName?: string | null;
+      IsActive?: boolean;
+      OrganizationName?: string | null;
+    };
+    const documentTypeID = r.documentTypeID ?? r.DocumentTypeID ?? null;
     return {
       documentID: Number(r.documentID ?? r.DocumentID ?? 0),
       underOrgID: Number(r.underOrgID ?? r.UnderOrgID ?? 0),
       srNo: Number(r.srNo ?? r.SrNo ?? 0),
       documentName: String(r.documentName ?? r.DocumentName ?? ''),
+      documentTypeID: documentTypeID != null ? Number(documentTypeID) : null,
+      documentTypeName: r.documentTypeName ?? r.DocumentTypeName ?? null,
       isActive: Boolean(r.isActive ?? r.IsActive ?? true),
       organizationName: r.organizationName ?? r.OrganizationName ?? null
+    };
+  }
+
+  private normalizeDocumentType(raw: unknown): DocumentTypeOption {
+    const r = raw as DocumentTypeOption & { DocumentTypeID?: number; DocumentTypeName?: string };
+    return {
+      documentTypeID: Number(r.documentTypeID ?? r.DocumentTypeID ?? 0),
+      documentTypeName: String(r.documentTypeName ?? r.DocumentTypeName ?? '')
     };
   }
 

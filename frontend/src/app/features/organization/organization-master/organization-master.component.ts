@@ -169,16 +169,20 @@ export class OrganizationMasterComponent {
     const parentId = this.resolveParentOrgId(orgId, selected?.underOrgID);
     const defaultSchoolCategory = lookups?.schoolCategories.find((s) => s.id > 0)?.id ?? null;
     const ownerBusinessCategory = selected?.businessCategoryID ?? SCHOOL_BUSINESS_CATEGORY_ID;
+    const businessCategoryID = ownerBusinessCategory === SANSTHA_BUSINESS_CATEGORY_ID
+      ? SCHOOL_BUSINESS_CATEGORY_ID
+      : (ownerBusinessCategory || SCHOOL_BUSINESS_CATEGORY_ID);
     this.form.set({
       ...this.emptyForm(),
-      businessCategoryID: ownerBusinessCategory === SANSTHA_BUSINESS_CATEGORY_ID
-        ? SCHOOL_BUSINESS_CATEGORY_ID
-        : (ownerBusinessCategory || SCHOOL_BUSINESS_CATEGORY_ID),
+      businessCategoryID,
       underOrgID: parentId,
       schoolCategoryID: defaultSchoolCategory
     });
     this.documentOptions.set([]);
-    if (parentId) this.refreshNextSrNo(parentId);
+    if (parentId) {
+      this.refreshNextSrNo(parentId);
+      this.refreshDocumentOptions(businessCategoryID, true);
+    }
   }
 
   onFormOrgChange(orgId: number | null): void {
@@ -186,6 +190,8 @@ export class OrganizationMasterComponent {
     const parentId = orgId ? this.resolveParentOrgId(orgId, selected?.underOrgID) : null;
     this.updateForm('underOrgID', parentId);
     if (parentId && this.isNewMode()) this.refreshNextSrNo(parentId);
+    const bc = this.form().businessCategoryID;
+    if (bc && parentId) this.refreshDocumentOptions(bc, true);
   }
 
   /** Parent sanstha for a school; if selection is already a sanstha, use itself. */
@@ -246,6 +252,10 @@ export class OrganizationMasterComponent {
   setTab(tab: FormTab): void {
     if (tab === 'documents' && !this.documentsTabEnabled()) return;
     this.activeTab.set(tab);
+    if (tab === 'documents') {
+      const bc = this.form().businessCategoryID;
+      if (bc) this.refreshDocumentOptions(bc, false);
+    }
   }
 
   updateForm<K extends keyof OrganizationFormState>(key: K, value: OrganizationFormState[K]): void {
@@ -264,12 +274,27 @@ export class OrganizationMasterComponent {
   }
 
   private refreshDocumentOptions(businessCategoryId: number, resetRows: boolean): void {
-    this.organization.getDocumentsByBusinessCategory(businessCategoryId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((opts) => {
+    const underOrgID = this.resolveDocumentUnderOrgId();
+    if (!underOrgID) {
+      this.documentOptions.set([]);
+      if (resetRows) this.form.update((f) => ({ ...f, documents: [this.emptyDocumentRow()] }));
+      return;
+    }
+    this.organization.getDocumentsByBusinessCategory(businessCategoryId, underOrgID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((opts) => {
       this.documentOptions.set(opts);
       if (resetRows) {
         this.form.update((f) => ({ ...f, documents: [this.emptyDocumentRow()] }));
       }
     });
+  }
+
+  /** Sanstha org that owns DocumentMaster rows for this form. */
+  private resolveDocumentUnderOrgId(): number | null {
+    const form = this.form();
+    if (form.underOrgID && form.underOrgID > 0) return form.underOrgID;
+    if (form.businessCategoryID === SANSTHA_BUSINESS_CATEGORY_ID && form.orgID) return form.orgID;
+    const sansthaId = this.auth.currentUser()?.sansthaId;
+    return sansthaId && sansthaId > 0 ? sansthaId : null;
   }
 
   addDocumentRow(): void {

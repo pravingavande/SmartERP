@@ -47,6 +47,7 @@ export function validateClassForm(form: ClassFormState): FieldErrors {
 export function validateDocumentForm(form: DocumentFormState): FieldErrors {
   const errors: FieldErrors = {
     ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
+    ...requireId(form.documentTypeID, 'documentTypeID', 'Document type'),
     ...requireText(form.documentName, 'documentName', 'Document name')
   };
   if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {

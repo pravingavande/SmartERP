@@ -22,9 +22,9 @@ public sealed class TeacherService : ITeacherService
         _auditRepository = auditRepository;
     }
 
-    public async Task<TeacherLookupsBundleDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<TeacherLookupsBundleDto> GetLookupsAsync(long userId, long? underOrgId = null, CancellationToken cancellationToken = default)
     {
-        var lookups = await _teacherRepository.GetLookupsAsync(cancellationToken).ConfigureAwait(false);
+        var lookups = await _teacherRepository.GetLookupsAsync(underOrgId, cancellationToken).ConfigureAwait(false);
         var orgs = await _auditRepository.GetUserOrgsAsync(userId, cancellationToken).ConfigureAwait(false);
         return new TeacherLookupsBundleDto { Lookups = lookups, Orgs = orgs };
     }

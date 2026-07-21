@@ -4,7 +4,7 @@ namespace SmartEPR.Core.Interfaces;
 
 public interface ITeacherRepository
 {
-    Task<TeacherLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default);
+    Task<TeacherLookupsDto> GetLookupsAsync(long? underOrgId = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<TeacherListItemDto>> GetListAsync(TeacherListFilterDto filter, CancellationToken cancellationToken = default);
     Task<TeacherDto?> GetByIdAsync(long userId, CancellationToken cancellationToken = default);
     Task<int?> GetNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);
@@ -16,7 +16,7 @@ public interface ITeacherRepository
 
 public interface ITeacherService
 {
-    Task<TeacherLookupsBundleDto> GetLookupsAsync(long userId, CancellationToken cancellationToken = default);
+    Task<TeacherLookupsBundleDto> GetLookupsAsync(long userId, long? underOrgId = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<TeacherListItemDto>> GetListAsync(TeacherListFilterDto filter, CancellationToken cancellationToken = default);
     Task<TeacherDto?> GetByIdAsync(long userId, CancellationToken cancellationToken = default);
     Task<int?> GetNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);

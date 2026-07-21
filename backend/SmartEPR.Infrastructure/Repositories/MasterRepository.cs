@@ -108,6 +108,9 @@ public sealed class MasterRepository : IMasterRepository
         return row?.NextSrNo;
     }
 
+    public Task<IReadOnlyList<DocumentTypeOptionDto>> GetDocumentTypesAsync(CancellationToken cancellationToken = default)
+        => _executor.QueryListAsync<DocumentTypeOptionDto>("dbo.sp_DocumentType_GetOptions", null, cancellationToken);
+
     public async Task<long> SaveDocumentAsync(SaveDocumentRequestDto request, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
@@ -115,6 +118,7 @@ public sealed class MasterRepository : IMasterRepository
         p.Add("@UnderOrgID", request.UnderOrgID);
         p.Add("@SrNo", request.SrNo > 0 ? request.SrNo : null);
         p.Add("@DocumentName", request.DocumentName);
+        p.Add("@DocumentTypeID", request.DocumentTypeID > 0 ? request.DocumentTypeID : null);
         p.Add("@IsActive", request.IsActive);
         await _executor.ExecuteAsync("dbo.sp_Document_Save", p, cancellationToken).ConfigureAwait(false);
         return p.Get<long>("@DocumentID");

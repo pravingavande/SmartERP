@@ -99,6 +99,20 @@ public sealed class MasterController : ControllerBase
         }
     }
 
+    [HttpGet("document/types")]
+    public async Task<IActionResult> GetDocumentTypes(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var items = await _masterService.GetDocumentTypesAsync(cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<DocumentTypeOptionDto>>.Ok(items));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<DocumentTypeOptionDto>>.Fail(ex.Message));
+        }
+    }
+
     [HttpGet("document/next-srno")]
     public async Task<IActionResult> GetDocumentNextSrNo([FromQuery] long orgId, CancellationToken cancellationToken)
     {

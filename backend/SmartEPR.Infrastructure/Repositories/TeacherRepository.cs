@@ -25,13 +25,16 @@ public sealed class TeacherRepository : ITeacherRepository
         _executor = executor;
     }
 
-    public async Task<TeacherLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default)
+    public async Task<TeacherLookupsDto> GetLookupsAsync(long? underOrgId = null, CancellationToken cancellationToken = default)
     {
         await using var connection = _connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId > 0 ? underOrgId : null);
+
         using var multi = await connection.QueryMultipleAsync(
-            new CommandDefinition("dbo.sp_Teacher_GetLookups", commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))
+            new CommandDefinition("dbo.sp_Teacher_GetLookups", p, commandType: CommandType.StoredProcedure, cancellationToken: cancellationToken))
             .ConfigureAwait(false);
 
         var staffTypes = (await multi.ReadAsync<IdNameRow>().ConfigureAwait(false)).AsList();

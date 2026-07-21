@@ -31,8 +31,10 @@ export class OrganizationService {
     );
   }
 
-  getDocumentsByBusinessCategory(businessCategoryId: number): Observable<OrganizationDocumentOption[]> {
-    const params = new HttpParams().set('businessCategoryId', businessCategoryId.toString());
+  getDocumentsByBusinessCategory(businessCategoryId: number, underOrgId: number): Observable<OrganizationDocumentOption[]> {
+    const params = new HttpParams()
+      .set('businessCategoryId', businessCategoryId.toString())
+      .set('underOrgId', underOrgId.toString());
     return this.http.get<ApiResponse<OrganizationDocumentOption[]>>(`${this.base}/documents`, { params }).pipe(
       map((r) => (r.success && r.data ? r.data.map((d) => this.normalizeDocumentOption(d as unknown as Record<string, unknown>)) : [])),
       catchError(() => of([]))

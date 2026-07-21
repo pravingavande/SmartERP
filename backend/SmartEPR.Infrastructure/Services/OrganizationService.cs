@@ -35,8 +35,12 @@ public sealed class OrganizationService : IOrganizationService
         };
     }
 
-    public Task<IReadOnlyList<OrganizationDocumentOptionDto>> GetDocumentsByBusinessCategoryAsync(int businessCategoryId, CancellationToken cancellationToken = default)
-        => _repository.GetDocumentsByBusinessCategoryAsync(businessCategoryId, cancellationToken);
+    public Task<IReadOnlyList<OrganizationDocumentOptionDto>> GetDocumentsByBusinessCategoryAsync(int businessCategoryId, long underOrgId, CancellationToken cancellationToken = default)
+    {
+        if (underOrgId <= 0)
+            return Task.FromResult<IReadOnlyList<OrganizationDocumentOptionDto>>(Array.Empty<OrganizationDocumentOptionDto>());
+        return _repository.GetDocumentsByBusinessCategoryAsync(businessCategoryId, underOrgId, cancellationToken);
+    }
 
     public Task<long?> GetNextSrNoAsync(long underOrgId, CancellationToken cancellationToken = default)
         => _repository.GetNextSrNoAsync(underOrgId, cancellationToken);

@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SmartEPR.Core.Common;
 using SmartEPR.Core.DTOs.Organization;
 using SmartEPR.Core.Interfaces;
@@ -42,10 +43,20 @@ public sealed class OrganizationController : ControllerBase
     }
 
     [HttpGet("documents")]
-    public async Task<IActionResult> GetDocumentsByBusinessCategory([FromQuery] int businessCategoryId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetDocumentsByBusinessCategory(
+        [FromQuery] int businessCategoryId,
+        [FromQuery] long underOrgId,
+        CancellationToken cancellationToken)
     {
-        var items = await _organizationService.GetDocumentsByBusinessCategoryAsync(businessCategoryId, cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<IReadOnlyList<OrganizationDocumentOptionDto>>.Ok(items));
+        try
+        {
+            var items = await _organizationService.GetDocumentsByBusinessCategoryAsync(businessCategoryId, underOrgId, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<OrganizationDocumentOptionDto>>.Ok(items));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<OrganizationDocumentOptionDto>>.Fail(ex.Message));
+        }
     }
 
     [HttpGet("next-srno")]
