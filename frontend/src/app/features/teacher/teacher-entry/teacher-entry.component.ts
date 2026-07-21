@@ -408,7 +408,7 @@ export class TeacherEntryComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    const orgId = this.form().orgID;
+    const orgId = this.form().orgID ?? this.listFilter().orgId;
     if (!orgId) {
       this.toast.showError('Please select School / Organization before uploading photo.');
       input.value = '';
@@ -424,11 +424,11 @@ export class TeacherEntryComponent {
     this.teacherService
       .uploadPhoto(file, orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((storedName) => {
+      .subscribe(({ path: storedName, error }) => {
         this.photoUploading.set(false);
         input.value = '';
         if (!storedName) {
-          this.toast.showError('Unable to upload photo.');
+          this.toast.showError(error ?? 'Unable to upload photo.');
           return;
         }
         this.form.update((f) => ({ ...f, photoPath: storedName }));
@@ -502,7 +502,7 @@ export class TeacherEntryComponent {
       input.value = '';
       return;
     }
-    const orgId = this.form().orgID;
+    const orgId = this.form().orgID ?? this.listFilter().orgId;
     if (!orgId) {
       this.toast.showError('Please select School / Organization before uploading document.');
       input.value = '';
@@ -511,10 +511,10 @@ export class TeacherEntryComponent {
     this.teacherService
       .uploadDocument(file, orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((storedName) => {
+      .subscribe(({ path: storedName, error }) => {
         input.value = '';
         if (!storedName) {
-          this.toast.showError('Unable to upload document.');
+          this.toast.showError(error ?? 'Unable to upload document.');
           return;
         }
         this.updateDocument(index, { empDocumentPath: storedName, selectedFileName: file.name });
@@ -599,6 +599,7 @@ export class TeacherEntryComponent {
         const wasNew = !this.form().userID;
         this.form.set(this.ensureChildRows(saved));
         this.formMode.set('edit');
+        this.refreshPhotoPreview(saved.photoPath);
 
         if (this.isWizardFlow()) {
           const currentStep = this.sectionStep(this.activeSection());

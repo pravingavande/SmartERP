@@ -19,6 +19,7 @@ import {
   TEACHER_STAFF_TYPE_ID,
   UserRoleOption
 } from '../models/teacher.model';
+import { apiUploadHttpError, apiUploadPath, UploadResult } from '../utils/api-response.util';
 import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 
 @Injectable({ providedIn: 'root' })
@@ -167,23 +168,23 @@ export class TeacherService {
     );
   }
 
-  uploadPhoto(file: File, orgId: number): Observable<string | null> {
+  uploadPhoto(file: File, orgId: number): Observable<UploadResult> {
     const formData = new FormData();
     formData.append('file', file);
     const params = new HttpParams().set('orgId', orgId.toString());
     return this.http.post<ApiResponse<string>>(`${this.base}/upload-photo`, formData, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
-      catchError(() => of(null))
+      map((r) => apiUploadPath(r)),
+      catchError((err) => of({ path: null, error: apiUploadHttpError(err, 'Unable to upload photo.') }))
     );
   }
 
-  uploadDocument(file: File, orgId: number): Observable<string | null> {
+  uploadDocument(file: File, orgId: number): Observable<UploadResult> {
     const formData = new FormData();
     formData.append('file', file);
     const params = new HttpParams().set('orgId', orgId.toString());
     return this.http.post<ApiResponse<string>>(`${this.base}/upload-document`, formData, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
-      catchError(() => of(null))
+      map((r) => apiUploadPath(r)),
+      catchError((err) => of({ path: null, error: apiUploadHttpError(err, 'Unable to upload document.') }))
     );
   }
 
@@ -342,7 +343,7 @@ export class TeacherService {
       permanentAddress: String(r['permanentAddress'] ?? r['PermanentAddress'] ?? r['address'] ?? r['Address'] ?? ''),
       cityName: String(r['cityName'] ?? r['CityName'] ?? ''),
       photoPath,
-      photoPreviewUrl: this.photoUrl(photoPath),
+      photoPreviewUrl: null,
       genderCode: (r['genderCode'] ?? r['GenderCode'] ?? null) as number | null,
       dob: this.toDateInput(r['dob'] ?? r['Dob']),
       adharCardNo: String(r['adharCardNo'] ?? r['AdharCardNo'] ?? ''),

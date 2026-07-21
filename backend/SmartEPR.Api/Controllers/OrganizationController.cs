@@ -96,6 +96,9 @@ public sealed class OrganizationController : ControllerBase
         if (file is null || file.Length == 0)
             return Ok(ApiResponse<string>.Fail("No file uploaded."));
 
+        if (orgId is null or <= 0)
+            return Ok(ApiResponse<string>.Fail("Organization is required for document upload."));
+
         if (file.Length > MaxUploadBytes)
             return Ok(ApiResponse<string>.Fail("Maximum file size is 5 MB."));
 
@@ -106,12 +109,23 @@ public sealed class OrganizationController : ControllerBase
         // documentId kept for API compatibility; storage is OrgID-folder based.
         _ = documentId;
 
-        await using var stream = file.OpenReadStream();
-        var relativePath = await _fileStorage
-            .SaveAsync(DocumentFeature, orgId ?? 0, stream, file.FileName, cancellationToken)
-            .ConfigureAwait(false);
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var relativePath = await _fileStorage
+                .SaveAsync(DocumentFeature, orgId.Value, stream, file.FileName, cancellationToken)
+                .ConfigureAwait(false);
 
-        return Ok(ApiResponse<string>.Ok(relativePath, "Document uploaded."));
+            return Ok(ApiResponse<string>.Ok(relativePath, "Document uploaded."));
+        }
+        catch (IOException)
+        {
+            return Ok(ApiResponse<string>.Fail("Unable to save document on server. Contact administrator."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Ok(ApiResponse<string>.Fail("Server cannot write upload folder. Contact administrator."));
+        }
     }
 
     [HttpGet("file/{*relativePath}")]

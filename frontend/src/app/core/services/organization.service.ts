@@ -12,6 +12,7 @@ import {
   SansthaOrgOption
 } from '../models/organization.model';
 import { AuthService } from './auth.service';
+import { apiUploadHttpError, apiUploadPath, UploadResult } from '../utils/api-response.util';
 import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 
 @Injectable({ providedIn: 'root' })
@@ -114,7 +115,7 @@ export class OrganizationService {
     );
   }
 
-  uploadDocument(file: File, orgId: number | null, documentId: number | null): Observable<string | null> {
+  uploadDocument(file: File, orgId: number | null, documentId: number | null): Observable<UploadResult> {
     const formData = new FormData();
     formData.append('file', file);
     let params = new HttpParams();
@@ -122,8 +123,8 @@ export class OrganizationService {
     if (documentId) params = params.set('documentId', documentId.toString());
 
     return this.http.post<ApiResponse<string>>(`${this.base}/upload`, formData, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data : null)),
-      catchError(() => of(null))
+      map((r) => apiUploadPath(r)),
+      catchError((err) => of({ path: null, error: apiUploadHttpError(err, 'Unable to upload document.') }))
     );
   }
 

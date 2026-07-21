@@ -23,6 +23,7 @@ if ($LASTEXITCODE -ne 0) { throw 'API publish failed.' }
 
 Copy-Item $prodSettings (Join-Path $apiOut 'appsettings.Production.json') -Force
 Copy-Item $iisSettings (Join-Path $apiOut 'appsettings.IIS.json') -Force
+Copy-Item (Join-Path $root 'backend\SmartEPR.Api\web.config') (Join-Path $apiOut 'web.config') -Force
 
 # Ensure base appsettings CORS includes Firebase (IIS may run without Production env).
 $baseSettings = Join-Path $apiOut 'appsettings.json'
@@ -39,6 +40,7 @@ if (Test-Path $baseSettings) {
   }
   $json | ConvertTo-Json -Depth 8 | Set-Content $baseSettings -Encoding UTF8
 }
+
 $note = @"
 SmartEPR API — IIS deployment
 =============================
@@ -47,6 +49,7 @@ COPY TO VPS (IIS api application folder):
   $apiOut
 
 appsettings.Production.json is included in this package (SQL + JWT + CORS).
+web.config sets ASPNETCORE_ENVIRONMENT=Production and enables WebSockets.
 
 After copy: restart IIS app pool, then test:
   https://smarterp.pathsoft.in/api/health  -> "database": true

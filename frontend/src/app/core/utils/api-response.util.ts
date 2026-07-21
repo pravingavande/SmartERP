@@ -18,3 +18,21 @@ export function apiMessage<T>(response: ApiEnvelope<T>): string | undefined {
 export function apiData<T>(response: ApiEnvelope<T>): T | null | undefined {
   return response.data ?? response.Data;
 }
+
+export interface UploadResult {
+  path: string | null;
+  error: string | null;
+}
+
+export function apiUploadPath(response: ApiEnvelope<string>): UploadResult {
+  const path = apiData(response);
+  if (apiSuccess(response) && path) {
+    return { path, error: null };
+  }
+  return { path: null, error: apiMessage(response) ?? 'Upload failed.' };
+}
+
+export function apiUploadHttpError(err: unknown, fallback = 'Upload failed.'): string {
+  const body = (err as { error?: ApiEnvelope<unknown> })?.error;
+  return body ? apiMessage(body) ?? fallback : fallback;
+}

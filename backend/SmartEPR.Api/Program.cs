@@ -81,6 +81,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseRouting();
 app.UseCors("Frontend");
 
 if (!app.Environment.IsDevelopment())

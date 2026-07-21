@@ -104,6 +104,7 @@ public sealed class TeacherController : ControllerBase
     }
 
     [HttpPost("upload-photo")]
+    [RequestSizeLimit(MaxPhotoBytes)]
     public async Task<IActionResult> UploadPhoto(IFormFile file, [FromQuery] long orgId, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
@@ -119,12 +120,23 @@ public sealed class TeacherController : ControllerBase
         if (!PhotoExtensions.Contains(ext))
             return Ok(ApiResponse<string>.Fail("Only JPG, JPEG, and PNG photos are allowed."));
 
-        await using var stream = file.OpenReadStream();
-        var relativePath = await _fileStorage
-            .SaveAsync(PhotoFeature, orgId, stream, file.FileName, cancellationToken)
-            .ConfigureAwait(false);
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var relativePath = await _fileStorage
+                .SaveAsync(PhotoFeature, orgId, stream, file.FileName, cancellationToken)
+                .ConfigureAwait(false);
 
-        return Ok(ApiResponse<string>.Ok(relativePath, "Photo uploaded."));
+            return Ok(ApiResponse<string>.Ok(relativePath, "Photo uploaded."));
+        }
+        catch (IOException)
+        {
+            return Ok(ApiResponse<string>.Fail("Unable to save photo on server. Contact administrator."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Ok(ApiResponse<string>.Fail("Server cannot write upload folder. Contact administrator."));
+        }
     }
 
     [HttpGet("photo/{*relativePath}")]
@@ -160,12 +172,23 @@ public sealed class TeacherController : ControllerBase
         if (!DocumentExtensions.Contains(ext))
             return Ok(ApiResponse<string>.Fail("Only PDF, JPG, JPEG, and PNG files are allowed."));
 
-        await using var stream = file.OpenReadStream();
-        var relativePath = await _fileStorage
-            .SaveAsync(DocumentFeature, orgId, stream, file.FileName, cancellationToken)
-            .ConfigureAwait(false);
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var relativePath = await _fileStorage
+                .SaveAsync(DocumentFeature, orgId, stream, file.FileName, cancellationToken)
+                .ConfigureAwait(false);
 
-        return Ok(ApiResponse<string>.Ok(relativePath, "Document uploaded."));
+            return Ok(ApiResponse<string>.Ok(relativePath, "Document uploaded."));
+        }
+        catch (IOException)
+        {
+            return Ok(ApiResponse<string>.Fail("Unable to save document on server. Contact administrator."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Ok(ApiResponse<string>.Fail("Server cannot write upload folder. Contact administrator."));
+        }
     }
 
     [HttpGet("document/{*relativePath}")]

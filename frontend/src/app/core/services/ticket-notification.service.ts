@@ -25,7 +25,10 @@ export class TicketNotificationService {
     const hubUrl = `${environment.apiBaseUrl}/hubs/ticket`;
     this.connection = new HubConnectionBuilder()
       .withUrl(hubUrl, { accessTokenFactory: () => token })
-      .withAutomaticReconnect([0, 2000, 10000])
+      .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: (ctx) =>
+          ctx.previousRetryCount >= 3 ? null : [0, 2000, 10000][ctx.previousRetryCount] ?? 10000
+      })
       .configureLogging(LogLevel.None)
       .build();
 

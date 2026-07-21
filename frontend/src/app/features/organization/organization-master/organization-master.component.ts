@@ -317,13 +317,20 @@ export class OrganizationMasterComponent {
       return;
     }
 
+    const orgId = this.form().orgID;
+    if (!orgId) {
+      this.toast.showError('Save the organization first, then upload documents.', 'Organization required');
+      input.value = '';
+      return;
+    }
+
     this.organization
-      .uploadDocument(file, this.form().orgID, row.documentID)
+      .uploadDocument(file, orgId, row.documentID)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((path) => {
+      .subscribe(({ path, error }) => {
         input.value = '';
         if (!path) {
-          this.toast.showError('Unable to upload document.', 'Upload failed');
+          this.toast.showError(error ?? 'Unable to upload document.', 'Upload failed');
           return;
         }
         this.updateDocument(index, { documentPath: path, selectedFileName: file.name, pendingFile: null });
@@ -380,6 +387,7 @@ export class OrganizationMasterComponent {
 
     this.loading.set(true);
     this.saveError.set(null);
+    const wasNew = this.isNewMode();
     this.organization.save(current).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ data, message }) => {
       this.loading.set(false);
       if (!data) {
@@ -392,7 +400,9 @@ export class OrganizationMasterComponent {
       this.formMode.set('edit');
       this.toast.showSuccess('Organization saved.', 'Saved');
       this.loadList();
-      this.closeForm();
+      if (wasNew || this.activeTab() === 'basic') {
+        this.activeTab.set('documents');
+      }
     });
   }
 
