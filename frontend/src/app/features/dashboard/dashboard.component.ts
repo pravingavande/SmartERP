@@ -3,7 +3,6 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin, map } from 'rxjs';
-import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { EventCalendarService } from '../../core/services/event-calendar.service';
 import { DashboardSummary } from '../../core/models/dashboard.model';
@@ -35,25 +34,20 @@ interface BreakdownCard {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent {
-  private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
   private readonly eventCalendarService = inject(EventCalendarService);
 
   private readonly noticeListRef = viewChild<ElementRef<HTMLElement>>('noticeList');
 
-  readonly sessionUser = this.auth.currentUser;
-
   private readonly dashboardData = toSignal(
     forkJoin({
-      profile: this.dashboardService.getProfile(),
       summary: this.dashboardService.getSummary(),
       notices: this.dashboardService.getNotices(10),
       pendingReporting: this.eventCalendarService.getPendingReporting()
     }).pipe(map((data) => data)),
-    { initialValue: { profile: null, summary: null, notices: [], pendingReporting: { pendingCount: 0, items: [] } as PendingEventReportingSummary } }
+    { initialValue: { summary: null, notices: [], pendingReporting: { pendingCount: 0, items: [] } as PendingEventReportingSummary } }
   );
 
-  readonly profile = () => this.dashboardData().profile;
   readonly summary = () => this.dashboardData().summary;
   readonly notices = () => this.dashboardData().notices;
   readonly pendingReporting = () => this.dashboardData().pendingReporting;

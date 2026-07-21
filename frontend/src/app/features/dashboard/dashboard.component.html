@@ -1,36 +1,3 @@
-@if (profile(); as p) {
-  <section class="sanstha-banner">
-    <div class="banner-tricolor" aria-hidden="true">
-      <span class="stripe saffron"></span>
-      <span class="stripe white"></span>
-      <span class="stripe green"></span>
-    </div>
-    <div class="banner-content">
-      <p class="org-line sanstha-line">
-        <span class="org-label">Sanstha Name</span>
-        <span class="org-sep">-</span>
-        <strong class="org-value">{{ sessionUser()?.sansthaName || summary()?.sansthaName || p.sansthaName || '—' }}</strong>
-      </p>
-      @if (sessionUser()?.schoolName || p.schoolName) {
-        <p class="org-line school-line">
-          <span class="org-label">School</span>
-          <span class="org-sep">-</span>
-          <strong class="org-value">{{ sessionUser()?.schoolName || p.schoolName }}</strong>
-        </p>
-      }
-    </div>
-  </section>
-} @else {
-  @if (sessionUser(); as u) {
-    <section class="sanstha-banner banner-loading">
-      <div class="banner-content">
-        <h2>Welcome, {{ u.displayName }}</h2>
-        <p>Loading your profile...</p>
-      </div>
-    </section>
-  }
-}
-
 <div class="dashboard-layout">
   <div class="dashboard-main">
     @if (summary(); as s) {
