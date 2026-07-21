@@ -1,253 +1,101 @@
 <!DOCTYPE html>
-<html lang="mr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="School &amp; Sanstha public website — academics, notices, admissions, and contact.">
-  <title>School Website — शाळा व संस्था</title>
+  <meta name="description" content="eOffice Desk — SmartERP for schools and sanstha. Accounts, staff, documents, vouchers and reports in one place.">
+  <title>eOffice Desk — SmartERP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="config.js"></script>
 </head>
 <body>
-  <div class="tricolor" aria-hidden="true"></div>
-
-  <header class="site-header" id="top">
-    <div class="container header-inner">
-      <a class="brand" href="#top">
-        <span class="brand-badge" aria-hidden="true">शा</span>
+  <div class="page">
+    <header class="header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">e</span>
         <span class="brand-text">
-          <strong data-bind="sansthaNameMr">शाळा व संस्था</strong>
-          <small data-bind="sansthaName">School &amp; Sanstha</small>
+          <strong data-bind="brandName">eOffice Desk</strong>
+          <small data-bind="productName">SmartERP</small>
         </span>
-      </a>
-
-      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="siteNav">
-        <span class="sr-only">Menu</span>
-        <span></span><span></span><span></span>
-      </button>
-
-      <nav class="site-nav" id="siteNav" aria-label="Main navigation">
-        <a href="#about">आमच्याबद्दल</a>
-        <a href="#academics">शैक्षणिक</a>
-        <a href="#notices">सूचना</a>
-        <a href="#facilities">सुविधा</a>
-        <a href="#contact">संपर्क</a>
-        <a class="btn btn-outline btn-sm" data-href="erpLoginUrl" href="#">Staff Login</a>
-      </nav>
-    </div>
-  </header>
-
-  <main>
-    <section class="hero" id="home">
-      <div class="hero-bg" aria-hidden="true"></div>
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">शिक्षण संस्था · Group of Schools</p>
-          <h1>
-            <span data-bind="sansthaNameMr">शाळा व संस्था</span>
-            <span class="hero-sub" data-bind="taglineMr">गुणवत्तापूर्ण शिक्षण</span>
-          </h1>
-          <p class="lead" data-bind="tagline">
-            Quality education for every child across our school network.
-          </p>
-          <div class="hero-stats">
-            <div class="stat">
-              <strong data-bind="establishedYear">—</strong>
-              <span>स्थापना</span>
-            </div>
-            <div class="stat">
-              <strong data-bind="schoolCount">—</strong>
-              <span>शाळा</span>
-            </div>
-            <div class="stat">
-              <strong data-bind="studentCount">—</strong>
-              <span>विद्यार्थी</span>
-            </div>
-          </div>
-          <div class="hero-actions">
-            <a class="btn btn-primary btn-lg" href="#notices">नवीन सूचना पहा</a>
-            <a class="btn btn-ghost btn-lg" href="#contact">प्रवेश माहिती</a>
-          </div>
-        </div>
-
-        <aside class="hero-panel" aria-label="Quick links">
-          <h2>महत्त्वाचे दुवे</h2>
-          <ul class="quick-links">
-            <li><a href="#academics">शैक्षणिक वर्ष व दिनदर्शिका</a></li>
-            <li><a href="#notices">परीक्षा व सूचना</a></li>
-            <li><a href="#facilities">प्रयोगशाळा व क्रीडा</a></li>
-            <li><a href="#contact">शाळेशी संपर्क</a></li>
-          </ul>
-          <div class="erp-strip">
-            <p>शिक्षक / कर्मचारी SmartERP प्रवेश</p>
-            <div class="erp-actions">
-              <a class="btn btn-primary btn-sm" data-href="erpLoginUrl" href="#">School ERP</a>
-              <a class="btn btn-secondary btn-sm" data-href="sansthaErpLoginUrl" href="#">Sanstha ERP</a>
-            </div>
-          </div>
-        </aside>
       </div>
-    </section>
+      <a class="btn btn-primary btn-header" data-href="loginUrl" href="https://smartepr.web.app/login">Login</a>
+    </header>
 
-    <section class="section" id="about">
-      <div class="container split">
-        <div>
-          <p class="section-label">About Us · आमच्याबद्दल</p>
-          <h2>एक संस्था, अनेक शाळा — एकच दृष्टीकोन</h2>
-          <p>
-            आमच्या संस्थेमार्फत चालणाऱ्या शाळांमध्ये विद्यार्थ्यांच्या सर्वांगीण विकासासाठी
-            शैक्षणिक उत्कृष्टता, सांस्कृतिक मूल्ये आणि आधुनिक शिक्षण पद्धती यांचा समन्वय साधला जातो.
-          </p>
-          <p class="muted" data-bind="tagline">
-            Quality education for every child across our school network.
-          </p>
-          <ul class="check-list">
-            <li>अनुभवी शिक्षक व प्रशासकीय संघ</li>
-            <li>मराठी व इंग्रजी माध्यमात शिक्षण</li>
-            <li>सांस्कृतिक व क्रीडा उपक्रम</li>
-            <li>पालक–शाळा समन्वय</li>
-          </ul>
-        </div>
-        <div class="about-card">
-          <h3>आमचे उद्दिष्ट</h3>
-          <p>प्रत्येक विद्यार्थ्याला ज्ञान, चारित्र्य आणि आत्मविश्वास देणारे शिक्षण प्रदान करणे.</p>
-          <h3>आमची दृष्टी</h3>
-          <p>ग्रामीण व शहरी भागात समान दर्जाचे शिक्षण उपलब्ध करून देणे.</p>
-        </div>
-      </div>
-    </section>
+    <main class="main">
+      <section class="hero">
+        <p class="eyebrow">Education Management Software</p>
+        <h1>
+          <span data-bind="brandName">eOffice Desk</span>
+          <span class="hero-product">powered by <span data-bind="productName">SmartERP</span></span>
+        </h1>
+        <p class="lead" data-bind="tagline">
+          Integrated ERP for Schools, Sanstha &amp; Education Institutions
+        </p>
+        <p class="lead-mr" data-bind="taglineMr">
+          शाळा, संस्था व शैक्षणिक संस्थांसाठी एकत्रित ई-ऑफिस व ERP प्रणाली
+        </p>
+        <a class="btn btn-primary btn-lg" data-href="loginUrl" href="https://smartepr.web.app/login">
+          Login to SmartERP
+        </a>
+      </section>
 
-    <section class="section section-alt" id="academics">
-      <div class="container">
-        <p class="section-label">Academics · शैक्षणिक</p>
-        <h2 class="section-title">शैक्षणिक वर्ष 2025–2026</h2>
-        <div class="card-grid three">
-          <article class="info-card">
-            <span class="card-icon" aria-hidden="true">📅</span>
-            <h3>दिनदर्शिका</h3>
-            <p>शैक्षणिक वर्ष, सुट्ट्या, परीक्षा व सण-उत्सवांची वेळापत्रक येथे प्रकाशित केली जाते.</p>
-          </article>
-          <article class="info-card">
-            <span class="card-icon" aria-hidden="true">📚</span>
-            <h3>अभ्यासक्रम</h3>
-            <p>इयत्ता 1 ते 10 — राज्य मंडळ अभ्यासक्रम व पूरक उपक्रम.</p>
-          </article>
-          <article class="info-card">
-            <span class="card-icon" aria-hidden="true">🎓</span>
-            <h3>परीक्षा</h3>
-            <p>आंतरिक मूल्यमापन, सेमिस्टर परीक्षा व बोर्ड परीक्षेची तयारी.</p>
-          </article>
-        </div>
-      </div>
-    </section>
+      <section class="about">
+        <h2>About the software</h2>
+        <p>
+          <strong data-bind="productName">SmartERP</strong> is a complete back-office solution for education
+          groups — manage schools under your sanstha, daily accounts, receipts &amp; payments, staff and
+          teacher records, documents, inventory, events, and reports from a single secure application.
+        </p>
+        <p class="about-mr">
+          संस्था व शाळांचे प्रशासन, लेखा, कर्मचारी/शिक्षक माहिती, कागदपत्रे, वाउचर व अहवाल
+          एकाच ठिकाणी व्यवस्थापित करण्यासाठी ही प्रणाली विकसित केली आहे.
+        </p>
+      </section>
 
-    <section class="section" id="notices">
-      <div class="container">
-        <p class="section-label">Notices · सूचना</p>
-        <h2 class="section-title">नवीन सूचना व परिपत्रके</h2>
-        <div class="notice-list">
-          <article class="notice-item notice-new">
-            <span class="notice-badge">NEW</span>
-            <div>
-              <h3>शैक्षणिक वर्ष 2025–2026 — महत्त्वाच्या सूचना</h3>
-              <p>हजेरी, संच मान्यता व संकलित प्रवाहासंदर्भात सर्व शाळांनी काळजीपूर्वक वाचावे.</p>
-              <time datetime="2025-06-01">१ जून २०२५</time>
-            </div>
-          </article>
-          <article class="notice-item">
-            <div>
-              <h3>प्रवेश प्रक्रिया 2025–26</h3>
-              <p>नवीन प्रवेशासाठी आवश्यक कागदपत्रे व अर्जाचा नमुना शाळा कार्यालयात उपलब्ध.</p>
-              <time datetime="2025-04-15">१५ एप्रिल २०२५</time>
-            </div>
-          </article>
-          <article class="notice-item">
-            <div>
-              <h3>पालक सभा — वेळापत्रक</h3>
-              <p>सर्व इयत्तांसाठी पालक सभेचे वेळापत्रक वर्गशिक्षकांकडून कळविले जाईल.</p>
-              <time datetime="2025-07-01">१ जुलै २०२५</time>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
+      <section class="features">
+        <h2>Key modules</h2>
+        <ul class="feature-grid">
+          <li>
+            <h3>Accounts &amp; Vouchers</h3>
+            <p>Receipt, payment, bank deposit, ledger and account registers</p>
+          </li>
+          <li>
+            <h3>School &amp; Organization</h3>
+            <p>School master, sanstha setup, organization documents</p>
+          </li>
+          <li>
+            <h3>Staff &amp; Teachers</h3>
+            <p>Employee and teacher profiles, documents, school history</p>
+          </li>
+          <li>
+            <h3>Masters &amp; Reports</h3>
+            <p>Document, category, subject masters and financial reports</p>
+          </li>
+        </ul>
+      </section>
 
-    <section class="section section-alt" id="facilities">
-      <div class="container">
-        <p class="section-label">Facilities · सुविधा</p>
-        <h2 class="section-title">विद्यार्थ्यांसाठी सुविधा</h2>
-        <div class="card-grid four">
-          <article class="facility-card"><h3>वाचनालय</h3><p>संदर्भ ग्रंथ व वाचन संस्कृती</p></article>
-          <article class="facility-card"><h3>विज्ञान प्रयोगशाळा</h3><p>हाताळून शिकण्याची संधी</p></article>
-          <article class="facility-card"><h3>क्रीडा मैदान</h3><p>शारीरिक व सांघिक विकास</p></article>
-          <article class="facility-card"><h3>संगणक कक्ष</h3><p>डिजिटल साक्षरता</p></article>
-        </div>
-      </div>
-    </section>
+      <section class="cta">
+        <h2>Ready to sign in?</h2>
+        <p>Use your official SmartERP username and password provided by your institution.</p>
+        <a class="btn btn-primary btn-lg" data-href="loginUrl" href="https://smartepr.web.app/login">
+          Go to Login
+        </a>
+      </section>
+    </main>
 
-    <section class="section" id="contact">
-      <div class="container contact-grid">
-        <div>
-          <p class="section-label">Contact · संपर्क</p>
-          <h2 class="section-title">शाळेशी संपर्क साधा</h2>
-          <ul class="contact-list">
-            <li>
-              <strong>पत्ता</strong>
-              <span data-bind="addressMr">—</span>
-              <span class="muted" data-bind="address">—</span>
-            </li>
-            <li>
-              <strong>दूरध्वनी</strong>
-              <a data-bind-href="phone" data-bind="phone" href="#">—</a>
-            </li>
-            <li>
-              <strong>ई-मेल</strong>
-              <a data-bind-href="email" data-bind="email" href="#">—</a>
-            </li>
-          </ul>
-        </div>
-        <form class="contact-form" action="#" method="post" onsubmit="return false;">
-          <h3>संदेश पाठवा</h3>
-          <label>
-            <span>नाव</span>
-            <input type="text" name="name" placeholder="आपले नाव" autocomplete="name">
-          </label>
-          <label>
-            <span>मोबाईल / ई-मेल</span>
-            <input type="text" name="contact" placeholder="संपर्क" autocomplete="email">
-          </label>
-          <label>
-            <span>संदेश</span>
-            <textarea name="message" rows="4" placeholder="आपला संदेश"></textarea>
-          </label>
-          <button type="submit" class="btn btn-primary" disabled title="Configure backend or email service to enable">
-            पाठवा (लवकरच)
-          </button>
-        </form>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container footer-grid">
-      <div>
-        <strong data-bind="sansthaNameMr">शाळा व संस्था</strong>
-        <p class="muted" data-bind="sansthaName">School &amp; Sanstha</p>
-      </div>
-      <div class="footer-links">
-        <a href="#about">आमच्याबद्दल</a>
-        <a href="#notices">सूचना</a>
-        <a data-href="erpLoginUrl" href="#">Staff ERP</a>
-      </div>
-      <div class="footer-meta">
-        <p>&copy; <span id="year"></span> <span data-bind="sansthaName">School</span></p>
-        <p>Developed by <strong>LR Technology</strong></p>
-      </div>
-    </div>
-  </footer>
+    <footer class="footer">
+      <p>
+        &copy; <span id="year"></span> <span data-bind="brandName">eOffice Desk</span>
+        · <span data-bind="productName">SmartERP</span>
+      </p>
+      <p class="footer-meta">
+        Developed by <strong data-bind="companyName">LR Technology</strong>
+      </p>
+    </footer>
+  </div>
 
   <script src="site.js"></script>
 </body>

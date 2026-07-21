@@ -297,7 +297,6 @@
             @if (!isViewMode()) {
               <footer class="form-footer">
                 <button type="button" class="btn btn-outline" (click)="cancel()">{{ lbl('Close', 'Close') }}</button>
-                <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="saveDocuments()">{{ lbl('SaveDocuments', 'Save Documents') }}</button>
               </footer>
             }
           </div>

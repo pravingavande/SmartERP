@@ -165,6 +165,17 @@ export class TeacherService {
     );
   }
 
+  saveDocuments(userId: number, documents: TeacherDocumentLine[]): Observable<{ data: TeacherFormState | null; message?: string }> {
+    const payload = documents
+      .filter((d) => d.empDocumentCode)
+      .map((d) => ({ empDocumentCode: d.empDocumentCode, empDocumentPath: d.empDocumentPath || '' }));
+
+    return this.http.post<ApiResponse<Record<string, unknown>>>(`${this.base}/${userId}/documents`, payload).pipe(
+      map((r) => ({ data: r.success && r.data ? this.mapToForm(r.data) : null, message: r.message })),
+      catchError(() => of({ data: null, message: 'Unable to save documents.' }))
+    );
+  }
+
   resetPassword(userId: number, password: string): Observable<boolean> {
     return this.http.post<ApiResponse<unknown>>(`${this.base}/${userId}/reset-password`, { appPassword: password }).pipe(
       map((r) => r.success),

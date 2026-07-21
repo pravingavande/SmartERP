@@ -1,4 +1,5 @@
-import { TeacherFormState } from '../models/teacher.model';
+import { TeacherFormState, TeacherDocumentLine } from '../models/teacher.model';
+import { getDuplicateDocumentNameError } from './document-unsaved.util';
 
 const MOBILE_RE = /^\d{10}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,6 +78,23 @@ export function validateTeacherForm(form: TeacherFormState, options?: { requireP
   }
 
   return errors;
+}
+
+/** Returns first validation message for document-only save, or null if valid. */
+export function getTeacherDocumentsSaveError(documents: TeacherDocumentLine[]): string | null {
+  const complete = documents.filter((d) => d.empDocumentCode && d.empDocumentPath?.trim());
+  for (const row of documents) {
+    if (row.empDocumentPath?.trim() && !row.empDocumentCode) {
+      return 'Select document type for each uploaded file.';
+    }
+    if (row.empDocumentCode && !row.empDocumentPath?.trim()) {
+      return 'Upload a file for each selected document type.';
+    }
+  }
+  if (!complete.length && documents.some((d) => d.empDocumentCode || d.empDocumentPath?.trim())) {
+    return 'Add at least one document with type and uploaded file.';
+  }
+  return getDuplicateDocumentNameError(documents.map((d) => d.empDocumentCode));
 }
 
 export function validateTeacherPhoto(file: File): string | null {

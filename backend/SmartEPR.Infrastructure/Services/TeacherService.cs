@@ -65,6 +65,23 @@ public sealed class TeacherService : ITeacherService
         return (saved, null);
     }
 
+    public async Task<(TeacherDto? Data, string? Error)> SaveDocumentsAsync(
+        long userId,
+        IReadOnlyList<SaveTeacherDocumentDto> documents,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+            return (null, "Teacher not found.");
+
+        var validationError = ValidateDocumentsSave(documents);
+        if (validationError is not null)
+            return (null, validationError);
+
+        await _teacherRepository.SaveDocumentsAsync(userId, documents, cancellationToken).ConfigureAwait(false);
+        var saved = await _teacherRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        return saved is null ? (null, "Documents saved but could not be reloaded.") : (saved, null);
+    }
+
     public async Task<(bool Success, string? Error)> DeleteAsync(long userId, CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
@@ -115,6 +132,19 @@ public sealed class TeacherService : ITeacherService
             return "PAN no. format is invalid.";
         if (request.RetirementYear.HasValue && request.RetirementYear < 0)
             return "Retirement year must be numeric.";
+        return null;
+    }
+
+    public static string? ValidateDocumentsSave(IReadOnlyList<SaveTeacherDocumentDto> documents)
+    {
+        foreach (var doc in documents)
+        {
+            if (!doc.EmpDocumentCode.HasValue || doc.EmpDocumentCode <= 0)
+                return "Select document type for each uploaded file.";
+            if (string.IsNullOrWhiteSpace(doc.EmpDocumentPath))
+                return "Upload a file for each selected document type.";
+        }
+
         return null;
     }
 

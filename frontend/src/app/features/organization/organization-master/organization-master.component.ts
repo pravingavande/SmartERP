@@ -22,8 +22,12 @@ import { ToastService } from '../../../core/services/toast.service';
 import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows } from '../../../core/utils/master-list.util';
-import { mapOrganizationBackendMessage, validateOrganizationForm } from '../../../core/utils/organization-validation.util';
+import { mapOrganizationBackendMessage, validateOrganizationForm, getOrganizationDocumentsSaveError } from '../../../core/utils/organization-validation.util';
 import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import {
+  serializeOrganizationDocuments,
+  DUPLICATE_DOCUMENT_NAME_MESSAGE
+} from '../../../core/utils/document-unsaved.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 
@@ -68,6 +72,7 @@ export class OrganizationMasterComponent {
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
   readonly userProfile = signal<UserProfile | null>(null);
+  private savedDocumentsJson = '';
 
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly isEditMode = computed(() => this.formMode() === 'edit');
@@ -143,7 +148,7 @@ export class OrganizationMasterComponent {
   onFilterChange<K extends keyof OrganizationListFilter>(key: K, value: OrganizationListFilter[K]): void {
     this.listFilter.update((f) => ({ ...f, [key]: value }));
     this.listPageIndex.set(0);
-    this.closeForm();
+    if (!this.tryCloseForm()) return;
     this.loadList();
   }
 
@@ -152,6 +157,7 @@ export class OrganizationMasterComponent {
       this.toast.showError('Employees cannot add organizations.', 'Access Denied');
       return;
     }
+    if (this.formVisible()) this.closeForm();
     const lookups = this.lookups();
     const orgId =
       this.listFilter().orgId ?? resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
@@ -183,6 +189,7 @@ export class OrganizationMasterComponent {
       this.refreshNextSrNo(parentId);
       this.refreshDocumentOptions(businessCategoryID, true);
     }
+    this.captureDocumentsSnapshot(this.form().documents);
   }
 
   onFormOrgChange(orgId: number | null): void {
@@ -215,6 +222,7 @@ export class OrganizationMasterComponent {
   }
 
   private openItem(orgId: number, mode: FormMode): void {
+    if (this.formVisible()) this.closeForm();
     this.loading.set(true);
     this.organization.getById(orgId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
       this.loading.set(false);
@@ -229,6 +237,7 @@ export class OrganizationMasterComponent {
       this.fieldErrors.set({});
       this.form.set({ ...data, documents: data.documents.length ? data.documents : [this.emptyDocumentRow()] });
       if (data.businessCategoryID) this.refreshDocumentOptions(data.businessCategoryID, false);
+      this.captureDocumentsSnapshot(this.form().documents);
     });
   }
 
@@ -245,7 +254,7 @@ export class OrganizationMasterComponent {
       }
       this.toast.showSuccess('Organization deactivated.', 'Deleted');
       this.loadList();
-      if (this.form().orgID === item.orgID) this.closeForm();
+      if (this.form().orgID === item.orgID) this.tryCloseForm();
     });
   }
 
@@ -284,6 +293,7 @@ export class OrganizationMasterComponent {
       this.documentOptions.set(opts);
       if (resetRows) {
         this.form.update((f) => ({ ...f, documents: [this.emptyDocumentRow()] }));
+        this.captureDocumentsSnapshot(this.form().documents);
       }
     });
   }
@@ -308,13 +318,25 @@ export class OrganizationMasterComponent {
       const documents = f.documents.filter((_, i) => i !== index);
       return { ...f, documents: documents.length ? documents : [this.emptyDocumentRow()] };
     });
+    this.persistDocuments({ silent: true });
   }
 
-  updateDocument(index: number, patch: Partial<OrganizationDocumentLine>): void {
+  updateDocument(index: number, patch: Partial<OrganizationDocumentLine>, options?: { persist?: boolean }): void {
+    if (patch.documentID != null && patch.documentID > 0) {
+      const isDuplicate = this.form().documents.some((row, i) => i !== index && row.documentID === patch.documentID);
+      if (isDuplicate) {
+        this.saveError.set(DUPLICATE_DOCUMENT_NAME_MESSAGE);
+        return;
+      }
+    }
+    this.saveError.set(null);
     this.form.update((f) => ({
       ...f,
       documents: f.documents.map((row, i) => (i === index ? { ...row, ...patch } : row))
     }));
+    if (options?.persist !== false && (patch.documentID != null || patch.documentPath != null)) {
+      this.persistDocuments({ silent: true });
+    }
   }
 
   onDocumentFileSelected(index: number, event: Event): void {
@@ -358,8 +380,12 @@ export class OrganizationMasterComponent {
           this.toast.showError(error ?? 'Unable to upload document.', 'Upload failed');
           return;
         }
-        this.updateDocument(index, { documentPath: path, selectedFileName: file.name, pendingFile: null });
-        this.toast.showSuccess('Document uploaded.', 'Uploaded');
+        this.updateDocument(index, { documentPath: path, selectedFileName: file.name, pendingFile: null }, { persist: false });
+        this.persistDocuments({
+          silent: true,
+          onSuccess: () => this.toast.showSuccess('Document uploaded successfully.', 'Uploaded'),
+          onError: (message) => this.toast.showError(message ?? 'Unable to save document.', 'Save failed')
+        });
       });
   }
 
@@ -422,6 +448,7 @@ export class OrganizationMasterComponent {
         return;
       }
       this.form.set({ ...data, documents: data.documents.length ? data.documents : [this.emptyDocumentRow()] });
+      this.captureDocumentsSnapshot(this.form().documents);
       this.formMode.set('edit');
       this.toast.showSuccess('Organization saved.', 'Saved');
       this.loadList();
@@ -431,18 +458,48 @@ export class OrganizationMasterComponent {
     });
   }
 
-  saveDocuments(): void {
-    if (this.isViewMode() || !this.form().orgID) return;
-    this.loading.set(true);
-    this.organization.save(this.form()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ data, message }) => {
-      this.loading.set(false);
+  private persistDocuments(options?: { silent?: boolean; onSuccess?: () => void; onError?: (message: string) => void }): void {
+    const orgId = this.form().orgID;
+    if (this.isViewMode() || !orgId) return;
+
+    const docError = getOrganizationDocumentsSaveError(this.form().documents);
+    if (docError) {
+      if (options?.onError) options.onError(docError);
+      else if (!options?.silent) this.saveError.set(docError);
+      return;
+    }
+
+    if (!options?.silent) {
+      this.loading.set(true);
+      this.saveError.set(null);
+      this.fieldErrors.set({});
+    }
+
+    this.organization.saveDocuments(orgId, this.form().documents).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ data, message }) => {
+      if (!options?.silent) this.loading.set(false);
       if (!data) {
-        this.saveError.set(message ?? 'Unable to save documents.');
+        const err = message ?? 'Unable to save documents.';
+        if (options?.onError) options.onError(err);
+        else if (!options?.silent) this.saveError.set(err);
         return;
       }
-      this.form.update((f) => ({ ...f, documents: data.documents.length ? data.documents : [this.emptyDocumentRow()] }));
-      this.toast.showSuccess('Documents saved.', 'Saved');
+      this.form.update((f) => ({
+        ...f,
+        documents: data.documents.length ? data.documents : [this.emptyDocumentRow()]
+      }));
+      this.captureDocumentsSnapshot(this.form().documents);
+      options?.onSuccess?.();
     });
+  }
+
+  private captureDocumentsSnapshot(documents?: OrganizationDocumentLine[]): void {
+    const docs = documents ?? this.form().documents;
+    this.savedDocumentsJson = serializeOrganizationDocuments(docs);
+  }
+
+  tryCloseForm(): boolean {
+    this.closeForm();
+    return true;
   }
 
   closeForm(): void {
@@ -453,7 +510,7 @@ export class OrganizationMasterComponent {
   }
 
   cancel(): void {
-    this.closeForm();
+    this.tryCloseForm();
   }
 
   fieldError(key: string): string | null {

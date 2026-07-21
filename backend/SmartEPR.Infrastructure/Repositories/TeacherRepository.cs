@@ -247,6 +247,16 @@ public sealed class TeacherRepository : ITeacherRepository
         return p.Get<long>("@UserID");
     }
 
+    public Task SaveDocumentsAsync(long userId, IReadOnlyList<SaveTeacherDocumentDto> documents, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UserID", userId);
+        p.Add("@DocumentsJson", documents.Count > 0
+            ? JsonSerializer.Serialize(documents, ChildRowJsonOptions)
+            : null);
+        return _executor.ExecuteAsync("dbo.sp_Teacher_SaveDocuments", p, cancellationToken);
+    }
+
     public Task DeleteAsync(long userId, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();

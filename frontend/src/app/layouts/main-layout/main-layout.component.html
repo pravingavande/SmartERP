@@ -10,10 +10,10 @@
 
   <aside class="sidebar" aria-label="Main navigation">
     <div class="sidebar-brand">
-      <span class="brand-badge">ERP</span>
+      <span class="brand-badge">{{ appBadge }}</span>
       @if (!sidebarCollapsed()) {
         <div class="brand-text">
-          <span class="brand-name">SmartERP</span>
+          <span class="brand-name">{{ appName }}</span>
         </div>
       }
     </div>
@@ -80,9 +80,9 @@
         </button>
         <div class="portal-title">
           @if (profile(); as p) {
-            <span class="portal-heading">{{ p.schoolName || p.sansthaName || 'SmartERP' }}</span>
+            <span class="portal-heading">{{ p.schoolName || p.sansthaName || appName }}</span>
           } @else {
-            <span class="portal-heading">SmartERP</span>
+            <span class="portal-heading">{{ appName }}</span>
           }
         </div>
       </div>
@@ -100,7 +100,7 @@
             >
               <div class="user-logo" aria-hidden="true">
                 <span class="user-logo-text">{{ getInitials(p.displayName) }}</span>
-                <span class="user-logo-badge">ERP</span>
+                <span class="user-logo-badge">{{ appBadge }}</span>
               </div>
               <div class="user-summary">
                 <span class="user-name">{{ p.displayName }}</span>
@@ -158,7 +158,7 @@
 
       <div class="footer-body">
         <div class="footer-brand">
-          <strong>SmartERP</strong>
+          <strong>{{ appName }}</strong>
         </div>
 
         <div class="footer-credit">

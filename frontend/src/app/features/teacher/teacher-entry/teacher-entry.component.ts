@@ -24,6 +24,10 @@ import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
 import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { buildEmployeeName } from '../../../core/utils/employee-name.util';
+import {
+  serializeTeacherDocuments,
+  DUPLICATE_DOCUMENT_NAME_MESSAGE
+} from '../../../core/utils/document-unsaved.util';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
 import {
   computeRetireDateIso,
@@ -33,7 +37,8 @@ import {
 import {
   mapTeacherBackendMessageToFieldErrors,
   validateTeacherForm,
-  validateTeacherPhoto
+  validateTeacherPhoto,
+  getTeacherDocumentsSaveError
 } from '../../../core/utils/teacher-validation.util';
 
 type FormMode = 'new' | 'edit' | 'view';
@@ -120,9 +125,18 @@ export class TeacherEntryComponent {
       (ur) => (ur.userRoleName ?? '').trim().toLowerCase() !== 'superadmin'
     )
   );
+  /** Add/Edit form — Employee login (role 3) may assign only Employee role (id 4). */
+  readonly formUserRoles = computed(() => {
+    const roles = this.selectableUserRoles();
+    if (this.auth.currentUser()?.userRoleId === 3) {
+      return roles.filter((ur) => ur.userRoleID === 4);
+    }
+    return roles;
+  });
   readonly isViewMode = computed(() => this.formMode() === 'view');
   readonly isWizardFlow = computed(() => this.wizardActive() && !this.isViewMode());
   readonly isLastWizardStep = computed(() => this.activeSection() === 'documents');
+  readonly documentsSectionEnabled = computed(() => !!this.form().userID);
   readonly displayName = computed(() => {
     const f = this.form();
     return f.employeeName?.trim()
@@ -132,6 +146,7 @@ export class TeacherEntryComponent {
 
   private docSeq = 0;
   private schoolSeq = 0;
+  private savedDocumentsJson = '';
 
   constructor() {
     this.listReload$
@@ -234,7 +249,7 @@ export class TeacherEntryComponent {
   updateListFilter<K extends keyof TeacherListFilter>(key: K, value: TeacherListFilter[K]): void {
     this.listFilter.update((f) => ({ ...f, [key]: value }));
     this.listPageIndex.set(0);
-    this.closeForm();
+    if (!this.tryCloseForm()) return;
     this.loadList();
   }
 
@@ -249,6 +264,7 @@ export class TeacherEntryComponent {
   }
 
   newTeacher(): void {
+    if (this.formVisible()) this.closeForm();
     const orgs = this.lookups()?.orgs ?? [];
     const orgId =
       this.listFilter().orgId ?? resolveDefaultSchoolOrgId(orgs, this.userProfile());
@@ -267,10 +283,14 @@ export class TeacherEntryComponent {
     this.saveError.set(null);
     this.showAppPassword.set(false);
     const empty = this.emptyForm();
+    if (this.auth.currentUser()?.userRoleId === 3) {
+      empty.userRoleID = 4;
+    }
     this.form.set(empty);
     if (orgId) this.onOrgChange(orgId);
     this.applyGradeDatesFromWorkingStart();
     this.applyRetireDateFromDobAndLeaveYear();
+    this.captureDocumentsSnapshot(this.form().documents);
   }
 
   editTeacher(item: TeacherListItem): void {
@@ -282,6 +302,7 @@ export class TeacherEntryComponent {
   }
 
   private openTeacher(userId: number, mode: FormMode): void {
+    if (this.formVisible()) this.closeForm();
     this.loading.set(true);
     this.teacherService
       .getById(userId)
@@ -302,11 +323,17 @@ export class TeacherEntryComponent {
         this.showAppPassword.set(false);
         this.form.set(this.ensureChildRows(data));
         this.refreshPhotoPreview(data.photoPath);
+        this.captureDocumentsSnapshot(this.form().documents);
       });
   }
 
   cancel(): void {
+    this.tryCloseForm();
+  }
+
+  tryCloseForm(): boolean {
     this.closeForm();
+    return true;
   }
 
   closeForm(): void {
@@ -491,14 +518,26 @@ export class TeacherEntryComponent {
       const documents = f.documents.filter((_, i) => i !== index);
       return { ...f, documents: documents.length ? documents : [this.createDocumentLine()] };
     });
+    this.persistDocuments({ silent: true });
   }
 
-  updateDocument(index: number, patch: Partial<TeacherDocumentLine>): void {
+  updateDocument(index: number, patch: Partial<TeacherDocumentLine>, options?: { persist?: boolean }): void {
+    if (patch.empDocumentCode != null && patch.empDocumentCode > 0) {
+      const isDuplicate = this.form().documents.some((row, i) => i !== index && row.empDocumentCode === patch.empDocumentCode);
+      if (isDuplicate) {
+        this.saveError.set(DUPLICATE_DOCUMENT_NAME_MESSAGE);
+        return;
+      }
+    }
+    this.saveError.set(null);
     this.form.update((f) => {
       const documents = [...f.documents];
       documents[index] = { ...documents[index], ...patch };
       return { ...f, documents };
     });
+    if (options?.persist !== false && (patch.empDocumentCode != null || patch.empDocumentPath != null)) {
+      this.persistDocuments({ silent: true });
+    }
   }
 
   onDocumentFileSelected(index: number, event: Event): void {
@@ -537,8 +576,12 @@ export class TeacherEntryComponent {
           this.toast.showError(error ?? 'Unable to upload document.');
           return;
         }
-        this.updateDocument(index, { empDocumentPath: storedName, selectedFileName: file.name });
-        this.toast.showSuccess('Document uploaded.');
+        this.updateDocument(index, { empDocumentPath: storedName, selectedFileName: file.name }, { persist: false });
+        this.persistDocuments({
+          silent: true,
+          onSuccess: () => this.toast.showSuccess('Document uploaded successfully.', 'Uploaded'),
+          onError: (message) => this.toast.showError(message ?? 'Unable to save document.', 'Save failed')
+        });
       });
   }
 
@@ -588,6 +631,43 @@ export class TeacherEntryComponent {
     this.persistTeacher({ advance: false, close: true });
   }
 
+  private persistDocuments(options?: { silent?: boolean; onSuccess?: () => void; onError?: (message: string) => void }): void {
+    const userId = this.form().userID;
+    if (this.isViewMode() || !userId) return;
+
+    const docError = getTeacherDocumentsSaveError(this.form().documents);
+    if (docError) {
+      if (options?.onError) options.onError(docError);
+      else if (!options?.silent) this.saveError.set(docError);
+      return;
+    }
+
+    if (!options?.silent) {
+      this.loading.set(true);
+      this.saveError.set(null);
+      this.fieldErrors.set({});
+    }
+
+    this.teacherService
+      .saveDocuments(userId, this.form().documents)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ data, message }) => {
+        if (!options?.silent) this.loading.set(false);
+        if (!data) {
+          const err = message ?? 'Unable to save documents.';
+          if (options?.onError) options.onError(err);
+          else if (!options?.silent) this.saveError.set(err);
+          return;
+        }
+        this.form.update((f) => ({
+          ...f,
+          documents: data.documents.length ? data.documents : [this.createDocumentLine()]
+        }));
+        this.captureDocumentsSnapshot(this.form().documents);
+        options?.onSuccess?.();
+      });
+  }
+
   private persistTeacher(options: { advance: boolean; close: boolean }): void {
     if (this.isViewMode()) return;
     if (!this.validateCurrentStep()) return;
@@ -618,6 +698,7 @@ export class TeacherEntryComponent {
 
         const wasNew = !this.form().userID;
         this.form.set(this.ensureChildRows(saved));
+        this.captureDocumentsSnapshot(this.form().documents);
         this.formMode.set('edit');
         this.refreshPhotoPreview(saved.photoPath);
 
@@ -728,6 +809,11 @@ export class TeacherEntryComponent {
       empDocumentPath: '',
       selectedFileName: null
     };
+  }
+
+  private captureDocumentsSnapshot(documents?: TeacherDocumentLine[]): void {
+    const docs = documents ?? this.form().documents;
+    this.savedDocumentsJson = serializeTeacherDocuments(docs);
   }
 
   private createSchoolLine(srNo: number): TeacherSchoolLine {

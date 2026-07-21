@@ -7,7 +7,6 @@ namespace SmartEPR.Infrastructure.Services;
 public sealed class OrganizationService : IOrganizationService
 {
     private static readonly Regex EmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex PanRegex = new(@"^[A-Z]{5}[0-9]{4}[A-Z]$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex MobileRegex = new(@"^\d{10}$", RegexOptions.Compiled);
     private static readonly Regex PhoneRegex = new(@"^\d+$", RegexOptions.Compiled);
     private static readonly Regex YearRegex = new(@"^\d{4}$", RegexOptions.Compiled);
@@ -66,6 +65,23 @@ public sealed class OrganizationService : IOrganizationService
         return saved is null ? (null, "Organization saved but could not be reloaded.") : (saved, null);
     }
 
+    public async Task<(OrganizationDto? Data, string? Error)> SaveDocumentsAsync(
+        long orgId,
+        IReadOnlyList<SaveOrganizationDocumentDto> documents,
+        CancellationToken cancellationToken = default)
+    {
+        if (orgId <= 0)
+            return (null, "Organization not found.");
+
+        var validationError = ValidateDocumentsSave(documents);
+        if (validationError is not null)
+            return (null, validationError);
+
+        await _repository.SaveDocumentsAsync(orgId, documents, cancellationToken).ConfigureAwait(false);
+        var saved = await _repository.GetByIdAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return saved is null ? (null, "Documents saved but could not be reloaded.") : (saved, null);
+    }
+
     public async Task<(bool Success, string? Error)> DeleteAsync(long orgId, CancellationToken cancellationToken = default)
     {
         if (orgId <= 0)
@@ -98,14 +114,24 @@ public sealed class OrganizationService : IOrganizationService
         if (!string.IsNullOrWhiteSpace(request.PhoneNo) && !PhoneRegex.IsMatch(request.PhoneNo.Trim()))
             return "Phone number must be numeric.";
 
-        if (!string.IsNullOrWhiteSpace(request.PanNo) && !PanRegex.IsMatch(request.PanNo.Trim().ToUpperInvariant()))
-            return "Enter a valid PAN number.";
-
         if (!string.IsNullOrWhiteSpace(request.EstablishmentYear) && !YearRegex.IsMatch(request.EstablishmentYear.Trim()))
             return "Establishment year must be 4 digits.";
 
         if (!string.IsNullOrWhiteSpace(request.WebSite) && !Uri.TryCreate(request.WebSite.Trim(), UriKind.Absolute, out _))
             return "Enter a valid website URL.";
+
+        return null;
+    }
+
+    public static string? ValidateDocumentsSave(IReadOnlyList<SaveOrganizationDocumentDto> documents)
+    {
+        foreach (var doc in documents)
+        {
+            if (doc.DocumentID <= 0)
+                return "Select document name for each uploaded file.";
+            if (string.IsNullOrWhiteSpace(doc.DocumentPath))
+                return "Upload a file for each selected document.";
+        }
 
         return null;
     }

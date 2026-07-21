@@ -7,6 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { TicketNotificationService } from '../../core/services/ticket-notification.service';
 import { TicketService } from '../../core/services/ticket.service';
+import { APP_BADGE, APP_NAME } from '../../core/constants/app-brand';
 import { NavSection } from '../../core/models/nav.model';
 import { isAppSuperAdmin } from '../../core/utils/super-admin-access.util';
 import { TicketPendingModalComponent } from '../../shared/components/ticket-pending-modal/ticket-pending-modal.component';
@@ -25,6 +26,8 @@ export class MainLayoutComponent {
   private readonly ticketNotifications = inject(TicketNotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
+  readonly appName = APP_NAME;
+  readonly appBadge = APP_BADGE;
   readonly sidebarCollapsed = signal(false);
   readonly isMobileView = signal(false);
   readonly userProfileExpanded = signal(false);

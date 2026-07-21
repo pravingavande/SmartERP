@@ -1,11 +1,12 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
-import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { InventoryLookups, ItemFormState, ItemGroupMasterItem, ItemMasterItem } from '../../../core/models/master.model';
+import { AuditLookups } from '../../../core/models/audit.model';
+import { ItemFormState, ItemGroupMasterItem, ItemMasterItem } from '../../../core/models/master.model';
+import { AuditService } from '../../../core/services/audit.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { MasterService } from '../../../core/services/master.service';
@@ -15,20 +16,21 @@ import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../
 import { mapBackendMessageToFieldErrors, validateItemForm } from '../../../core/utils/master-validation.util';
 import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { resolveDefaultSansthaOrgId, resolveSansthaOrgs } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-item-master',
-  imports: [FormsModule, DecimalPipe, MasterListPaginationComponent, ListActionBtnComponent, OrgSchoolSelectComponent],
+  imports: [FormsModule, DecimalPipe, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './item-master.component.html',
   styleUrl: './item-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ItemMasterComponent {
   private readonly master = inject(MasterService);
+  private readonly audit = inject(AuditService);
   private readonly toast = inject(ToastService);
   private readonly auth = inject(AuthService);
   private readonly dashboardService = inject(DashboardService);
@@ -41,7 +43,7 @@ export class ItemMasterComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly saveError = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
-  readonly lookups = signal<InventoryLookups | null>(null);
+  readonly lookups = signal<AuditLookups | null>(null);
   readonly itemGroups = signal<ItemGroupMasterItem[]>([]);
   readonly items = signal<ItemMasterItem[]>([]);
   readonly form = signal<ItemFormState>(this.emptyForm());
@@ -62,6 +64,7 @@ export class ItemMasterComponent {
 
   private static readonly ImportSourceOrgID = 1;
 
+  readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
   readonly canImport = computed(() => {
     const orgId = this.listOrgID();
     return (
@@ -83,7 +86,7 @@ export class ItemMasterComponent {
   });
   readonly selectedOrgName = computed(() => {
     const orgId = this.listOrgID();
-    return this.lookups()?.orgs?.find((o) => o.orgID === orgId)?.organizationName ?? '—';
+    return this.sansthaOrgs().find((o) => o.orgID === orgId)?.organizationName ?? '—';
   });
 
   readonly activeItemGroups = computed(() => this.itemGroups().filter((g) => g.isActive));
@@ -111,21 +114,29 @@ export class ItemMasterComponent {
 
   loadLookups(): void {
     this.lookupsLoading.set(true);
+    this.errorMessage.set(null);
     forkJoin({
-      lookups: this.master.getInventoryLookups(),
+      lookups: this.audit.getLookups(),
       profile: this.dashboardService.getProfile()
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ lookups: data, profile }) => {
-        this.lookupsLoading.set(false);
-        this.lookups.set(data);
-        if (!data?.orgs?.length) {
-          this.errorMessage.set('No schools found for your login.');
-          return;
+      .subscribe({
+        next: ({ lookups: data, profile }) => {
+          this.lookupsLoading.set(false);
+          const sansthaOrgs = resolveSansthaOrgs(data?.sansthaOrgs ?? [], this.auth.currentUser());
+          this.lookups.set(data ? { ...data, sansthaOrgs } : null);
+          if (!sansthaOrgs.length) {
+            this.errorMessage.set('No Sanstha found for your login.');
+            return;
+          }
+          const orgId = resolveDefaultSansthaOrgId(sansthaOrgs, profile, this.auth.currentUser());
+          this.listOrgID.set(orgId);
+          if (orgId) this.onListOrgChange(orgId);
+        },
+        error: () => {
+          this.lookupsLoading.set(false);
+          this.errorMessage.set('Unable to load organization list.');
         }
-        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
-        this.listOrgID.set(orgId);
-        if (orgId) this.onListOrgChange(orgId);
       });
   }
 
@@ -194,7 +205,7 @@ export class ItemMasterComponent {
   newItem(): void {
     const orgId = this.listOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select Org / School on the list page before adding new.');
+      this.errorMessage.set('Select Org / Sanstha on the list page before adding new.');
       return;
     }
     this.formMode.set('new');
@@ -251,7 +262,7 @@ export class ItemMasterComponent {
   openImport(): void {
     const orgId = this.listOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select Org / School before importing.');
+      this.errorMessage.set('Select Org / Sanstha before importing.');
       return;
     }
     if (!this.canImport()) {

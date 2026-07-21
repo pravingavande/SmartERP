@@ -161,6 +161,16 @@ public sealed class OrganizationRepository : IOrganizationRepository
         return p.Get<long?>("@OrgID");
     }
 
+    public Task SaveDocumentsAsync(long orgId, IReadOnlyList<SaveOrganizationDocumentDto> documents, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        p.Add("@DocumentsJson", documents.Count > 0
+            ? JsonSerializer.Serialize(documents, JsonOptions)
+            : null);
+        return _executor.ExecuteAsync("dbo.sp_Organization_SaveDocuments", p, cancellationToken);
+    }
+
     public async Task<bool> DeleteAsync(long orgId, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();

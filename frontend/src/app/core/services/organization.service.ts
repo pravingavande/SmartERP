@@ -4,6 +4,7 @@ import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ApiResponse,
+  OrganizationDocumentLine,
   OrganizationDocumentOption,
   OrganizationFormState,
   OrganizationListFilter,
@@ -71,6 +72,20 @@ export class OrganizationService {
     return this.http.get<ApiResponse<Record<string, unknown>>>(`${this.base}/${orgId}`).pipe(
       map((r) => (r.success && r.data ? this.mapToForm(r.data) : null)),
       catchError(() => of(null))
+    );
+  }
+
+  saveDocuments(orgId: number, documents: OrganizationDocumentLine[]): Observable<{ data: OrganizationFormState | null; message?: string }> {
+    const payload = documents
+      .filter((d) => d.documentID && d.documentPath)
+      .map((d) => ({ documentID: d.documentID, documentPath: d.documentPath }));
+
+    return this.http.post<ApiResponse<Record<string, unknown>>>(`${this.base}/${orgId}/documents`, payload).pipe(
+      map((r) => ({
+        data: r.success && r.data ? this.mapToForm(r.data) : null,
+        message: r.message
+      })),
+      catchError((err) => of({ data: null, message: err?.error?.message ?? 'Unable to save documents.' }))
     );
   }
 

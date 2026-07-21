@@ -188,7 +188,6 @@
                     </th>
                     <th class="sr-col">Sr</th>
                     <th class="name-col">Document Name</th>
-                    <th class="type-id-col">Type ID</th>
                     <th class="type-name-col">Document Type</th>
                   </tr>
                 </thead>
@@ -204,11 +203,10 @@
                       </td>
                       <td class="sr-col">{{ item.srNo }}</td>
                       <td class="name-col">{{ item.documentName }}</td>
-                      <td class="type-id-col">{{ item.documentTypeID ?? '—' }}</td>
                       <td class="type-name-col">{{ item.documentTypeName || '—' }}</td>
                     </tr>
                   } @empty {
-                    <tr><td colspan="5" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} documents found</td></tr>
+                    <tr><td colspan="4" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} documents found</td></tr>
                   }
                 </tbody>
               </table>

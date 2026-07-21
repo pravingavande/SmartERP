@@ -51,6 +51,8 @@ export class EventCalendarComponent {
   readonly viewMonth = signal(new Date().getMonth());
   readonly loading = signal(false);
   readonly showModal = signal(false);
+  readonly showDayModal = signal(false);
+  readonly selectedDayIso = signal<string | null>(null);
   readonly isViewMode = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
@@ -105,6 +107,17 @@ export class EventCalendarComponent {
   readonly showReportingSection = computed(() => this.isCompleted() || this.isLocked());
   readonly canEditFields = computed(() => this.canManage() && !this.isViewMode() && !this.isLocked());
   readonly canEditReporting = computed(() => this.canManage() && !this.isViewMode() && (this.showReportingSection() || this.isLocked()));
+  readonly selectedDayEvents = computed(() => {
+    const iso = this.selectedDayIso();
+    if (!iso) return [];
+    return this.eventsForDay(iso);
+  });
+  readonly selectedDayLabel = computed(() => {
+    const iso = this.selectedDayIso();
+    if (!iso) return '';
+    const d = new Date(`${iso}T00:00:00`);
+    return d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  });
 
   constructor() {
     forkJoin({
@@ -207,6 +220,35 @@ export class EventCalendarComponent {
 
   editEvent(ev: CalendarEvent): void {
     this.openEventById(ev.eventID, !ev.canManage);
+  }
+
+  onDayClick(iso: string): void {
+    this.selectedDayIso.set(iso);
+    this.showDayModal.set(true);
+  }
+
+  closeDayModal(): void {
+    this.showDayModal.set(false);
+    this.selectedDayIso.set(null);
+  }
+
+  editEventFromDay(ev: CalendarEvent): void {
+    this.closeDayModal();
+    this.editEvent(ev);
+  }
+
+  addEventOnSelectedDay(): void {
+    const iso = this.selectedDayIso();
+    this.closeDayModal();
+    if (iso) this.openNew(iso);
+  }
+
+  deleteEventFromDay(ev: CalendarEvent): void {
+    if (!this.canManage() || !ev.canManage) return;
+    if (!confirm(`Delete event "${ev.title}"?`)) return;
+    this.calendarService.deleteEvent(ev.eventID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.loadEvents();
+    });
   }
 
   private openEventById(eventId: number, viewOnly = false): void {

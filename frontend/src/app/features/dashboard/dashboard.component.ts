@@ -53,7 +53,10 @@ export class DashboardComponent {
   );
 
   readonly summary = () => this.dashboardData().summary;
-  readonly notices = () => this.dashboardData().notices;
+  readonly notices = () =>
+    [...this.dashboardData().notices].sort(
+      (a, b) => new Date(a.noticeDate).getTime() - new Date(b.noticeDate).getTime()
+    );
   readonly pendingReporting = () => this.dashboardData().pendingReporting;
 
   statTiles(summary: DashboardSummary): StatTile[] {

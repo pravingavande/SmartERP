@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { APP_BADGE, APP_NAME } from '../../../core/constants/app-brand';
 import { environment } from '../../../../environments/environment';
 
 export type LoginPortal = 'school' | 'sanstha' | 'default';
@@ -25,6 +26,8 @@ export class LoginComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly showPassword = signal(false);
   readonly showDevDefaults = !environment.production && !!environment.devLogin;
+  readonly appName = APP_NAME;
+  readonly appBadge = APP_BADGE;
   readonly schoolWebsiteUrl = environment.schoolWebsiteUrl?.trim() || null;
   readonly portal = signal<LoginPortal>('default');
 
@@ -38,7 +41,7 @@ export class LoginComponent {
 
   readonly portalSubtitle = computed(() => {
     switch (this.portal()) {
-      case 'school': return 'Sign in to your school SmartERP workspace';
+      case 'school': return `Sign in to your school ${APP_NAME} workspace`;
       case 'sanstha': return 'Sign in to sanstha administration dashboard';
       default: return 'Sign in with your registered app credentials';
     }

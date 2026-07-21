@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { APP_NAME } from '../constants/app-brand';
 import { Voucher } from '../models/audit.model';
 import { Donation } from '../models/donation.model';
 
@@ -90,12 +91,12 @@ export class AuditPrintService {
     return `
       <div class="receipt">
         <header>
-          <h1>SmartERP</h1>
+          <h1>${APP_NAME}</h1>
           <h2>${this.esc(title)}</h2>
         </header>
         ${body}
         <footer>
-          <p>Computer generated receipt — SmartERP</p>
+          <p>Computer generated receipt — ${APP_NAME}</p>
           <p>Printed: ${new Date().toLocaleString('en-IN')}</p>
         </footer>
       </div>

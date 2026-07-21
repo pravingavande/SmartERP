@@ -65,7 +65,7 @@
           <div class="dow">{{ day }}</div>
         }
         @for (day of monthDays(); track day.iso) {
-          <button type="button" class="day-cell" [class.outside]="!day.inMonth" [class.today]="isToday(day.iso)" (click)="canManage() ? openNew(day.iso) : null">
+          <button type="button" class="day-cell" [class.outside]="!day.inMonth" [class.today]="isToday(day.iso)" (click)="onDayClick(day.iso)">
             <span class="day-num">{{ day.date.getDate() }}</span>
             @for (ev of eventsForDay(day.iso); track ev.eventID) {
               <span class="chip event" [style.border-left-color]="eventColor(ev)" (click)="$event.stopPropagation(); editEvent(ev)">{{ ev.title }}</span>
@@ -106,10 +106,53 @@
         </ul>
       </div>
       }
-      <p class="hint">Click a date to add an event · Click an event chip to view/edit</p>
+      <p class="hint">Click a date to view events · Click an event chip to view/edit</p>
     </div>
   </div>
 </section>
+
+@if (showDayModal()) {
+  <div class="modal-overlay" (click)="closeDayModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2>{{ selectedDayLabel() }}</h2>
+        <button type="button" class="icon-btn" (click)="closeDayModal()">×</button>
+      </header>
+      <div class="day-events-panel">
+        @if (selectedDayEvents().length) {
+          <ul class="day-events-list">
+            @for (ev of selectedDayEvents(); track ev.eventID) {
+              <li class="day-event-row">
+                <div class="day-event-info">
+                  <span class="day-event-time">{{ ev.startTime || 'All day' }}</span>
+                  <span class="day-event-title">{{ ev.title }}</span>
+                  @if (ev.location) {
+                    <span class="day-event-location">{{ ev.location }}</span>
+                  }
+                </div>
+                <div class="day-event-actions">
+                  <button type="button" class="btn btn-outline btn-sm" (click)="editEventFromDay(ev)">View / Edit</button>
+                  @if (canManage() && ev.canManage) {
+                    <button type="button" class="btn btn-danger btn-sm" (click)="deleteEventFromDay(ev)">Delete</button>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="empty">No events on this date.</p>
+        }
+      </div>
+      <footer class="modal-footer">
+        @if (canManage()) {
+          <button type="button" class="btn btn-primary" (click)="addEventOnSelectedDay()">+ Add Event</button>
+        }
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-outline" (click)="closeDayModal()">Close</button>
+      </footer>
+    </div>
+  </div>
+}
 
 @if (showModal()) {
   <div class="modal-overlay" (click)="closeModal()">

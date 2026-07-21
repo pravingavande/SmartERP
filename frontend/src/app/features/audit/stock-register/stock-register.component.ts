@@ -7,6 +7,8 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { InventoryLookups, ItemGroupMasterItem, ItemMasterItem, StockFormState, StockRegisterItem } from '../../../core/models/master.model';
 import { MarathiNumberInputDirective } from '../../../core/directives/marathi-number-input.directive';
+import { AuditService } from '../../../core/services/audit.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { MasterService } from '../../../core/services/master.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -15,7 +17,7 @@ import { coerceEnglishNumber } from '../../../core/utils/marathi-numerals';
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateStockForm } from '../../../core/utils/master-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { resolveDefaultSansthaOrgId, resolveDefaultSchoolOrgId, resolveSansthaOrgs } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
@@ -29,6 +31,8 @@ type FormMode = 'new' | 'edit';
 })
 export class StockRegisterComponent {
   private readonly master = inject(MasterService);
+  private readonly audit = inject(AuditService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -50,6 +54,8 @@ export class StockRegisterComponent {
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
   readonly listOrgID = signal<number | null>(null);
+  /** Logged-in sanstha — item groups/items are scoped by UnderOrgID. */
+  readonly sansthaOrgID = signal<number | null>(null);
   readonly searchText = signal('');
   readonly sortKey = signal<keyof StockRegisterItem>('stockID');
   readonly sortDir = signal<SortDirection>('desc');
@@ -93,22 +99,36 @@ export class StockRegisterComponent {
 
   loadLookups(): void {
     this.lookupsLoading.set(true);
+    this.errorMessage.set(null);
     forkJoin({
       lookups: this.master.getInventoryLookups(),
+      auditLookups: this.audit.getLookups(),
       profile: this.dashboardService.getProfile()
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ lookups: data, profile }) => {
+      .subscribe(({ lookups: data, auditLookups, profile }) => {
         this.lookupsLoading.set(false);
         this.lookups.set(data);
         if (!data?.orgs?.length) {
           this.errorMessage.set('No schools found for your login.');
           return;
         }
+
+        const sansthaOrgs = resolveSansthaOrgs(auditLookups?.sansthaOrgs ?? [], this.auth.currentUser());
+        const sansthaId = resolveDefaultSansthaOrgId(sansthaOrgs, profile, this.auth.currentUser());
+        this.sansthaOrgID.set(sansthaId);
+        if (sansthaId) this.loadMasterOptions(sansthaId);
+
         const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
         this.listOrgID.set(orgId);
         if (orgId) this.onListOrgChange(orgId);
       });
+  }
+
+  /** Item Group / Item Name masters belong to sanstha (UnderOrgID), not school. */
+  private loadMasterOptions(sansthaOrgId: number): void {
+    this.loadItemGroups(sansthaOrgId);
+    this.loadItemOptions(sansthaOrgId);
   }
 
   onListOrgChange(orgId: number | null): void {
@@ -117,12 +137,8 @@ export class StockRegisterComponent {
     this.closeForm();
     if (!orgId) {
       this.items.set([]);
-      this.itemOptions.set([]);
-      this.itemGroupOptions.set([]);
       return;
     }
-    this.loadItemGroups(orgId);
-    this.loadItemOptions(orgId);
     this.loadList();
   }
 
@@ -218,10 +234,15 @@ export class StockRegisterComponent {
       this.formItemGroupID.set(null);
       return;
     }
-    this.loadItemGroups(item.orgID);
+    const sansthaId = this.sansthaOrgID();
+    if (!sansthaId) {
+      this.formItemGroupID.set(null);
+      return;
+    }
+    this.loadItemGroups(sansthaId);
     this.itemsLoading.set(true);
     this.master
-      .getItems(item.orgID)
+      .getItems(sansthaId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((list) => {
         this.itemsLoading.set(false);
@@ -262,13 +283,6 @@ export class StockRegisterComponent {
     this.form.update((f) => ({ ...f, orgID: orgId, itemID: null }));
     this.formItemGroupID.set(null);
     this.listOrgID.set(orgId);
-    if (!orgId) {
-      this.itemOptions.set([]);
-      this.itemGroupOptions.set([]);
-      return;
-    }
-    this.loadItemGroups(orgId);
-    this.loadItemOptions(orgId);
   }
 
   onItemGroupChange(groupId: number | null): void {

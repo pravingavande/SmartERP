@@ -91,6 +91,15 @@ public sealed class OrganizationController : ControllerBase
             : Ok(ApiResponse<OrganizationDto>.Ok(data, "Organization saved."));
     }
 
+    [HttpPost("{orgId:long}/documents")]
+    public async Task<IActionResult> SaveDocuments(long orgId, [FromBody] IReadOnlyList<SaveOrganizationDocumentDto> documents, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _organizationService.SaveDocumentsAsync(orgId, documents ?? Array.Empty<SaveOrganizationDocumentDto>(), cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<OrganizationDto>.Fail(error ?? "Unable to save documents."))
+            : Ok(ApiResponse<OrganizationDto>.Ok(data, "Documents saved."));
+    }
+
     [HttpDelete("{orgId:long}")]
     public async Task<IActionResult> Delete(long orgId, CancellationToken cancellationToken)
     {

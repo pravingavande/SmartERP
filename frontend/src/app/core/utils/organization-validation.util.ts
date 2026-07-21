@@ -1,8 +1,8 @@
 import { FieldErrors } from './form-field-errors';
-import { OrganizationFormState, SANSTHA_BUSINESS_CATEGORY_ID, SCHOOL_BUSINESS_CATEGORY_ID } from '../models/organization.model';
+import { OrganizationDocumentLine, OrganizationFormState, SANSTHA_BUSINESS_CATEGORY_ID, SCHOOL_BUSINESS_CATEGORY_ID } from '../models/organization.model';
+import { getDuplicateDocumentNameError } from './document-unsaved.util';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
-const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/i;
 const mobileRegex = /^\d{10}$/;
 const phoneRegex = /^\d+$/;
 const yearRegex = /^\d{4}$/;
@@ -38,10 +38,6 @@ export function validateOrganizationForm(form: OrganizationFormState): FieldErro
     errors['phoneNo'] = 'Phone number must be numeric.';
   }
 
-  if (form.panNo?.trim() && !panRegex.test(form.panNo.trim())) {
-    errors['panNo'] = 'Enter a valid PAN number.';
-  }
-
   if (form.establishmentYear?.trim()) {
     const yearText = form.establishmentYear.trim();
     if (!yearRegex.test(yearText)) {
@@ -71,6 +67,23 @@ export function validateOrganizationForm(form: OrganizationFormState): FieldErro
   }
 
   return errors;
+}
+
+/** Returns first validation message for document-only save, or null if valid. */
+export function getOrganizationDocumentsSaveError(documents: OrganizationDocumentLine[]): string | null {
+  const complete = documents.filter((d) => d.documentID && d.documentPath?.trim());
+  for (const row of documents) {
+    if (row.documentPath?.trim() && !row.documentID) {
+      return 'Select document name for each uploaded file.';
+    }
+    if (row.documentID && !row.documentPath?.trim()) {
+      return 'Upload a file for each selected document name.';
+    }
+  }
+  if (!complete.length && documents.some((d) => d.documentID || d.documentPath?.trim())) {
+    return 'Add at least one document with name and uploaded file.';
+  }
+  return getDuplicateDocumentNameError(documents.map((d) => d.documentID));
 }
 
 export function mapOrganizationBackendMessage(message: string): FieldErrors {
