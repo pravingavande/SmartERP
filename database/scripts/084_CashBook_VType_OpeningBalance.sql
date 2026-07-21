@@ -1,12 +1,15 @@
--- Cash Book Report (मुख्य किर्द रिपोर्ट) from vw_VoucherDetailsReport
-USE SmartERP;
+-- ============================================================
+-- Cash Book opening balance: include RV/PV/BD/BW (matches AuditVoucherRules)
+-- Procedure-only change — no table data is modified.
+-- ============================================================
+SET NOCOUNT ON;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_CashBook_GetReport
     @OrgID BIGINT,
     @FromDate DATE,
     @ToDate DATE,
-    @AccountRegisterID BIGINT = 1  -- default: Cash Book (रोख किर्द)
+    @AccountRegisterID BIGINT = 1
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -77,4 +80,7 @@ BEGIN
       AND CAST(v.VDate AS DATE) <= @ToDate
     ORDER BY CAST(v.VDate AS DATE), v.VoucherID, v.LedgerHead;
 END
+GO
+
+PRINT '084_CashBook_VType_OpeningBalance applied (procedure only).';
 GO

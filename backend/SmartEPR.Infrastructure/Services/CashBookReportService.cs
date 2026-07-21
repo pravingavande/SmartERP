@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Reporting.NETCore;
 using SmartEPR.Core.DTOs.Reports;
 using SmartEPR.Core.Interfaces;
+using SmartEPR.Core.Validation;
 
 namespace SmartEPR.Infrastructure.Services;
 
@@ -216,7 +217,7 @@ public sealed class CashBookReportService : ICashBookReportService
                 CreditText = isReceipt ? FormatAmount(amount) : string.Empty,
                 DebitText = isReceipt ? string.Empty : FormatAmount(amount),
                 VchNo = line.VCode?.ToString() ?? string.Empty,
-                VchType = isReceipt ? "Receipt" : "Payment"
+                VchType = FormatVoucherTypeLabel(line.VType)
             });
         }
 
@@ -245,10 +246,18 @@ public sealed class CashBookReportService : ICashBookReportService
         });
     }
 
-    private static bool IsReceipt(string? vType)
+    private static bool IsReceipt(string? vType) => AuditVoucherRules.BalanceSign(vType) > 0;
+
+    private static string FormatVoucherTypeLabel(string? vType)
     {
         var t = (vType ?? string.Empty).Trim().ToUpperInvariant();
-        return t is "R" or "RECEIPT";
+        return t switch
+        {
+            "BD" => "Bank Deposit",
+            "BW" => "Bank Withdraw",
+            "RV" or "R" or "RECEIPT" => "Receipt",
+            _ => "Payment"
+        };
     }
 
     private static string FormatAmount(decimal value) =>
