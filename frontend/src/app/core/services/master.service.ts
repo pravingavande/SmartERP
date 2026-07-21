@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   AcademicScheduleFilter,
@@ -8,8 +8,12 @@ import {
   AcademicScheduleItem,
   AcademicScheduleLookups,
   ApiResponse,
+  CategoryFormState,
+  CategoryMasterItem,
   ClassFormState,
   ClassMasterItem,
+  DocumentFormState,
+  DocumentMasterItem,
   ImportClassResult,
   InventoryLookups,
   ItemFormState,
@@ -113,18 +117,125 @@ export class MasterService {
       );
   }
 
-  getSubjects(search?: string | null): Observable<SubjectMasterItem[]> {
-    let params = new HttpParams();
+  getDocuments(orgId: number, search?: string | null): Observable<DocumentMasterItem[]> {
+    let params = new HttpParams().set('orgId', String(orgId));
+    if (search?.trim()) params = params.set('search', search.trim());
+    return this.http.get<ApiResponse<DocumentMasterItem[]>>(`${this.base}/document`, { params }).pipe(
+      map((r) => {
+        if (!r.success) throw new Error(r.message ?? 'Unable to load documents.');
+        return r.data ? r.data.map((x) => this.normalizeDocument(x)) : [];
+      }),
+      catchError((err: { message?: string; error?: { message?: string } }) =>
+        throwError(() => new Error(err?.error?.message ?? err?.message ?? 'Unable to load documents.'))
+      )
+    );
+  }
+
+  getDocumentNextSrNo(orgId: number): Observable<number | null> {
+    const params = new HttpParams().set('orgId', String(orgId));
+    return this.http.get<ApiResponse<{ nextSrNo?: number; NextSrNo?: number }>>(`${this.base}/document/next-srno`, { params }).pipe(
+      map((r) => {
+        if (!r.success || !r.data) return null;
+        const n = r.data.nextSrNo ?? r.data.NextSrNo;
+        return n != null ? Number(n) : null;
+      }),
+      catchError(() => of(null))
+    );
+  }
+
+  saveDocument(form: DocumentFormState): Observable<{ data: DocumentMasterItem | null; message?: string }> {
+    const payload = {
+      documentID: form.documentID ?? 0,
+      underOrgID: form.underOrgID ?? 0,
+      srNo: form.srNo ?? 0,
+      documentName: trimText(form.documentName),
+      isActive: form.isActive
+    };
+    return this.http.post<ApiResponse<DocumentMasterItem>>(`${this.base}/document`, payload).pipe(
+      map((r) => ({ data: apiSuccess(r) && apiData(r) ? this.normalizeDocument(apiData(r)) : null, message: apiMessage(r) })),
+      catchError(() => of({ data: null, message: 'Unable to save document.' }))
+    );
+  }
+
+  deleteDocument(documentId: number): Observable<{ success: boolean; message?: string }> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.base}/document/${documentId}`).pipe(
+      map((r) => ({ success: !!r.success, message: r.message ?? undefined })),
+      catchError(() => of({ success: false, message: 'Unable to delete document.' }))
+    );
+  }
+
+  importDocuments(destinationOrgId: number, documentIds: number[]): Observable<{ data: ImportClassResult | null; message?: string | null }> {
+    return this.http.post<ApiResponse<ImportClassResult>>(`${this.base}/document/import`, { destinationOrgID: destinationOrgId, documentIds }).pipe(
+      map((r) => ({
+        data: r.success && r.data ? { importedCount: Number(r.data.importedCount ?? (r.data as { ImportedCount?: number }).ImportedCount ?? 0), skippedCount: Number(r.data.skippedCount ?? (r.data as { SkippedCount?: number }).SkippedCount ?? 0) } : null,
+        message: r.message ?? null
+      })),
+      catchError(() => of({ data: null, message: 'Unable to import documents.' }))
+    );
+  }
+
+  getCategories(orgId: number, search?: string | null): Observable<CategoryMasterItem[]> {
+    let params = new HttpParams().set('orgId', String(orgId));
+    if (search?.trim()) params = params.set('search', search.trim());
+    return this.http.get<ApiResponse<CategoryMasterItem[]>>(`${this.base}/category`, { params }).pipe(
+      map((r) => {
+        if (!r.success) throw new Error(r.message ?? 'Unable to load categories.');
+        return r.data ? r.data.map((x) => this.normalizeCategory(x)) : [];
+      }),
+      catchError((err: { message?: string; error?: { message?: string } }) =>
+        throwError(() => new Error(err?.error?.message ?? err?.message ?? 'Unable to load categories.'))
+      )
+    );
+  }
+
+  saveCategory(form: CategoryFormState): Observable<{ data: CategoryMasterItem | null; message?: string }> {
+    const payload = {
+      categoryID: form.categoryID ?? 0,
+      underOrgID: form.underOrgID ?? 0,
+      categoryName: trimText(form.categoryName),
+      isActive: form.isActive
+    };
+    return this.http.post<ApiResponse<CategoryMasterItem>>(`${this.base}/category`, payload).pipe(
+      map((r) => ({ data: apiSuccess(r) && apiData(r) ? this.normalizeCategory(apiData(r)) : null, message: apiMessage(r) })),
+      catchError(() => of({ data: null, message: 'Unable to save category.' }))
+    );
+  }
+
+  deleteCategory(categoryId: number): Observable<{ success: boolean; message?: string }> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.base}/category/${categoryId}`).pipe(
+      map((r) => ({ success: !!r.success, message: r.message ?? undefined })),
+      catchError(() => of({ success: false, message: 'Unable to delete category.' }))
+    );
+  }
+
+  importCategories(destinationOrgId: number, categoryIds: number[]): Observable<{ data: ImportClassResult | null; message?: string | null }> {
+    return this.http.post<ApiResponse<ImportClassResult>>(`${this.base}/category/import`, { destinationOrgID: destinationOrgId, categoryIds }).pipe(
+      map((r) => ({
+        data: r.success && r.data ? { importedCount: Number(r.data.importedCount ?? (r.data as { ImportedCount?: number }).ImportedCount ?? 0), skippedCount: Number(r.data.skippedCount ?? (r.data as { SkippedCount?: number }).SkippedCount ?? 0) } : null,
+        message: r.message ?? null
+      })),
+      catchError(() => of({ data: null, message: 'Unable to import categories.' }))
+    );
+  }
+
+  getSubjects(orgId: number, search?: string | null): Observable<SubjectMasterItem[]> {
+    let params = new HttpParams().set('orgId', String(orgId));
     if (search?.trim()) params = params.set('search', search.trim());
     return this.http.get<ApiResponse<SubjectMasterItem[]>>(`${this.base}/subject`, { params }).pipe(
-      map((r) => (r.success && r.data ? r.data.map((x) => this.normalizeSubject(x)) : [])),
-      catchError(() => of([]))
+      map((r) => {
+        if (!r.success) throw new Error(r.message ?? 'Unable to load subjects.');
+        return r.data ? r.data.map((x) => this.normalizeSubject(x)) : [];
+      }),
+      catchError((err: { message?: string; error?: { message?: string } }) =>
+        throwError(() => new Error(err?.error?.message ?? err?.message ?? 'Unable to load subjects.'))
+      )
     );
   }
 
   saveSubject(form: SubjectFormState): Observable<{ data: SubjectMasterItem | null; message?: string }> {
     const payload = {
       subjectID: form.subjectID ?? 0,
+      underOrgID: form.underOrgID ?? 0,
       subjectName: trimText(form.subjectName),
       isActive: form.isActive
     };
@@ -141,6 +252,16 @@ export class MasterService {
     return this.http.delete<ApiResponse<boolean>>(`${this.base}/subject/${subjectId}`).pipe(
       map((r) => ({ success: !!r.success, message: r.message ?? undefined })),
       catchError(() => of({ success: false, message: 'Unable to delete subject.' }))
+    );
+  }
+
+  importSubjects(destinationOrgId: number, subjectIds: number[]): Observable<{ data: ImportClassResult | null; message?: string | null }> {
+    return this.http.post<ApiResponse<ImportClassResult>>(`${this.base}/subject/import`, { destinationOrgID: destinationOrgId, subjectIds }).pipe(
+      map((r) => ({
+        data: r.success && r.data ? { importedCount: Number(r.data.importedCount ?? (r.data as { ImportedCount?: number }).ImportedCount ?? 0), skippedCount: Number(r.data.skippedCount ?? (r.data as { SkippedCount?: number }).SkippedCount ?? 0) } : null,
+        message: r.message ?? null
+      })),
+      catchError(() => of({ data: null, message: 'Unable to import subjects.' }))
     );
   }
 
@@ -433,12 +554,37 @@ export class MasterService {
     };
   }
 
+  private normalizeDocument(raw: unknown): DocumentMasterItem {
+    const r = raw as DocumentMasterItem & { DocumentID?: number; UnderOrgID?: number; SrNo?: number; DocumentName?: string; IsActive?: boolean; OrganizationName?: string | null };
+    return {
+      documentID: Number(r.documentID ?? r.DocumentID ?? 0),
+      underOrgID: Number(r.underOrgID ?? r.UnderOrgID ?? 0),
+      srNo: Number(r.srNo ?? r.SrNo ?? 0),
+      documentName: String(r.documentName ?? r.DocumentName ?? ''),
+      isActive: Boolean(r.isActive ?? r.IsActive ?? true),
+      organizationName: r.organizationName ?? r.OrganizationName ?? null
+    };
+  }
+
+  private normalizeCategory(raw: unknown): CategoryMasterItem {
+    const r = raw as CategoryMasterItem & { CategoryID?: number; UnderOrgID?: number; CategoryName?: string; IsActive?: boolean; OrganizationName?: string | null };
+    return {
+      categoryID: Number(r.categoryID ?? r.CategoryID ?? 0),
+      underOrgID: Number(r.underOrgID ?? r.UnderOrgID ?? 0),
+      categoryName: String(r.categoryName ?? r.CategoryName ?? ''),
+      isActive: Boolean(r.isActive ?? r.IsActive ?? true),
+      organizationName: r.organizationName ?? r.OrganizationName ?? null
+    };
+  }
+
   private normalizeSubject(raw: unknown): SubjectMasterItem {
-    const r = raw as SubjectMasterItem & { SubjectID?: number; SubjectName?: string; IsActive?: boolean };
+    const r = raw as SubjectMasterItem & { SubjectID?: number; UnderOrgID?: number; SubjectName?: string; IsActive?: boolean; OrganizationName?: string | null };
     return {
       subjectID: Number(r.subjectID ?? r.SubjectID ?? 0),
+      underOrgID: Number(r.underOrgID ?? r.UnderOrgID ?? 0),
       subjectName: String(r.subjectName ?? r.SubjectName ?? ''),
-      isActive: Boolean(r.isActive ?? r.IsActive ?? true)
+      isActive: Boolean(r.isActive ?? r.IsActive ?? true),
+      organizationName: r.organizationName ?? r.OrganizationName ?? null
     };
   }
 

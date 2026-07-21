@@ -17,8 +17,13 @@ describe('master-validation.util', () => {
   });
 
   it('validateSubjectForm rejects blank subject name', () => {
-    const errors = validateSubjectForm({ subjectID: null, subjectName: '   ', isActive: true });
+    const errors = validateSubjectForm({ subjectID: null, underOrgID: 1, subjectName: '   ', isActive: true });
     expect(errors['subjectName']).toBe('Subject name is required.');
+  });
+
+  it('validateSubjectForm rejects missing organization', () => {
+    const errors = validateSubjectForm({ subjectID: null, underOrgID: null, subjectName: 'Maths', isActive: true });
+    expect(errors['underOrgID']).toBe('Organization is required.');
   });
 
   it('validateClassForm accepts valid class name', () => {

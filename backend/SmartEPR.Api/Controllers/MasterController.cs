@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SmartEPR.Core.Common;
 using SmartEPR.Core.DTOs.Master;
 using SmartEPR.Core.DTOs.Settings;
@@ -82,11 +83,103 @@ public sealed class MasterController : ControllerBase
             : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete class."));
     }
 
-    [HttpGet("subject")]
-    public async Task<IActionResult> GetSubjectList([FromQuery] string? search, CancellationToken cancellationToken)
+    [HttpGet("document")]
+    public async Task<IActionResult> GetDocumentList([FromQuery] long orgId, [FromQuery] string? search, CancellationToken cancellationToken)
     {
-        var items = await _masterService.GetSubjectListAsync(search, cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<IReadOnlyList<SubjectMasterDto>>.Ok(items));
+        if (orgId <= 0)
+            return Ok(ApiResponse<IReadOnlyList<DocumentMasterDto>>.Fail("Organization is required."));
+        try
+        {
+            var items = await _masterService.GetDocumentListAsync(orgId, search, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<DocumentMasterDto>>.Ok(items));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<DocumentMasterDto>>.Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("document/next-srno")]
+    public async Task<IActionResult> GetDocumentNextSrNo([FromQuery] long orgId, CancellationToken cancellationToken)
+    {
+        var next = await _masterService.GetDocumentNextSrNoAsync(orgId, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<NextSrNoDto>.Ok(new NextSrNoDto { NextSrNo = (int)(next ?? 1) }));
+    }
+
+    [HttpPost("document")]
+    public async Task<IActionResult> SaveDocument([FromBody] SaveDocumentRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _masterService.SaveDocumentAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null ? Ok(ApiResponse<DocumentMasterDto>.Fail(error ?? "Unable to save document.")) : Ok(ApiResponse<DocumentMasterDto>.Ok(data, "Document saved."));
+    }
+
+    [HttpPost("document/import")]
+    public async Task<IActionResult> ImportDocuments([FromBody] ImportDocumentRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _masterService.ImportDocumentsAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import documents."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(data, $"Imported {data.ImportedCount} document(s). Skipped {data.SkippedCount}."));
+    }
+
+    [HttpDelete("document/{documentId:long}")]
+    public async Task<IActionResult> DeleteDocument(long documentId, CancellationToken cancellationToken)
+    {
+        var (success, error) = await _masterService.DeleteDocumentAsync(documentId, cancellationToken).ConfigureAwait(false);
+        return success ? Ok(ApiResponse<bool>.Ok(true, "Document deleted.")) : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete document."));
+    }
+
+    [HttpGet("category")]
+    public async Task<IActionResult> GetCategoryList([FromQuery] long orgId, [FromQuery] string? search, CancellationToken cancellationToken)
+    {
+        if (orgId <= 0)
+            return Ok(ApiResponse<IReadOnlyList<CategoryMasterDto>>.Fail("Organization is required."));
+        try
+        {
+            var items = await _masterService.GetCategoryListAsync(orgId, search, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<CategoryMasterDto>>.Ok(items));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<CategoryMasterDto>>.Fail(ex.Message));
+        }
+    }
+
+    [HttpPost("category")]
+    public async Task<IActionResult> SaveCategory([FromBody] SaveCategoryRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _masterService.SaveCategoryAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null ? Ok(ApiResponse<CategoryMasterDto>.Fail(error ?? "Unable to save category.")) : Ok(ApiResponse<CategoryMasterDto>.Ok(data, "Category saved."));
+    }
+
+    [HttpPost("category/import")]
+    public async Task<IActionResult> ImportCategories([FromBody] ImportCategoryRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _masterService.ImportCategoriesAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import categories."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(data, $"Imported {data.ImportedCount} category(ies). Skipped {data.SkippedCount}."));
+    }
+
+    [HttpDelete("category/{categoryId:long}")]
+    public async Task<IActionResult> DeleteCategory(long categoryId, CancellationToken cancellationToken)
+    {
+        var (success, error) = await _masterService.DeleteCategoryAsync(categoryId, cancellationToken).ConfigureAwait(false);
+        return success ? Ok(ApiResponse<bool>.Ok(true, "Category deleted.")) : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete category."));
+    }
+
+    [HttpGet("subject")]
+    public async Task<IActionResult> GetSubjectList([FromQuery] long orgId, [FromQuery] string? search, CancellationToken cancellationToken)
+    {
+        if (orgId <= 0)
+            return Ok(ApiResponse<IReadOnlyList<SubjectMasterDto>>.Fail("Organization is required."));
+        try
+        {
+            var items = await _masterService.GetSubjectListAsync(orgId, search, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<SubjectMasterDto>>.Ok(items));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<SubjectMasterDto>>.Fail(ex.Message));
+        }
     }
 
     [HttpPost("subject")]
@@ -96,6 +189,14 @@ public sealed class MasterController : ControllerBase
         return data is null
             ? Ok(ApiResponse<SubjectMasterDto>.Fail(error ?? "Unable to save subject."))
             : Ok(ApiResponse<SubjectMasterDto>.Ok(data, "Subject saved."));
+    }
+
+    [HttpPost("subject/import")]
+    public async Task<IActionResult> ImportSubjects([FromBody] ImportSubjectRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _masterService.ImportSubjectsAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import subjects."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(data, $"Imported {data.ImportedCount} subject(s). Skipped {data.SkippedCount}."));
     }
 
     [HttpDelete("subject/{subjectId:long}")]

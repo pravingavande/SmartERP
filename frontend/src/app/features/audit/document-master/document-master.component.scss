@@ -1,0 +1,19 @@
+@import '../../../shared/styles/master-shared.scss';
+@import '../party-master/party-master.component.scss';
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.master-modal-wide {
+  width: min(100%, 640px);
+}
+
+.master-modal-header .hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}

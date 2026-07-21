@@ -64,11 +64,83 @@ public sealed class ImportItemRequestDto
     public IReadOnlyList<long> ItemIds { get; set; } = [];
 }
 
+public sealed class DocumentMasterDto
+{
+    public long DocumentID { get; init; }
+    public long UnderOrgID { get; init; }
+    public long SrNo { get; init; }
+    public string DocumentName { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+    public string? OrganizationName { get; init; }
+}
+
+public sealed class SaveDocumentRequestDto
+{
+    [JsonPropertyName("documentID")]
+    public long DocumentID { get; set; }
+
+    [JsonPropertyName("underOrgID")]
+    public long UnderOrgID { get; set; }
+
+    [JsonPropertyName("srNo")]
+    public long SrNo { get; set; }
+
+    [JsonPropertyName("documentName")]
+    public string DocumentName { get; set; } = string.Empty;
+
+    [JsonPropertyName("isActive")]
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class ImportDocumentRequestDto
+{
+    [JsonPropertyName("destinationOrgID")]
+    public long DestinationOrgID { get; set; }
+
+    [JsonPropertyName("documentIds")]
+    public IReadOnlyList<long> DocumentIds { get; set; } = [];
+}
+
+public sealed class CategoryMasterDto
+{
+    public long CategoryID { get; init; }
+    public long UnderOrgID { get; init; }
+    public string CategoryName { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+    public string? OrganizationName { get; init; }
+}
+
+public sealed class SaveCategoryRequestDto
+{
+    [JsonPropertyName("categoryID")]
+    public long CategoryID { get; set; }
+
+    [JsonPropertyName("underOrgID")]
+    public long UnderOrgID { get; set; }
+
+    [JsonPropertyName("categoryName")]
+    public string CategoryName { get; set; } = string.Empty;
+
+    [JsonPropertyName("isActive")]
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class ImportCategoryRequestDto
+{
+    [JsonPropertyName("destinationOrgID")]
+    public long DestinationOrgID { get; set; }
+
+    [JsonPropertyName("categoryIds")]
+    public IReadOnlyList<long> CategoryIds { get; set; } = [];
+}
+
 public sealed class SubjectMasterDto
 {
     public long SubjectID { get; init; }
+    public long UnderOrgID { get; init; }
     public string SubjectName { get; init; } = string.Empty;
     public bool IsActive { get; init; }
+    public string? OrganizationName { get; init; }
 }
 
 public sealed class SaveSubjectRequestDto
@@ -76,11 +148,23 @@ public sealed class SaveSubjectRequestDto
     [JsonPropertyName("subjectID")]
     public long SubjectID { get; set; }
 
+    [JsonPropertyName("underOrgID")]
+    public long UnderOrgID { get; set; }
+
     [JsonPropertyName("subjectName")]
     public string SubjectName { get; set; } = string.Empty;
 
     [JsonPropertyName("isActive")]
     public bool IsActive { get; set; } = true;
+}
+
+public sealed class ImportSubjectRequestDto
+{
+    [JsonPropertyName("destinationOrgID")]
+    public long DestinationOrgID { get; set; }
+
+    [JsonPropertyName("subjectIds")]
+    public IReadOnlyList<long> SubjectIds { get; set; } = [];
 }
 
 public sealed class MasterOptionDto

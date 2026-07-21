@@ -70,6 +70,22 @@ export class MasterHubComponent {
       adminOnly: true
     },
     {
+      label: 'Document Master',
+      description: 'Manage documents for your organization',
+      icon: 'register',
+      route: '/audit/document-master',
+      tone: 'document',
+      adminOnly: true
+    },
+    {
+      label: 'Category Master',
+      description: 'Manage categories for your organization',
+      icon: 'register',
+      route: '/audit/category-master',
+      tone: 'category',
+      adminOnly: true
+    },
+    {
       label: 'Event Types Master',
       description: 'Sanstha-wise event type definitions',
       icon: 'event-calendar',

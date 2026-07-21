@@ -28,14 +28,49 @@ export interface ImportClassResult {
   skippedCount: number;
 }
 
+export interface DocumentMasterItem {
+  documentID: number;
+  underOrgID: number;
+  srNo: number;
+  documentName: string;
+  isActive: boolean;
+  organizationName?: string | null;
+}
+
+export interface DocumentFormState {
+  documentID: number | null;
+  underOrgID: number | null;
+  srNo: number | null;
+  documentName: string;
+  isActive: boolean;
+}
+
+export interface CategoryMasterItem {
+  categoryID: number;
+  underOrgID: number;
+  categoryName: string;
+  isActive: boolean;
+  organizationName?: string | null;
+}
+
+export interface CategoryFormState {
+  categoryID: number | null;
+  underOrgID: number | null;
+  categoryName: string;
+  isActive: boolean;
+}
+
 export interface SubjectMasterItem {
   subjectID: number;
+  underOrgID: number;
   subjectName: string;
   isActive: boolean;
+  organizationName?: string | null;
 }
 
 export interface SubjectFormState {
   subjectID: number | null;
+  underOrgID: number | null;
   subjectName: string;
   isActive: boolean;
 }

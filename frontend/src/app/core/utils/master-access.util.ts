@@ -9,6 +9,8 @@ export const ADMIN_ONLY_MASTER_ROUTE_PATHS = [
   'audit/donation-head-master',
   'audit/leave-type-master',
   'audit/class-master',
+  'audit/document-master',
+  'audit/category-master',
   'audit/event-types-master',
   'audit/subject-master',
   'stock/item-group-master',

@@ -82,13 +82,89 @@ public sealed class MasterService : IMasterService
         }
     }
 
-    public Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(string? search, CancellationToken cancellationToken = default)
-        => _repository.GetSubjectListAsync(search, cancellationToken);
+    public Task<IReadOnlyList<DocumentMasterDto>> GetDocumentListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
+        => _repository.GetDocumentListAsync(orgId, search, cancellationToken);
+
+    public Task<long?> GetDocumentNextSrNoAsync(long orgId, CancellationToken cancellationToken = default)
+        => _repository.GetDocumentNextSrNoAsync(orgId, cancellationToken);
+
+    public async Task<(DocumentMasterDto? Data, string? Error)> SaveDocumentAsync(SaveDocumentRequestDto request, CancellationToken cancellationToken = default)
+    {
+        request.DocumentName = MasterValidators.Trim(request.DocumentName);
+        var error = MasterValidators.FirstError(
+            MasterValidators.RequirePositiveId(request.UnderOrgID, "Organization"),
+            MasterValidators.RequirePositiveId(request.SrNo, "Sr No"),
+            MasterValidators.RequireText(request.DocumentName, "Document name"));
+        if (error is not null) return (null, error);
+        try
+        {
+            var id = await _repository.SaveDocumentAsync(request, cancellationToken).ConfigureAwait(false);
+            var saved = await _repository.GetDocumentByIdAsync(id, cancellationToken).ConfigureAwait(false);
+            return saved is null || string.IsNullOrWhiteSpace(saved.DocumentName) ? (null, "Unable to save document.") : (saved, null);
+        }
+        catch (SqlException ex) { return (null, ex.Message); }
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteDocumentAsync(long documentId, CancellationToken cancellationToken = default)
+    {
+        if (documentId <= 0) return (false, "Document is required.");
+        try { await _repository.DeleteDocumentAsync(documentId, cancellationToken).ConfigureAwait(false); return (true, null); }
+        catch (SqlException ex) { return (false, ex.Message); }
+    }
+
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportDocumentsAsync(ImportDocumentRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationOrgID <= 0) return (null, "Organization is required.");
+        if (request.DestinationOrgID == 1) return (null, "Cannot import into the source organization.");
+        if (request.DocumentIds is null || request.DocumentIds.Count == 0) return (null, "Select at least one document to import.");
+        try { return (await _repository.ImportDocumentsAsync(request.DestinationOrgID, request.DocumentIds, cancellationToken).ConfigureAwait(false), null); }
+        catch (SqlException ex) { return (null, ex.Message); }
+    }
+
+    public Task<IReadOnlyList<CategoryMasterDto>> GetCategoryListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
+        => _repository.GetCategoryListAsync(orgId, search, cancellationToken);
+
+    public async Task<(CategoryMasterDto? Data, string? Error)> SaveCategoryAsync(SaveCategoryRequestDto request, CancellationToken cancellationToken = default)
+    {
+        request.CategoryName = MasterValidators.Trim(request.CategoryName);
+        var error = MasterValidators.FirstError(
+            MasterValidators.RequirePositiveId(request.UnderOrgID, "Organization"),
+            MasterValidators.RequireText(request.CategoryName, "Category name"));
+        if (error is not null) return (null, error);
+        try
+        {
+            var id = await _repository.SaveCategoryAsync(request, cancellationToken).ConfigureAwait(false);
+            var saved = await _repository.GetCategoryByIdAsync(id, cancellationToken).ConfigureAwait(false);
+            return saved is null || string.IsNullOrWhiteSpace(saved.CategoryName) ? (null, "Unable to save category.") : (saved, null);
+        }
+        catch (SqlException ex) { return (null, ex.Message); }
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteCategoryAsync(long categoryId, CancellationToken cancellationToken = default)
+    {
+        if (categoryId <= 0) return (false, "Category is required.");
+        try { await _repository.DeleteCategoryAsync(categoryId, cancellationToken).ConfigureAwait(false); return (true, null); }
+        catch (SqlException ex) { return (false, ex.Message); }
+    }
+
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportCategoriesAsync(ImportCategoryRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationOrgID <= 0) return (null, "Organization is required.");
+        if (request.DestinationOrgID == 1) return (null, "Cannot import into the source organization.");
+        if (request.CategoryIds is null || request.CategoryIds.Count == 0) return (null, "Select at least one category to import.");
+        try { return (await _repository.ImportCategoriesAsync(request.DestinationOrgID, request.CategoryIds, cancellationToken).ConfigureAwait(false), null); }
+        catch (SqlException ex) { return (null, ex.Message); }
+    }
+
+    public Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
+        => _repository.GetSubjectListAsync(orgId, search, cancellationToken);
 
     public async Task<(SubjectMasterDto? Data, string? Error)> SaveSubjectAsync(SaveSubjectRequestDto request, CancellationToken cancellationToken = default)
     {
         request.SubjectName = MasterValidators.Trim(request.SubjectName);
-        var error = MasterValidators.FirstError(MasterValidators.RequireText(request.SubjectName, "Subject name"));
+        var error = MasterValidators.FirstError(
+            MasterValidators.RequirePositiveId(request.UnderOrgID, "Organization"),
+            MasterValidators.RequireText(request.SubjectName, "Subject name"));
         if (error is not null) return (null, error);
 
         try
@@ -117,6 +193,15 @@ public sealed class MasterService : IMasterService
         {
             return (false, ex.Message);
         }
+    }
+
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportSubjectsAsync(ImportSubjectRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationOrgID <= 0) return (null, "Organization is required.");
+        if (request.DestinationOrgID == 1) return (null, "Cannot import into the source organization.");
+        if (request.SubjectIds is null || request.SubjectIds.Count == 0) return (null, "Select at least one subject to import.");
+        try { return (await _repository.ImportSubjectsAsync(request.DestinationOrgID, request.SubjectIds, cancellationToken).ConfigureAwait(false), null); }
+        catch (SqlException ex) { return (null, ex.Message); }
     }
 
     public Task<AcademicScheduleLookupsDto> GetAcademicScheduleLookupsAsync(long userId, CancellationToken cancellationToken = default)

@@ -12,10 +12,24 @@ public interface IMasterRepository
     Task DeleteClassAsync(long classId, CancellationToken cancellationToken = default);
     Task<ImportClassResultDto> ImportClassesAsync(long destinationOrgId, IReadOnlyList<long> classIds, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(string? search, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DocumentMasterDto>> GetDocumentListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
+    Task<DocumentMasterDto?> GetDocumentByIdAsync(long documentId, CancellationToken cancellationToken = default);
+    Task<long?> GetDocumentNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);
+    Task<long> SaveDocumentAsync(SaveDocumentRequestDto request, CancellationToken cancellationToken = default);
+    Task DeleteDocumentAsync(long documentId, CancellationToken cancellationToken = default);
+    Task<ImportClassResultDto> ImportDocumentsAsync(long destinationOrgId, IReadOnlyList<long> documentIds, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CategoryMasterDto>> GetCategoryListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
+    Task<CategoryMasterDto?> GetCategoryByIdAsync(long categoryId, CancellationToken cancellationToken = default);
+    Task<long> SaveCategoryAsync(SaveCategoryRequestDto request, CancellationToken cancellationToken = default);
+    Task DeleteCategoryAsync(long categoryId, CancellationToken cancellationToken = default);
+    Task<ImportClassResultDto> ImportCategoriesAsync(long destinationOrgId, IReadOnlyList<long> categoryIds, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<SubjectMasterDto?> GetSubjectByIdAsync(long subjectId, CancellationToken cancellationToken = default);
     Task<long> SaveSubjectAsync(SaveSubjectRequestDto request, CancellationToken cancellationToken = default);
     Task DeleteSubjectAsync(long subjectId, CancellationToken cancellationToken = default);
+    Task<ImportClassResultDto> ImportSubjectsAsync(long destinationOrgId, IReadOnlyList<long> subjectIds, CancellationToken cancellationToken = default);
 
     Task<AcademicScheduleLookupsDto> GetAcademicScheduleLookupsAsync(long userId, CancellationToken cancellationToken = default);
     Task<long> GetCurrentAyIdAsync(CancellationToken cancellationToken = default);
@@ -52,9 +66,21 @@ public interface IMasterService
     Task<(bool Success, string? Error)> DeleteClassAsync(long classId, CancellationToken cancellationToken = default);
     Task<(ImportClassResultDto? Data, string? Error)> ImportClassesAsync(ImportClassRequestDto request, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(string? search, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DocumentMasterDto>> GetDocumentListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
+    Task<long?> GetDocumentNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);
+    Task<(DocumentMasterDto? Data, string? Error)> SaveDocumentAsync(SaveDocumentRequestDto request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> DeleteDocumentAsync(long documentId, CancellationToken cancellationToken = default);
+    Task<(ImportClassResultDto? Data, string? Error)> ImportDocumentsAsync(ImportDocumentRequestDto request, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CategoryMasterDto>> GetCategoryListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
+    Task<(CategoryMasterDto? Data, string? Error)> SaveCategoryAsync(SaveCategoryRequestDto request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> DeleteCategoryAsync(long categoryId, CancellationToken cancellationToken = default);
+    Task<(ImportClassResultDto? Data, string? Error)> ImportCategoriesAsync(ImportCategoryRequestDto request, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<(SubjectMasterDto? Data, string? Error)> SaveSubjectAsync(SaveSubjectRequestDto request, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteSubjectAsync(long subjectId, CancellationToken cancellationToken = default);
+    Task<(ImportClassResultDto? Data, string? Error)> ImportSubjectsAsync(ImportSubjectRequestDto request, CancellationToken cancellationToken = default);
 
     Task<AcademicScheduleLookupsDto> GetAcademicScheduleLookupsAsync(long userId, CancellationToken cancellationToken = default);
     Task<long> GetCurrentAyIdAsync(CancellationToken cancellationToken = default);

@@ -85,9 +85,107 @@ public sealed class MasterRepository : IMasterRepository
         };
     }
 
-    public Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(string? search, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<DocumentMasterDto>> GetDocumentListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        p.Add("@Search", search);
+        return _executor.QueryListAsync<DocumentMasterDto>("dbo.sp_Document_GetList", p, cancellationToken);
+    }
+
+    public Task<DocumentMasterDto?> GetDocumentByIdAsync(long documentId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DocumentID", documentId);
+        return _executor.QuerySingleOrDefaultAsync<DocumentMasterDto>("dbo.sp_Document_GetById", p, cancellationToken);
+    }
+
+    public async Task<long?> GetDocumentNextSrNoAsync(long orgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        var row = await _executor.QuerySingleOrDefaultAsync<NextSrNoDto>("dbo.sp_Document_GetNextSrNo", p, cancellationToken).ConfigureAwait(false);
+        return row?.NextSrNo;
+    }
+
+    public async Task<long> SaveDocumentAsync(SaveDocumentRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DocumentID", request.DocumentID > 0 ? request.DocumentID : null, DbType.Int64, ParameterDirection.InputOutput);
+        p.Add("@UnderOrgID", request.UnderOrgID);
+        p.Add("@SrNo", request.SrNo > 0 ? request.SrNo : null);
+        p.Add("@DocumentName", request.DocumentName);
+        p.Add("@IsActive", request.IsActive);
+        await _executor.ExecuteAsync("dbo.sp_Document_Save", p, cancellationToken).ConfigureAwait(false);
+        return p.Get<long>("@DocumentID");
+    }
+
+    public Task DeleteDocumentAsync(long documentId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DocumentID", documentId);
+        return _executor.ExecuteAsync("dbo.sp_Document_Delete", p, cancellationToken);
+    }
+
+    public async Task<ImportClassResultDto> ImportDocumentsAsync(long destinationOrgId, IReadOnlyList<long> documentIds, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DestinationOrgID", destinationOrgId);
+        p.Add("@DocumentIdsJson", JsonSerializer.Serialize(documentIds));
+        p.Add("@ImportedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        p.Add("@SkippedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        var row = await _executor.QuerySingleOrDefaultAsync<ImportClassResultDto>("dbo.sp_Document_Import", p, cancellationToken).ConfigureAwait(false);
+        return row ?? new ImportClassResultDto { ImportedCount = p.Get<int?>("@ImportedCount") ?? 0, SkippedCount = p.Get<int?>("@SkippedCount") ?? 0 };
+    }
+
+    public Task<IReadOnlyList<CategoryMasterDto>> GetCategoryListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
+        p.Add("@Search", search);
+        return _executor.QueryListAsync<CategoryMasterDto>("dbo.sp_Category_GetList", p, cancellationToken);
+    }
+
+    public Task<CategoryMasterDto?> GetCategoryByIdAsync(long categoryId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@CategoryID", categoryId);
+        return _executor.QuerySingleOrDefaultAsync<CategoryMasterDto>("dbo.sp_Category_GetById", p, cancellationToken);
+    }
+
+    public async Task<long> SaveCategoryAsync(SaveCategoryRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@CategoryID", request.CategoryID > 0 ? request.CategoryID : null, DbType.Int64, ParameterDirection.InputOutput);
+        p.Add("@UnderOrgID", request.UnderOrgID);
+        p.Add("@CategoryName", request.CategoryName);
+        p.Add("@IsActive", request.IsActive);
+        await _executor.ExecuteAsync("dbo.sp_Category_Save", p, cancellationToken).ConfigureAwait(false);
+        return p.Get<long>("@CategoryID");
+    }
+
+    public Task DeleteCategoryAsync(long categoryId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@CategoryID", categoryId);
+        return _executor.ExecuteAsync("dbo.sp_Category_Delete", p, cancellationToken);
+    }
+
+    public async Task<ImportClassResultDto> ImportCategoriesAsync(long destinationOrgId, IReadOnlyList<long> categoryIds, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DestinationOrgID", destinationOrgId);
+        p.Add("@CategoryIdsJson", JsonSerializer.Serialize(categoryIds));
+        p.Add("@ImportedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        p.Add("@SkippedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        var row = await _executor.QuerySingleOrDefaultAsync<ImportClassResultDto>("dbo.sp_Category_Import", p, cancellationToken).ConfigureAwait(false);
+        return row ?? new ImportClassResultDto { ImportedCount = p.Get<int?>("@ImportedCount") ?? 0, SkippedCount = p.Get<int?>("@SkippedCount") ?? 0 };
+    }
+
+    public Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@OrgID", orgId);
         p.Add("@Search", search);
         return _executor.QueryListAsync<SubjectMasterDto>("dbo.sp_Subject_GetList", p, cancellationToken);
     }
@@ -103,6 +201,7 @@ public sealed class MasterRepository : IMasterRepository
     {
         var p = new DynamicParameters();
         p.Add("@SubjectID", request.SubjectID > 0 ? request.SubjectID : null, DbType.Int64, ParameterDirection.InputOutput);
+        p.Add("@UnderOrgID", request.UnderOrgID);
         p.Add("@SubjectName", request.SubjectName);
         p.Add("@IsActive", request.IsActive);
         await _executor.ExecuteAsync("dbo.sp_Subject_Save", p, cancellationToken).ConfigureAwait(false);
@@ -114,6 +213,17 @@ public sealed class MasterRepository : IMasterRepository
         var p = new DynamicParameters();
         p.Add("@SubjectID", subjectId);
         return _executor.ExecuteAsync("dbo.sp_Subject_Delete", p, cancellationToken);
+    }
+
+    public async Task<ImportClassResultDto> ImportSubjectsAsync(long destinationOrgId, IReadOnlyList<long> subjectIds, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DestinationOrgID", destinationOrgId);
+        p.Add("@SubjectIdsJson", JsonSerializer.Serialize(subjectIds));
+        p.Add("@ImportedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        p.Add("@SkippedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        var row = await _executor.QuerySingleOrDefaultAsync<ImportClassResultDto>("dbo.sp_Subject_Import", p, cancellationToken).ConfigureAwait(false);
+        return row ?? new ImportClassResultDto { ImportedCount = p.Get<int?>("@ImportedCount") ?? 0, SkippedCount = p.Get<int?>("@SkippedCount") ?? 0 };
     }
 
     public async Task<AcademicScheduleLookupsDto> GetAcademicScheduleLookupsAsync(long userId, CancellationToken cancellationToken = default)

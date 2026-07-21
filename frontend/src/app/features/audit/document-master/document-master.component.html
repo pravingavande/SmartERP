@@ -1,14 +1,14 @@
 <section class="audit-page master-page">
   <header class="page-header">
     <div>
-      <h1>Subject Master</h1>
-      <p>Manage subjects for academic schedule</p>
+      <h1>Document Master</h1>
+      <p>Manage documents for your organization</p>
     </div>
     <div class="header-actions">
       @if (canImport()) {
         <button type="button" class="btn btn-outline" (click)="openImport()">Import</button>
       }
-      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Subject</button>
+      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Document</button>
     </div>
   </header>
 
@@ -30,7 +30,7 @@
     </label>
     <label class="field">
       <span class="field-label">Search</span>
-      <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search subject name">
+      <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search document name">
     </label>
   </div>
   @if (errorMessage()) {
@@ -39,20 +39,22 @@
 
   <div class="audit-layout list-only">
     <aside class="list-panel">
-      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading subjects...</p> }
+      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading documents...</p> }
       <div class="records-table-wrap">
         <table class="records-table">
           <thead>
             <tr>
-              <th><button type="button" class="sort-btn" (click)="toggleSort('subjectName')">Subject Name</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('documentName')">Document Name</button></th>
               <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            @for (item of paginatedItems(); track item.subjectID) {
+            @for (item of paginatedItems(); track item.documentID) {
               <tr>
-                <td>{{ item.subjectName }}</td>
+                <td>{{ item.srNo }}</td>
+                <td>{{ item.documentName }}</td>
                 <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
                   <app-list-action-btn action="edit" (clicked)="editItem(item)" />
@@ -60,7 +62,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="3" class="empty">No subjects for selected organization</td></tr>
+              <tr><td colspan="4" class="empty">No documents for selected organization</td></tr>
             }
           </tbody>
         </table>
@@ -79,7 +81,7 @@
     <div class="master-modal-overlay">
       <div class="master-modal-box">
         <header class="master-modal-header">
-          <h2>{{ formMode() === 'edit' ? 'Edit Subject' : 'New Subject' }}</h2>
+          <h2>{{ formMode() === 'edit' ? 'Edit Document' : 'New Document' }}</h2>
         </header>
         <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
@@ -88,10 +90,25 @@
               <span class="field-label">Org / Sanstha</span>
               <input class="field-control field-readonly" type="text" readonly [value]="selectedOrgName()">
             </label>
-            <label class="field full" [class.field-invalid]="fieldError('subjectName')">
-              <span class="field-label">Subject Name *</span>
-              <input class="field-control" required [ngModel]="form().subjectName" (ngModelChange)="updateForm('subjectName', $event)" name="subjectName">
-              @if (fieldError('subjectName')) { <span class="field-error">{{ fieldError('subjectName') }}</span> }
+            <label class="field" [class.field-invalid]="fieldError('srNo')">
+              <span class="field-label">Sr No *</span>
+              <input
+                class="field-control"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                step="1"
+                required
+                [ngModel]="form().srNo"
+                (ngModelChange)="onSrNoChange($event)"
+                name="srNo"
+              >
+              @if (fieldError('srNo')) { <span class="field-error">{{ fieldError('srNo') }}</span> }
+            </label>
+            <label class="field full" [class.field-invalid]="fieldError('documentName')">
+              <span class="field-label">Document Name *</span>
+              <input class="field-control" required [ngModel]="form().documentName" (ngModelChange)="updateForm('documentName', $event)" name="documentName">
+              @if (fieldError('documentName')) { <span class="field-error">{{ fieldError('documentName') }}</span> }
             </label>
             @if (formMode() === 'edit') {
               <label class="field field-check master-active-field">
@@ -113,7 +130,7 @@
     <div class="master-modal-overlay">
       <div class="master-modal-box master-modal-wide">
         <header class="master-modal-header">
-          <h2>Import Subjects</h2>
+          <h2>Import Documents</h2>
           <p class="hint">Source: Organization 1 → Destination: {{ selectedOrgName() }}</p>
         </header>
         <div class="master-modal-form">
@@ -137,7 +154,7 @@
             </label>
           </div>
           @if (importSourceLoading()) {
-            <p class="loading-hint">Loading source subjects...</p>
+            <p class="loading-hint">Loading source documents...</p>
           } @else {
             <div class="records-table-wrap import-grid">
               <table class="records-table import-table">
@@ -151,23 +168,25 @@
                         [attr.aria-label]="'Select all'"
                       >
                     </th>
-                    <th class="name-col">Subject Name</th>
+                    <th class="sr-col">Sr</th>
+                    <th class="name-col">Document Name</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (item of filteredImportSourceItems(); track item.subjectID) {
+                  @for (item of filteredImportSourceItems(); track item.documentID) {
                     <tr>
                       <td class="check-col">
                         <input
                           type="checkbox"
-                          [checked]="isImportSelected(item.subjectID)"
-                          (change)="toggleImportItem(item.subjectID, $any($event.target).checked)"
+                          [checked]="isImportSelected(item.documentID)"
+                          (change)="toggleImportItem(item.documentID, $any($event.target).checked)"
                         >
                       </td>
-                      <td class="name-col">{{ item.subjectName }}</td>
+                      <td class="sr-col">{{ item.srNo }}</td>
+                      <td class="name-col">{{ item.documentName }}</td>
                     </tr>
                   } @empty {
-                    <tr><td colspan="2" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} subjects found</td></tr>
+                    <tr><td colspan="3" class="empty">No {{ importLanguage() === 'M' ? 'Marathi' : 'English' }} documents found</td></tr>
                   }
                 </tbody>
               </table>

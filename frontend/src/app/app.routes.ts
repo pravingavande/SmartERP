@@ -117,6 +117,18 @@ export const routes: Routes = [
         canActivate: [adminMasterGuard]
       },
       {
+        path: 'audit/document-master',
+        loadComponent: () =>
+          import('./features/audit/document-master/document-master.component').then((m) => m.DocumentMasterComponent),
+        canActivate: [adminMasterGuard]
+      },
+      {
+        path: 'audit/category-master',
+        loadComponent: () =>
+          import('./features/audit/category-master/category-master.component').then((m) => m.CategoryMasterComponent),
+        canActivate: [adminMasterGuard]
+      },
+      {
         path: 'audit/event-types-master',
         loadComponent: () =>
           import('./features/audit/event-types-master/event-types-master.component').then((m) => m.EventTypesMasterComponent),

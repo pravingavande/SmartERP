@@ -15,6 +15,7 @@ export interface SchoolOrgProfileHint {
   orgId?: number | null;
   SchoolCode?: number | null;
   orgID?: number | null;
+  sansthaId?: number | null;
 }
 
 /** UserRoleID 1 or 2 = sanstha-scoped admin (all schools in OrgGroupID from API). */
@@ -46,6 +47,65 @@ export function filterSchoolOrgs<T extends SchoolOrgOption>(orgs: T[], user: Aut
   }
 
   return orgs;
+}
+
+/**
+ * Sanstha org list for masters scoped by UnderOrgID (Account Register, Document, etc.).
+ * Falls back to login session when API returns no sanstha orgs.
+ */
+export function resolveSansthaOrgs(
+  fromApi: SchoolOrgSelectOption[],
+  user: AuthUser | null
+): SchoolOrgSelectOption[] {
+  if (fromApi.length) return fromApi;
+
+  const orgs: SchoolOrgSelectOption[] = [];
+
+  for (const ctx of user?.schoolContexts ?? []) {
+    if (!ctx.sansthaId || !ctx.sansthaName) continue;
+    if (!orgs.some((o) => o.orgID === ctx.sansthaId)) {
+      orgs.push({
+        orgID: ctx.sansthaId,
+        organizationName: ctx.sansthaName,
+        schoolCode: ctx.sansthaId
+      });
+    }
+  }
+
+  if (!orgs.length && user?.sansthaId && user.sansthaName) {
+    orgs.push({
+      orgID: user.sansthaId,
+      organizationName: user.sansthaName,
+      schoolCode: user.sansthaId
+    });
+  }
+
+  return orgs;
+}
+
+/**
+ * Default Sanstha selection — same rules as Account Register Master:
+ * 1) session sansthaId  2) profile orgId  3) first available sanstha.
+ */
+export function resolveDefaultSansthaOrgId(
+  orgs: SchoolOrgSelectOption[],
+  profile?: SchoolOrgProfileHint | null,
+  user?: AuthUser | null
+): number | null {
+  if (!orgs.length) return null;
+
+  if (user?.sansthaId) {
+    const match = orgs.find((o) => o.orgID === user.sansthaId);
+    if (match) return match.orgID;
+  }
+
+  const profileOrgId = profile?.orgId ?? profile?.orgID ?? null;
+  if (profileOrgId) {
+    const match = orgs.find((o) => o.orgID === profileOrgId);
+    if (match) return match.orgID;
+  }
+
+  return orgs[0]?.orgID ?? null;
 }
 
 /**

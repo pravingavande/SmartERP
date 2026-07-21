@@ -103,6 +103,7 @@ public sealed class MasterServiceInventoryTests
         var (data, error) = await CreateService().SaveSubjectAsync(new SaveSubjectRequestDto
         {
             SubjectID = 3,
+            UnderOrgID = 1,
             SubjectName = "  Maths  "
         });
 

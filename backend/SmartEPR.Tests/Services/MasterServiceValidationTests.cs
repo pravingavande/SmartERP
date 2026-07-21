@@ -14,7 +14,7 @@ public sealed class MasterServiceValidationTests
     public async Task SaveSubjectAsync_RejectsBlankSubjectName()
     {
         var service = new MasterService(_repository.Object);
-        var request = new SaveSubjectRequestDto { SubjectName = "   " };
+        var request = new SaveSubjectRequestDto { UnderOrgID = 1, SubjectName = "   " };
 
         var (data, error) = await service.SaveSubjectAsync(request);
 

@@ -4,7 +4,9 @@ import { DRHeadFormState } from '../models/donation.model';
 import { LeaveTypeFormState } from '../models/leave.model';
 import {
   AcademicScheduleFormState,
+  CategoryFormState,
   ClassFormState,
+  DocumentFormState,
   ItemFormState,
   ItemGroupFormState,
   StockFormState,
@@ -42,8 +44,29 @@ export function validateClassForm(form: ClassFormState): FieldErrors {
   return errors;
 }
 
+export function validateDocumentForm(form: DocumentFormState): FieldErrors {
+  const errors: FieldErrors = {
+    ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
+    ...requireText(form.documentName, 'documentName', 'Document name')
+  };
+  if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {
+    errors['srNo'] = 'Sr No is required and must be a positive whole number.';
+  }
+  return errors;
+}
+
+export function validateCategoryForm(form: CategoryFormState): FieldErrors {
+  return {
+    ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
+    ...requireText(form.categoryName, 'categoryName', 'Category name')
+  };
+}
+
 export function validateSubjectForm(form: SubjectFormState): FieldErrors {
-  return requireText(form.subjectName, 'subjectName', 'Subject name');
+  return {
+    ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
+    ...requireText(form.subjectName, 'subjectName', 'Subject name')
+  };
 }
 
 export function validatePartyForm(form: Pick<PartyFormState, 'orgID' | 'partyName'>): FieldErrors {

@@ -4,15 +4,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AuditLookups } from '../../../core/models/audit.model';
-import { SubjectFormState, SubjectMasterItem } from '../../../core/models/master.model';
+import { CategoryFormState, CategoryMasterItem } from '../../../core/models/master.model';
 import { AuditService } from '../../../core/services/audit.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { MasterService } from '../../../core/services/master.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
-import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
-import { mapBackendMessageToFieldErrors, validateSubjectForm } from '../../../core/utils/master-validation.util';
+import { pageCount, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
+import { mapBackendMessageToFieldErrors, validateCategoryForm } from '../../../core/utils/master-validation.util';
 import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { resolveDefaultSansthaOrgId, resolveSansthaOrgs } from '../../../core/utils/org-access.util';
@@ -21,13 +21,13 @@ import { MasterListPaginationComponent } from '../../../shared/components/master
 type FormMode = 'new' | 'edit';
 
 @Component({
-  selector: 'app-subject-master',
+  selector: 'app-category-master',
   imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
-  templateUrl: './subject-master.component.html',
-  styleUrl: './subject-master.component.scss',
+  templateUrl: './category-master.component.html',
+  styleUrl: './category-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SubjectMasterComponent {
+export class CategoryMasterComponent {
   private readonly master = inject(MasterService);
   private readonly audit = inject(AuditService);
   private readonly auth = inject(AuthService);
@@ -42,19 +42,19 @@ export class SubjectMasterComponent {
   readonly saveError = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly lookups = signal<AuditLookups | null>(null);
-  readonly items = signal<SubjectMasterItem[]>([]);
-  readonly form = signal<SubjectFormState>(this.emptyForm());
+  readonly items = signal<CategoryMasterItem[]>([]);
+  readonly form = signal<CategoryFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
   readonly importVisible = signal(false);
   readonly importLoading = signal(false);
   readonly importSourceLoading = signal(false);
-  readonly importSourceItems = signal<SubjectMasterItem[]>([]);
+  readonly importSourceItems = signal<CategoryMasterItem[]>([]);
   readonly importSelectedIds = signal<Set<number>>(new Set());
   readonly importLanguage = signal<ImportLanguage>('M');
   readonly listOrgID = signal<number | null>(null);
   readonly searchText = signal('');
-  readonly sortKey = signal<keyof SubjectMasterItem>('subjectName');
+  readonly sortKey = signal<keyof CategoryMasterItem>('categoryName');
   readonly sortDir = signal<SortDirection>('asc');
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
@@ -64,17 +64,17 @@ export class SubjectMasterComponent {
   readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
   readonly canImport = computed(() => {
     const orgId = this.listOrgID();
-    return orgId != null && orgId > 0 && orgId !== SubjectMasterComponent.ImportSourceOrgID;
+    return orgId != null && orgId > 0 && orgId !== CategoryMasterComponent.ImportSourceOrgID;
   });
   readonly importSelectedCount = computed(() => this.importSelectedIds().size);
   readonly filteredImportSourceItems = computed(() => {
     const lang = this.importLanguage();
-    return this.importSourceItems().filter((item) => matchesImportLanguage(item.subjectName, lang));
+    return this.importSourceItems().filter((item) => matchesImportLanguage(item.categoryName, lang));
   });
   readonly importAllSelected = computed(() => {
     const items = this.filteredImportSourceItems();
     const selected = this.importSelectedIds();
-    return items.length > 0 && items.every((x) => selected.has(x.subjectID));
+    return items.length > 0 && items.every((x) => selected.has(x.categoryID));
   });
   readonly selectedOrgName = computed(() => {
     const orgId = this.listOrgID();
@@ -84,13 +84,11 @@ export class SubjectMasterComponent {
   readonly filteredItems = computed(() => {
     const q = this.searchText().trim().toLowerCase();
     let rows = this.items();
-    if (q) rows = rows.filter((x) => x.subjectName.toLowerCase().includes(q));
+    if (q) rows = rows.filter((x) => x.categoryName.toLowerCase().includes(q));
     return sortRows(rows, this.sortKey(), this.sortDir());
   });
   readonly listPageCount = computed(() => pageCount(this.filteredItems().length, this.listPageSize()));
   readonly paginatedItems = computed(() => paginateRows(this.filteredItems(), this.listPageIndex(), this.listPageSize()));
-  readonly listPageStart = computed(() => pageRange(this.filteredItems().length, this.listPageIndex(), this.listPageSize()).start);
-  readonly listPageEnd = computed(() => pageRange(this.filteredItems().length, this.listPageIndex(), this.listPageSize()).end);
 
   constructor() {
     this.loadLookups();
@@ -131,7 +129,7 @@ export class SubjectMasterComponent {
     if (!orgId) return;
     this.listLoading.set(true);
     this.master
-      .getSubjects(orgId)
+      .getCategories(orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (list) => {
@@ -141,7 +139,7 @@ export class SubjectMasterComponent {
         },
         error: (err: Error) => {
           this.listLoading.set(false);
-          this.errorMessage.set(err.message ?? 'Unable to load subjects.');
+          this.errorMessage.set(err.message ?? 'Unable to load categories.');
         }
       });
   }
@@ -151,7 +149,7 @@ export class SubjectMasterComponent {
     this.listPageIndex.set(0);
   }
 
-  toggleSort(key: keyof SubjectMasterItem): void {
+  toggleSort(key: keyof CategoryMasterItem): void {
     if (this.sortKey() === key) this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
     else {
       this.sortKey.set(key);
@@ -183,28 +181,28 @@ export class SubjectMasterComponent {
     this.form.set({ ...this.emptyForm(), underOrgID: orgId });
   }
 
-  editItem(item: SubjectMasterItem): void {
+  editItem(item: CategoryMasterItem): void {
     this.formMode.set('edit');
     this.formVisible.set(true);
     this.errorMessage.set(null);
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.form.set({
-      subjectID: item.subjectID,
+      categoryID: item.categoryID,
       underOrgID: item.underOrgID,
-      subjectName: item.subjectName,
+      categoryName: item.categoryName,
       isActive: item.isActive
     });
   }
 
-  deleteItem(item: SubjectMasterItem): void {
-    if (!confirm(`Deactivate subject "${item.subjectName}"?`)) return;
-    this.master.deleteSubject(item.subjectID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((r) => {
+  deleteItem(item: CategoryMasterItem): void {
+    if (!confirm(`Deactivate category "${item.categoryName}"?`)) return;
+    this.master.deleteCategory(item.categoryID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((r) => {
       if (!r.success) {
-        this.toast.showError(r.message ?? 'Unable to delete subject.', 'Delete failed');
+        this.toast.showError(r.message ?? 'Unable to delete category.', 'Delete failed');
         return;
       }
-      this.toast.showSuccess('Subject deactivated.', 'Deleted');
+      this.toast.showSuccess('Category deactivated.', 'Deleted');
       this.loadList();
     });
   }
@@ -237,7 +235,7 @@ export class SubjectMasterComponent {
     this.importSelectedIds.set(new Set());
     this.importSourceLoading.set(true);
     this.master
-      .getSubjects(SubjectMasterComponent.ImportSourceOrgID)
+      .getCategories(CategoryMasterComponent.ImportSourceOrgID)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (list) => {
@@ -245,12 +243,12 @@ export class SubjectMasterComponent {
           const active = list.filter((x) => x.isActive !== false);
           this.importSourceItems.set(active);
           if (!active.length) {
-            this.toast.showError('No source subjects found in organization 1.', 'Import');
+            this.toast.showError('No source categories found in organization 1.', 'Import');
           }
         },
         error: (err: Error) => {
           this.importSourceLoading.set(false);
-          this.toast.showError(err.message ?? 'Unable to load source subjects.', 'Import failed');
+          this.toast.showError(err.message ?? 'Unable to load source categories.', 'Import failed');
         }
       });
   }
@@ -266,7 +264,7 @@ export class SubjectMasterComponent {
 
   onImportLanguageChange(lang: ImportLanguage): void {
     this.importLanguage.set(lang);
-    const visibleIds = new Set(this.filteredImportSourceItems().map((x) => x.subjectID));
+    const visibleIds = new Set(this.filteredImportSourceItems().map((x) => x.categoryID));
     this.importSelectedIds.update((selected) => {
       const next = new Set<number>();
       for (const id of selected) {
@@ -290,7 +288,7 @@ export class SubjectMasterComponent {
   }
 
   selectAllImport(): void {
-    this.importSelectedIds.set(new Set(this.filteredImportSourceItems().map((x) => x.subjectID)));
+    this.importSelectedIds.set(new Set(this.filteredImportSourceItems().map((x) => x.categoryID)));
   }
 
   unselectAllImport(): void {
@@ -305,51 +303,51 @@ export class SubjectMasterComponent {
       return;
     }
     if (!ids.length) {
-      this.toast.showError('Select at least one subject to import.', 'Import');
+      this.toast.showError('Select at least one category to import.', 'Import');
       return;
     }
 
     this.importLoading.set(true);
     this.master
-      .importSubjects(orgId, ids)
+      .importCategories(orgId, ids)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ data, message }) => {
         this.importLoading.set(false);
         if (!data) {
-          this.toast.showError(message ?? 'Unable to import subjects.', 'Import failed');
+          this.toast.showError(message ?? 'Unable to import categories.', 'Import failed');
           return;
         }
         this.closeImport();
         this.loadList();
         this.toast.showSuccess(
-          message ?? `Imported ${data.importedCount} subject(s). Skipped ${data.skippedCount}.`,
+          message ?? `Imported ${data.importedCount} category(s). Skipped ${data.skippedCount}.`,
           'Imported'
         );
       });
   }
 
-  updateForm<K extends keyof SubjectFormState>(key: K, value: SubjectFormState[K]): void {
+  updateForm<K extends keyof CategoryFormState>(key: K, value: CategoryFormState[K]): void {
     this.fieldErrors.update((e) => removeFieldError(e, String(key)));
     this.form.update((f) => ({ ...f, [key]: value }));
   }
 
   save(): void {
     const f = this.form();
-    const errors = validateSubjectForm(f);
+    const errors = validateCategoryForm(f);
     if (hasFieldErrors(errors)) {
       this.fieldErrors.set(errors);
       return;
     }
     this.loading.set(true);
-    this.master.saveSubject(f).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ data, message }) => {
+    this.master.saveCategory(f).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ data, message }) => {
       this.loading.set(false);
       if (!data) {
         this.fieldErrors.set(mapBackendMessageToFieldErrors(message));
-        this.saveError.set(message ?? 'Unable to save subject.');
-        toastOnSave(this.toast, false, { entity: 'Subject', mode: this.formMode(), errorMessage: message ?? 'Unable to save subject.' });
+        this.saveError.set(message ?? 'Unable to save category.');
+        toastOnSave(this.toast, false, { entity: 'Category', mode: this.formMode(), errorMessage: message ?? 'Unable to save category.' });
         return;
       }
-      toastOnSave(this.toast, true, { entity: 'Subject', mode: this.formMode() });
+      toastOnSave(this.toast, true, { entity: 'Category', mode: this.formMode() });
       this.closeForm();
       this.loadList();
     });
@@ -359,7 +357,7 @@ export class SubjectMasterComponent {
     return this.fieldErrors()[key] ?? null;
   }
 
-  private emptyForm(): SubjectFormState {
-    return { subjectID: null, underOrgID: null, subjectName: '', isActive: true };
+  private emptyForm(): CategoryFormState {
+    return { categoryID: null, underOrgID: null, categoryName: '', isActive: true };
   }
 }
