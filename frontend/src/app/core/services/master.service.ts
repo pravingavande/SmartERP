@@ -12,6 +12,9 @@ import {
   CategoryMasterItem,
   ClassFormState,
   ClassMasterItem,
+  DesignationFormState,
+  DesignationMasterItem,
+  DesignationOption,
   DocumentFormState,
   DocumentMasterItem,
   DocumentTypeOption,
@@ -230,6 +233,93 @@ export class MasterService {
       })),
       catchError(() => of({ data: null, message: 'Unable to import categories.' }))
     );
+  }
+
+  getDesignationMaster(underOrgId?: number | null): Observable<DesignationOption[]> {
+    let params = new HttpParams();
+    if (underOrgId) params = params.set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<DesignationOption[]>>(`${this.base}/designation/master`, { params }).pipe(
+      map((r) => {
+        if (!r.success) throw new Error(r.message ?? 'Unable to load designations.');
+        return r.data ? r.data.map((x) => this.normalizeDesignationOption(x)) : [];
+      }),
+      catchError((err: { message?: string; error?: { message?: string } }) =>
+        throwError(() => new Error(err?.error?.message ?? err?.message ?? 'Unable to load designations.'))
+      )
+    );
+  }
+
+  getDesignationList(underOrgId: number): Observable<DesignationMasterItem[]> {
+    const params = new HttpParams().set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<DesignationMasterItem[]>>(`${this.base}/designation`, { params }).pipe(
+      map((r) => {
+        if (!r.success) throw new Error(r.message ?? 'Unable to load designations.');
+        return r.data ? r.data.map((x) => this.normalizeDesignation(x)) : [];
+      }),
+      catchError((err: { message?: string; error?: { message?: string } }) =>
+        throwError(() => new Error(err?.error?.message ?? err?.message ?? 'Unable to load designations.'))
+      )
+    );
+  }
+
+  getNextDesignationSrNo(underOrgId: number): Observable<number> {
+    const params = new HttpParams().set('underOrgId', underOrgId.toString());
+    return this.http.get<ApiResponse<{ nextSrNo: number }>>(`${this.base}/designation/next-srno`, { params }).pipe(
+      map((r) => Number(r.data?.nextSrNo ?? (r.data as { NextSrNo?: number } | null)?.NextSrNo ?? 1)),
+      catchError(() => of(1))
+    );
+  }
+
+  saveDesignation(form: DesignationFormState): Observable<{ data: DesignationMasterItem | null; message?: string | null }> {
+    const payload = {
+      designationID: form.designationID ?? 0,
+      underOrgID: form.underOrgID ?? 0,
+      srNo: form.srNo ?? 0,
+      designationName: trimText(form.designationName),
+      designationNameShort: trimText(form.designationNameShort) || null,
+      leaveYear: form.leaveYear,
+      hmOrPrincipal: form.hmOrPrincipal,
+      isActive: form.isActive
+    };
+    return this.http.post<ApiResponse<DesignationMasterItem>>(`${this.base}/designation`, payload).pipe(
+      map((r) => ({
+        data: apiSuccess(r) && apiData(r) ? this.normalizeDesignation(apiData(r)) : null,
+        message: apiMessage(r)
+      })),
+      catchError(() => of({ data: null, message: 'Unable to save designation.' }))
+    );
+  }
+
+  deleteDesignation(designationId: number): Observable<{ success: boolean; message?: string | null }> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.base}/designation/${designationId}`).pipe(
+      map((r) => ({ success: !!r.success, message: r.message ?? null })),
+      catchError(() => of({ success: false, message: 'Unable to delete designation.' }))
+    );
+  }
+
+  importDesignations(destinationUnderOrgId: number, designationIds: number[]): Observable<{ data: ImportClassResult | null; message?: string | null }> {
+    return this.http
+      .post<ApiResponse<ImportClassResult>>(`${this.base}/designation/import`, {
+        destinationUnderOrgID: destinationUnderOrgId,
+        designationIds
+      })
+      .pipe(
+        map((r) => {
+          if (!r.success) throw new Error(r.message ?? 'Unable to import designations.');
+          return {
+            data: r.data
+              ? {
+                  importedCount: Number(r.data.importedCount ?? (r.data as { ImportedCount?: number }).ImportedCount ?? 0),
+                  skippedCount: Number(r.data.skippedCount ?? (r.data as { SkippedCount?: number }).SkippedCount ?? 0)
+                }
+              : null,
+            message: r.message ?? null
+          };
+        }),
+        catchError((err: { message?: string; error?: { message?: string } }) =>
+          throwError(() => new Error(err?.error?.message ?? err?.message ?? 'Unable to import designations.'))
+        )
+      );
   }
 
   getSubjects(orgId: number, search?: string | null): Observable<SubjectMasterItem[]> {
@@ -702,6 +792,35 @@ export class MasterService {
       remark: (r.remark ?? r['Remark']) as string | null | undefined,
       organizationName: (r.organizationName ?? r['OrganizationName']) as string | null | undefined,
       itemName: (r.itemName ?? r['ItemName']) as string | null | undefined
+    };
+  }
+
+  private normalizeDesignation(raw: unknown): DesignationMasterItem {
+    const r = raw as DesignationMasterItem & Record<string, unknown>;
+    return {
+      designationID: Number(r.designationID ?? r['DesignationID'] ?? 0),
+      underOrgID: Number(r.underOrgID ?? r['UnderOrgID'] ?? 0),
+      srNo: Number(r.srNo ?? r['SrNo'] ?? 0),
+      designationName: String(r.designationName ?? r['DesignationName'] ?? ''),
+      designationNameShort: (r.designationNameShort ?? r['DesignationNameShort']) as string | null | undefined,
+      leaveYear: (r.leaveYear ?? r['LeaveYear']) != null ? Number(r.leaveYear ?? r['LeaveYear']) : null,
+      hmOrPrincipal: Boolean(r.hmOrPrincipal ?? r['HMOrPrincipal'] ?? false),
+      isActive: Boolean(r.isActive ?? r['IsActive'] ?? true),
+      organizationName: (r.organizationName ?? r['OrganizationName']) as string | null | undefined
+    };
+  }
+
+  private normalizeDesignationOption(raw: unknown): DesignationOption {
+    const r = raw as DesignationOption & Record<string, unknown>;
+    return {
+      designationID: Number(r.designationID ?? r['DesignationID'] ?? 0),
+      underOrgID: (r.underOrgID ?? r['UnderOrgID']) != null ? Number(r.underOrgID ?? r['UnderOrgID']) : null,
+      srNo: (r.srNo ?? r['SrNo']) != null ? Number(r.srNo ?? r['SrNo']) : null,
+      designationName: String(r.designationName ?? r['DesignationName'] ?? ''),
+      designationNameShort: (r.designationNameShort ?? r['DesignationNameShort']) as string | null | undefined,
+      leaveYear: (r.leaveYear ?? r['LeaveYear']) != null ? Number(r.leaveYear ?? r['LeaveYear']) : null,
+      hmOrPrincipal: Boolean(r.hmOrPrincipal ?? r['HMOrPrincipal'] ?? false),
+      isActive: Boolean(r.isActive ?? r['IsActive'] ?? true)
     };
   }
 

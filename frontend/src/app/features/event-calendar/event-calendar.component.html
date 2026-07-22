@@ -68,7 +68,8 @@
           <button type="button" class="day-cell" [class.outside]="!day.inMonth" [class.today]="isToday(day.iso)" (click)="onDayClick(day.iso)">
             <span class="day-num">{{ day.date.getDate() }}</span>
             @for (ev of eventsForDay(day.iso); track ev.eventID) {
-              <span class="chip event" [style.border-left-color]="eventColor(ev)" (click)="$event.stopPropagation(); editEvent(ev)">{{ ev.title }}</span>
+              <!-- Direct edit on event chip disabled — click date to open day popup, then View/Edit -->
+              <span class="chip event" [style.border-left-color]="eventColor(ev)">{{ ev.title }}</span>
             }
           </button>
         }
@@ -76,14 +77,15 @@
       } @else if (viewMode() === 'week') {
       <div class="week-grid">
         @for (day of weekDaysGrid(); track day.iso) {
-          <div class="week-day-col" [class.today]="isToday(day.iso)">
+          <div class="week-day-col" [class.today]="isToday(day.iso)" (click)="onDayClick(day.iso)" role="button" tabindex="0">
             <div class="week-day-head">
               <span class="dow">{{ day.date.toLocaleDateString('en-IN', { weekday: 'short' }) }}</span>
               <span class="day-num">{{ day.date.getDate() }}</span>
             </div>
             <div class="week-day-events">
               @for (ev of eventsForDay(day.iso); track ev.eventID) {
-                <button type="button" class="chip event week-event" [style.border-left-color]="eventColor(ev)" (click)="editEvent(ev)">{{ ev.title }}</button>
+                <!-- Direct edit on event chip disabled — click date column to open day popup -->
+                <span class="chip event week-event" [style.border-left-color]="eventColor(ev)">{{ ev.title }}</span>
               }
             </div>
           </div>
@@ -95,7 +97,8 @@
         <ul class="today-events">
           @for (ev of eventsForDay(todayIso()); track ev.eventID) {
             <li>
-              <button type="button" class="entry-btn" (click)="editEvent(ev)">
+              <!-- Direct edit disabled — opens day popup for today -->
+              <button type="button" class="entry-btn" (click)="onDayClick(todayIso())">
                 <span class="date">{{ ev.startTime || 'All day' }}</span>
                 <span class="name">{{ ev.title }}</span>
               </button>
@@ -106,7 +109,7 @@
         </ul>
       </div>
       }
-      <p class="hint">Click a date to view events · Click an event chip to view/edit</p>
+      <p class="hint">Click a date to view events · Use View / Edit in the day popup</p>
     </div>
   </div>
 </section>

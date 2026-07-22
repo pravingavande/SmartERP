@@ -68,6 +68,9 @@ public sealed class TeacherController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetList([FromQuery] TeacherListFilterDto filter, CancellationToken cancellationToken)
     {
+        if (!filter.SansthaID.HasValue && TryGetSansthaId(out var sansthaId))
+            filter = WithSansthaId(filter, sansthaId);
+
         var items = await _teacherService.GetListAsync(filter, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<IReadOnlyList<TeacherListItemDto>>.Ok(items));
     }
@@ -86,6 +89,9 @@ public sealed class TeacherController : ControllerBase
     {
         if (!TryGetUserId(out var actorUserId))
             return Unauthorized(ApiResponse<TeacherDto>.Fail("Invalid token."));
+
+        if (!request.SansthaID.HasValue && TryGetSansthaId(out var sansthaId))
+            request.SansthaID = sansthaId;
 
         var (saved, error) = await _teacherService.SaveAsync(actorUserId, request, cancellationToken).ConfigureAwait(false);
         return saved is null
@@ -236,4 +242,24 @@ public sealed class TeacherController : ControllerBase
             ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
         return long.TryParse(claim, out userId);
     }
+
+    private bool TryGetSansthaId(out long sansthaId)
+    {
+        sansthaId = 0;
+        var claim = User.FindFirstValue("sanstha_id");
+        return long.TryParse(claim, out sansthaId) && sansthaId > 0;
+    }
+
+    private static TeacherListFilterDto WithSansthaId(TeacherListFilterDto filter, long sansthaId) => new()
+    {
+        OrgID = filter.OrgID,
+        SansthaID = sansthaId,
+        Search = filter.Search,
+        ShalarthID = filter.ShalarthID,
+        MobileNo = filter.MobileNo,
+        DesignationCode = filter.DesignationCode,
+        Subject = filter.Subject,
+        UserRoleID = filter.UserRoleID,
+        IsActive = filter.IsActive
+    };
 }

@@ -7,6 +7,7 @@ export const ADMIN_ONLY_MASTER_ROUTE_PATHS = [
   'audit/account-register-master',
   'audit/account-register-define',
   'audit/donation-head-master',
+  'audit/designation-master',
   'audit/leave-type-master',
   'audit/class-master',
   'audit/document-master',

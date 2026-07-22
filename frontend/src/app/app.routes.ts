@@ -105,6 +105,12 @@ export const routes: Routes = [
         canActivate: [adminMasterGuard]
       },
       {
+        path: 'audit/designation-master',
+        loadComponent: () =>
+          import('./features/audit/designation-master/designation-master.component').then((m) => m.DesignationMasterComponent),
+        canActivate: [adminMasterGuard]
+      },
+      {
         path: 'audit/leave-type-master',
         loadComponent: () =>
           import('./features/employee/leave-type-master/leave-type-master.component').then((m) => m.LeaveTypeMasterComponent),

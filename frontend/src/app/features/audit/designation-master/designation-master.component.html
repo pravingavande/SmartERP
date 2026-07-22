@@ -1,0 +1,251 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Designation Master</h1>
+      <p>Sanstha-wise designations for staff and teachers</p>
+    </div>
+    <div class="header-actions">
+      @if (canImport()) {
+        <button type="button" class="btn btn-outline" (click)="openImport()">Import</button>
+      }
+      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Designation</button>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <label class="field">
+      <span class="field-label">Org / Sanstha</span>
+      <select
+        class="field-control"
+        [disabled]="lookupsLoading()"
+        [ngModel]="listOrgID()"
+        (ngModelChange)="onListOrgChange($event ? +$event : null)"
+        name="listOrgID"
+      >
+        <option [ngValue]="null">-- Select Sanstha --</option>
+        @for (o of sansthaOrgs(); track o.orgID) {
+          <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">Search</span>
+      <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search designation">
+    </label>
+    <label class="field">
+      <span class="field-label">Status</span>
+      <select class="field-control" [ngModel]="listStatusActive()" (ngModelChange)="onListStatusChange($event)" name="listStatus">
+        <option [ngValue]="true">Active</option>
+        <option [ngValue]="false">Inactive</option>
+      </select>
+    </label>
+  </div>
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading designations...</p> }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('designationName')">Designation</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('designationNameShort')">Short</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('leaveYear')">Leave Year</button></th>
+              <th>HM/Principal</th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('isActive')">Status</button></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of paginatedItems(); track item.designationID) {
+              <tr>
+                <td>{{ item.srNo }}</td>
+                <td>{{ item.designationName }}</td>
+                <td>{{ item.designationNameShort || '—' }}</td>
+                <td>{{ item.leaveYear ?? '—' }}</td>
+                <td>{{ item.hmOrPrincipal ? 'Yes' : 'No' }}</td>
+                <td>{{ item.isActive ? 'Active' : 'Inactive' }}</td>
+                <td class="actions">
+                  <app-list-action-btn action="edit" (clicked)="editItem(item)" />
+                  @if (item.isActive) {
+                    <app-list-action-btn action="delete" (clicked)="deleteItem(item)" />
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="empty">No designations for selected organization</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-master-list-pagination
+        [total]="filteredItems().length"
+        [pageIndex]="listPageIndex()"
+        [pageSize]="listPageSize()"
+        (pageIndexChange)="goToListPage($event)"
+        (pageSizeChange)="onListPageSizeChange($event)"
+      />
+    </aside>
+  </div>
+
+  @if (formVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box">
+        <header class="master-modal-header">
+          <h2>{{ formMode() === 'edit' ? 'Edit Designation' : 'New Designation' }}</h2>
+        </header>
+        <form class="master-modal-form voucher-form" (ngSubmit)="save()">
+          @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
+          <div class="form-grid">
+            <label class="field full">
+              <span class="field-label">Org / Sanstha</span>
+              <input class="field-control field-readonly" type="text" readonly [value]="selectedOrgName()">
+            </label>
+            <label class="field" [class.field-invalid]="fieldError('srNo')">
+              <span class="field-label">Sr No *</span>
+              <input
+                class="field-control"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                step="1"
+                required
+                [ngModel]="form().srNo"
+                (ngModelChange)="onSrNoChange($event)"
+                name="srNo"
+              >
+              @if (fieldError('srNo')) { <span class="field-error">{{ fieldError('srNo') }}</span> }
+            </label>
+            <label class="field full" [class.field-invalid]="fieldError('designationName')">
+              <span class="field-label">Designation Name *</span>
+              <input class="field-control" required [ngModel]="form().designationName" (ngModelChange)="updateForm('designationName', $event)" name="designationName">
+              @if (fieldError('designationName')) { <span class="field-error">{{ fieldError('designationName') }}</span> }
+            </label>
+            <label class="field">
+              <span class="field-label">Short Name</span>
+              <input class="field-control" [ngModel]="form().designationNameShort" (ngModelChange)="updateForm('designationNameShort', $event)" name="designationNameShort">
+            </label>
+            <label class="field" [class.field-invalid]="fieldError('leaveYear')">
+              <span class="field-label">Leave Year</span>
+              <input
+                class="field-control"
+                type="number"
+                inputmode="numeric"
+                min="0"
+                step="1"
+                [ngModel]="form().leaveYear"
+                (ngModelChange)="onLeaveYearChange($event)"
+                name="leaveYear"
+              >
+              @if (fieldError('leaveYear')) { <span class="field-error">{{ fieldError('leaveYear') }}</span> }
+            </label>
+            <label class="field field-check master-active-field">
+              <input type="checkbox" [ngModel]="form().hmOrPrincipal" (ngModelChange)="updateForm('hmOrPrincipal', $event)" name="hmOrPrincipal">
+              <span>HM / Principal</span>
+            </label>
+            @if (formMode() === 'edit') {
+              <label class="field field-check master-active-field">
+                <input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="updateForm('isActive', $event)" name="isActive">
+                <span>Active</span>
+              </label>
+            }
+          </div>
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading()">Save</button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (importVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>Import Designations</h2>
+          <p class="hint">Source: Organization 1 → Destination: {{ selectedOrgName() }}</p>
+        </header>
+        <div class="master-modal-form">
+          <div class="import-toolbar">
+            <div class="import-toolbar-left">
+              <button type="button" class="btn btn-outline" (click)="selectAllImport()" [disabled]="importSourceLoading() || !filteredImportSourceItems().length">Select All</button>
+              <button type="button" class="btn btn-outline" (click)="unselectAllImport()" [disabled]="importSourceLoading() || importSelectedCount() === 0">Unselect All</button>
+              <span class="hint">Loaded: {{ importSourceItems().length }} · Showing: {{ filteredImportSourceItems().length }} · Selected: {{ importSelectedCount() }}</span>
+            </div>
+            <label class="field import-lang-field">
+              <span class="field-label">Language</span>
+              <select
+                class="field-control"
+                [ngModel]="importLanguage()"
+                (ngModelChange)="onImportLanguageChange($event)"
+                name="importLanguage"
+              >
+                <option value="A">All</option>
+                <option value="M">Marathi</option>
+                <option value="E">English</option>
+              </select>
+            </label>
+          </div>
+          @if (importSourceLoading()) {
+            <p class="loading-hint">Loading source designations...</p>
+          } @else {
+            <div class="records-table-wrap import-grid">
+              <table class="records-table import-table">
+                <thead>
+                  <tr>
+                    <th class="check-col">
+                      <input
+                        type="checkbox"
+                        [checked]="importAllSelected()"
+                        (change)="$any($event.target).checked ? selectAllImport() : unselectAllImport()"
+                        [attr.aria-label]="'Select all'"
+                      >
+                    </th>
+                    <th class="sr-col">Sr</th>
+                    <th class="name-col">Designation</th>
+                    <th>Short</th>
+                    <th>Leave Year</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of filteredImportSourceItems(); track item.designationID) {
+                    <tr>
+                      <td class="check-col">
+                        <input
+                          type="checkbox"
+                          [checked]="isImportSelected(item.designationID)"
+                          (change)="toggleImportItem(item.designationID, $any($event.target).checked)"
+                        >
+                      </td>
+                      <td class="sr-col">{{ item.srNo ?? '—' }}</td>
+                      <td class="name-col">{{ item.designationName }}</td>
+                      <td>{{ item.designationNameShort || '—' }}</td>
+                      <td>{{ item.leaveYear ?? '—' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="empty">
+                      @if (importSourceItems().length) {
+                        No designations match the language filter. Try All, English, or Marathi.
+                      } @else {
+                        No source designations found in organization 1.
+                      }
+                    </td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="closeImport()" [disabled]="importLoading()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirmImport()" [disabled]="importLoading() || importSelectedCount() === 0">Import</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+  }
+</section>

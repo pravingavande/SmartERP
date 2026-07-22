@@ -6,6 +6,7 @@ import {
   AcademicScheduleFormState,
   CategoryFormState,
   ClassFormState,
+  DesignationFormState,
   DocumentFormState,
   ItemFormState,
   ItemGroupFormState,
@@ -109,6 +110,20 @@ export function validateDRHeadForm(form: DRHeadFormState): FieldErrors {
   };
   if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {
     errors['srNo'] = 'Sr No is required and must be a positive whole number.';
+  }
+  return errors;
+}
+
+export function validateDesignationForm(form: DesignationFormState): FieldErrors {
+  const errors: FieldErrors = {
+    ...requireId(form.underOrgID, 'underOrgID', 'Organization'),
+    ...requireText(form.designationName, 'designationName', 'Designation name')
+  };
+  if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {
+    errors['srNo'] = 'Sr No is required and must be a positive whole number.';
+  }
+  if (form.leaveYear != null && (!Number.isFinite(form.leaveYear) || form.leaveYear < 0 || !Number.isInteger(form.leaveYear))) {
+    errors['leaveYear'] = 'Leave year must be a valid whole number.';
   }
   return errors;
 }

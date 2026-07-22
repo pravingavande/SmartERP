@@ -180,6 +180,81 @@ public sealed class MasterController : ControllerBase
         return success ? Ok(ApiResponse<bool>.Ok(true, "Category deleted.")) : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete category."));
     }
 
+    [HttpGet("designation/master")]
+    public async Task<IActionResult> GetDesignationMaster([FromQuery] long? underOrgId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var items = await _masterService.GetDesignationMasterAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<DesignationOptionDto>>.Ok(items));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<DesignationOptionDto>>.Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("designation")]
+    public async Task<IActionResult> GetDesignationList([FromQuery] long underOrgId, CancellationToken cancellationToken)
+    {
+        if (underOrgId <= 0)
+            return Ok(ApiResponse<IReadOnlyList<DesignationMasterDto>>.Fail("Organization is required."));
+        try
+        {
+            var items = await _masterService.GetDesignationListAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<DesignationMasterDto>>.Ok(items));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<DesignationMasterDto>>.Fail(ex.Message));
+        }
+    }
+
+    [HttpGet("designation/next-srno")]
+    public async Task<IActionResult> GetDesignationNextSrNo([FromQuery] long underOrgId, CancellationToken cancellationToken)
+    {
+        if (underOrgId <= 0)
+            return Ok(ApiResponse<NextSrNoDto>.Fail("Organization is required."));
+        try
+        {
+            var next = await _masterService.GetNextDesignationSrNoAsync(underOrgId, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<NextSrNoDto>.Ok(new NextSrNoDto { NextSrNo = (int)next }));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<NextSrNoDto>.Fail(ex.Message));
+        }
+    }
+
+    [HttpPost("designation")]
+    public async Task<IActionResult> SaveDesignation([FromBody] SaveDesignationRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _masterService.SaveDesignationAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<DesignationMasterDto>.Fail(error ?? "Unable to save designation."))
+            : Ok(ApiResponse<DesignationMasterDto>.Ok(data, "Designation saved."));
+    }
+
+    [HttpPost("designation/import")]
+    public async Task<IActionResult> ImportDesignations([FromBody] ImportDesignationRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _masterService.ImportDesignationsAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<ImportClassResultDto>.Fail(error ?? "Unable to import designations."))
+            : Ok(ApiResponse<ImportClassResultDto>.Ok(
+                data,
+                $"Imported {data.ImportedCount} designation(s). Skipped {data.SkippedCount}."));
+    }
+
+    [HttpDelete("designation/{designationId:long}")]
+    public async Task<IActionResult> DeleteDesignation(long designationId, CancellationToken cancellationToken)
+    {
+        var (success, error) = await _masterService.DeleteDesignationAsync(designationId, cancellationToken).ConfigureAwait(false);
+        return success
+            ? Ok(ApiResponse<bool>.Ok(true, "Designation deleted."))
+            : Ok(ApiResponse<bool>.Fail(error ?? "Unable to delete designation."));
+    }
+
     [HttpGet("subject")]
     public async Task<IActionResult> GetSubjectList([FromQuery] long orgId, [FromQuery] string? search, CancellationToken cancellationToken)
     {

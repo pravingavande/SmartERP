@@ -162,7 +162,15 @@ export class VoucherEntryComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ lookups: data, profile }) => {
         this.lookupsLoading.set(false);
-        this.lookups.set(data);
+        this.lookups.set(
+          data
+            ? {
+                ...data,
+                ledgerHeads: [],
+                bankLedgerHeads: []
+              }
+            : null
+        );
         if (!data?.orgs?.length) {
           this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
           return;
@@ -260,6 +268,9 @@ export class VoucherEntryComponent {
       this.accountRegisters.set([]);
       this.parties.set([]);
       this.vouchers.set([]);
+      this.lookups.update((prev) =>
+        prev ? { ...prev, ledgerHeads: [], bankLedgerHeads: [] } : prev
+      );
       return;
     }
     this.closeForm();
@@ -306,6 +317,9 @@ export class VoucherEntryComponent {
     if (!orgId) {
       this.accountRegisters.set([]);
       this.parties.set([]);
+      this.lookups.update((prev) =>
+        prev ? { ...prev, ledgerHeads: [], bankLedgerHeads: [] } : prev
+      );
       return;
     }
     this.refreshLedgerLookups(orgId);

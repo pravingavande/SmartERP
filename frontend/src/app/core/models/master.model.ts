@@ -68,6 +68,40 @@ export interface CategoryFormState {
   isActive: boolean;
 }
 
+export interface DesignationMasterItem {
+  designationID: number;
+  underOrgID: number;
+  srNo: number;
+  designationName: string;
+  designationNameShort?: string | null;
+  leaveYear?: number | null;
+  hmOrPrincipal: boolean;
+  isActive: boolean;
+  organizationName?: string | null;
+}
+
+export interface DesignationOption {
+  designationID: number;
+  underOrgID?: number | null;
+  srNo?: number | null;
+  designationName: string;
+  designationNameShort?: string | null;
+  leaveYear?: number | null;
+  hmOrPrincipal: boolean;
+  isActive: boolean;
+}
+
+export interface DesignationFormState {
+  designationID: number | null;
+  underOrgID: number | null;
+  srNo: number | null;
+  designationName: string;
+  designationNameShort: string;
+  leaveYear: number | null;
+  hmOrPrincipal: boolean;
+  isActive: boolean;
+}
+
 export interface SubjectMasterItem {
   subjectID: number;
   underOrgID: number;

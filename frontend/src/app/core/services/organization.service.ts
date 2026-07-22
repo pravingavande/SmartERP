@@ -55,8 +55,9 @@ export class OrganizationService {
     if (filter.search?.trim()) params = params.set('search', filter.search.trim());
     if (filter.businessCategoryID) params = params.set('businessCategoryID', filter.businessCategoryID.toString());
     if (filter.schoolCategoryID) params = params.set('schoolCategoryID', filter.schoolCategoryID.toString());
-    // API param underOrgID = selected Org / School scope (OrgID or children under it)
-    if (filter.orgId) params = params.set('underOrgID', filter.orgId.toString());
+    // Selected school, or logged-in sanstha when "-- All --" (never unscoped global list)
+    const scopeOrgId = filter.orgId ?? this.auth.currentUser()?.sansthaId ?? null;
+    if (scopeOrgId) params = params.set('underOrgID', scopeOrgId.toString());
     if (filter.cityName?.trim()) params = params.set('cityName', filter.cityName.trim());
     if (filter.isActive !== null && filter.isActive !== undefined) {
       params = params.set('isActive', filter.isActive.toString());
@@ -156,10 +157,10 @@ export class OrganizationService {
   private normalizeLookups(raw: Record<string, unknown>): OrganizationLookups {
     const businessCategories = (raw['businessCategories'] ?? raw['BusinessCategories'] ?? []) as Array<Record<string, unknown>>;
     const schoolCategories = (raw['schoolCategories'] ?? raw['SchoolCategories'] ?? []) as Array<Record<string, unknown>>;
-    const rawSansthaOrgs =
-      ((raw['sansthaOrgs'] ?? raw['SansthaOrgs']) as Array<Record<string, unknown>>) ?? [];
+    // Prefer orgs (Teacher Master); fall back to legacy sansthaOrgs until API is updated
     const rawOrgs =
-      ((raw['orgs'] ?? raw['Orgs']) as Array<Record<string, unknown>>) ?? [];
+      ((raw['orgs'] ?? raw['Orgs'] ?? raw['sansthaOrgs'] ?? raw['SansthaOrgs']) as Array<Record<string, unknown>>) ?? [];
+    const mapped = rawOrgs.map((x) => this.normalizeOrg(x));
     return {
       businessCategories: businessCategories.map((x) => ({
         id: Number(x['id'] ?? x['Id'] ?? 0),
@@ -169,8 +170,7 @@ export class OrganizationService {
         id: Number(x['id'] ?? x['Id'] ?? 0),
         name: String(x['name'] ?? x['Name'] ?? '')
       })),
-      orgs: this.auth.filterSchoolOrgs(rawOrgs.map((x) => this.normalizeOrg(x))),
-      sansthaOrgs: rawSansthaOrgs.map((x) => this.normalizeOrg(x))
+      orgs: this.auth.filterSchoolOrgs(mapped)
     };
   }
 

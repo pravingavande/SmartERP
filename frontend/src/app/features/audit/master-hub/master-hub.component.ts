@@ -54,6 +54,14 @@ export class MasterHubComponent {
       adminOnly: true
     },
     {
+      label: 'Designation Master',
+      description: 'Sanstha-wise staff designations',
+      icon: 'staff',
+      route: '/audit/designation-master',
+      tone: 'designation',
+      adminOnly: true
+    },
+    {
       label: 'Leave Type Master',
       description: 'Define leave types for employee leave applications',
       icon: 'attendance',

@@ -26,6 +26,14 @@ public interface IMasterRepository
     Task DeleteCategoryAsync(long categoryId, CancellationToken cancellationToken = default);
     Task<ImportClassResultDto> ImportCategoriesAsync(long destinationOrgId, IReadOnlyList<long> categoryIds, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<DesignationOptionDto>> GetDesignationMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DesignationMasterDto>> GetDesignationListAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<DesignationMasterDto?> GetDesignationByIdAsync(long designationId, CancellationToken cancellationToken = default);
+    Task<long> GetNextDesignationSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<long> SaveDesignationAsync(SaveDesignationRequestDto request, CancellationToken cancellationToken = default);
+    Task DeleteDesignationAsync(long designationId, CancellationToken cancellationToken = default);
+    Task<ImportClassResultDto> ImportDesignationsAsync(long destinationUnderOrgId, IReadOnlyList<long> designationIds, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<SubjectMasterDto?> GetSubjectByIdAsync(long subjectId, CancellationToken cancellationToken = default);
     Task<long> SaveSubjectAsync(SaveSubjectRequestDto request, CancellationToken cancellationToken = default);
@@ -78,6 +86,13 @@ public interface IMasterService
     Task<(CategoryMasterDto? Data, string? Error)> SaveCategoryAsync(SaveCategoryRequestDto request, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteCategoryAsync(long categoryId, CancellationToken cancellationToken = default);
     Task<(ImportClassResultDto? Data, string? Error)> ImportCategoriesAsync(ImportCategoryRequestDto request, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DesignationOptionDto>> GetDesignationMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DesignationMasterDto>> GetDesignationListAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<long> GetNextDesignationSrNoAsync(long underOrgId, CancellationToken cancellationToken = default);
+    Task<(DesignationMasterDto? Data, string? Error)> SaveDesignationAsync(SaveDesignationRequestDto request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> DeleteDesignationAsync(long designationId, CancellationToken cancellationToken = default);
+    Task<(ImportClassResultDto? Data, string? Error)> ImportDesignationsAsync(ImportDesignationRequestDto request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(long orgId, string? search, CancellationToken cancellationToken = default);
     Task<(SubjectMasterDto? Data, string? Error)> SaveSubjectAsync(SaveSubjectRequestDto request, CancellationToken cancellationToken = default);

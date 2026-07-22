@@ -141,6 +141,7 @@
   background: #fff;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 
   &.today {
     border-color: var(--epr-orange);

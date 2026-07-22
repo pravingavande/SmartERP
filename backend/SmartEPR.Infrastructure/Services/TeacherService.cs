@@ -263,6 +263,7 @@ public sealed class TeacherService : ITeacherService
     {
         UserID = request.UserID,
         OrgID = request.OrgID,
+        SansthaID = request.SansthaID,
         StaffTypeID = request.StaffTypeID ?? TeacherStaffTypeId,
         UserRoleID = request.UserRoleID,
         DesignationCode = request.DesignationCode,

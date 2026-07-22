@@ -23,7 +23,7 @@ import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows } from '../../../core/utils/master-list.util';
 import { mapOrganizationBackendMessage, validateOrganizationForm, getOrganizationDocumentsSaveError } from '../../../core/utils/organization-validation.util';
-import { resolveDefaultSchoolOrgId, resolveSansthaOrgs } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import {
   serializeOrganizationDocuments,
   DUPLICATE_DOCUMENT_NAME_MESSAGE
@@ -82,9 +82,7 @@ export class OrganizationMasterComponent {
   readonly isSansthaCategory = computed(() => this.form().businessCategoryID === SANSTHA_BUSINESS_CATEGORY_ID);
   /** UserRoleID 3 (Employee) — view/edit only; cannot add or delete. */
   readonly canManageOrganizations = computed(() => this.auth.currentUser()?.userRoleId !== 3);
-  /** Sanstha orgs for list filter (UnderOrgID scope). */
-  readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
-  /** School orgs for form Org / School select. */
+  /** Same as Teacher Master — user-scoped school orgs from lookups API. */
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   /** Form Org / School select value: school itself on edit, list selection context on new. */
   readonly formOrgSelectValue = computed(() => {
@@ -118,8 +116,9 @@ export class OrganizationMasterComponent {
           this.items.set([]);
           return;
         }
-        const sansthaOrgs = resolveSansthaOrgs(data.sansthaOrgs ?? [], this.auth.currentUser());
-        this.lookups.set({ ...data, sansthaOrgs });
+        if (!data.orgs?.length) {
+          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
+        }
         this.listFilter.update((f) => ({ ...f, orgId: null, isActive: true }));
         this.loadList();
       });
@@ -149,11 +148,9 @@ export class OrganizationMasterComponent {
     if (this.formVisible()) this.closeForm();
     const lookups = this.lookups();
     const orgId =
-      this.listFilter().orgId ??
-      this.sansthaOrgs()[0]?.orgID ??
-      resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
+      this.listFilter().orgId ?? resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
     if (!orgId) {
-      this.errorMessage.set('Select a sanstha on the list page before adding a new organization.');
+      this.errorMessage.set('Select Sanstha on the list page before adding a new organization.');
       return;
     }
     this.errorMessage.set(null);

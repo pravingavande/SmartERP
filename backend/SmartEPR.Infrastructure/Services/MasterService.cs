@@ -160,6 +160,83 @@ public sealed class MasterService : IMasterService
         catch (SqlException ex) { return (null, ex.Message); }
     }
 
+    public Task<IReadOnlyList<DesignationOptionDto>> GetDesignationMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default)
+        => _repository.GetDesignationMasterAsync(underOrgId, cancellationToken);
+
+    public Task<IReadOnlyList<DesignationMasterDto>> GetDesignationListAsync(long underOrgId, CancellationToken cancellationToken = default)
+        => _repository.GetDesignationListAsync(underOrgId, cancellationToken);
+
+    public Task<long> GetNextDesignationSrNoAsync(long underOrgId, CancellationToken cancellationToken = default)
+        => _repository.GetNextDesignationSrNoAsync(underOrgId, cancellationToken);
+
+    public async Task<(DesignationMasterDto? Data, string? Error)> SaveDesignationAsync(
+        SaveDesignationRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        request.DesignationName = MasterValidators.Trim(request.DesignationName);
+        request.DesignationNameShort = string.IsNullOrWhiteSpace(request.DesignationNameShort)
+            ? null
+            : MasterValidators.Trim(request.DesignationNameShort);
+
+        var error = MasterValidators.FirstError(
+            MasterValidators.RequirePositiveId(request.UnderOrgID, "Organization"),
+            MasterValidators.RequirePositiveId(request.SrNo, "Sr No"),
+            MasterValidators.RequireText(request.DesignationName, "Designation name"));
+        if (error is not null) return (null, error);
+
+        try
+        {
+            var id = await _repository.SaveDesignationAsync(request, cancellationToken).ConfigureAwait(false);
+            var saved = await _repository.GetDesignationByIdAsync(id, cancellationToken).ConfigureAwait(false);
+            return saved is null || string.IsNullOrWhiteSpace(saved.DesignationName)
+                ? (null, "Unable to save designation.")
+                : (saved, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
+        }
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteDesignationAsync(long designationId, CancellationToken cancellationToken = default)
+    {
+        if (designationId <= 0) return (false, "Designation is required.");
+        try
+        {
+            await _repository.DeleteDesignationAsync(designationId, cancellationToken).ConfigureAwait(false);
+            return (true, null);
+        }
+        catch (SqlException ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    public async Task<(ImportClassResultDto? Data, string? Error)> ImportDesignationsAsync(
+        ImportDesignationRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.DestinationUnderOrgID <= 0)
+            return (null, "Organization is required.");
+        if (request.DestinationUnderOrgID == 1)
+            return (null, "Cannot import into the source organization.");
+        if (request.DesignationIds is null || request.DesignationIds.Count == 0)
+            return (null, "Select at least one designation to import.");
+
+        try
+        {
+            var result = await _repository.ImportDesignationsAsync(
+                request.DestinationUnderOrgID,
+                request.DesignationIds,
+                cancellationToken).ConfigureAwait(false);
+            return (result, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
+        }
+    }
+
     public Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
         => _repository.GetSubjectListAsync(orgId, search, cancellationToken);
 

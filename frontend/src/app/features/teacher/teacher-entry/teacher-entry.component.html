@@ -19,7 +19,7 @@
         fieldClass="field-org-wide"
         name="filterOrg"
         label="शाळा / कॉलेज / संस्था"
-        [nullLabel]="lbl('SelectSanstha', '-- Select Sanstha --')"
+        [nullLabel]="lbl('All', '-- All --')"
         [orgs]="schoolOrgs()"
         [value]="listFilter().orgId ?? null"
         (valueChange)="updateListFilter('orgId', $event)"

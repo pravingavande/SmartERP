@@ -1,63 +1,10 @@
--- UserMaster is shared by /staff and /teacher-master.
--- Undo StaffTypeID=2 mass backfill (047) that hid legacy staff from /staff.
--- /staff: all active UserMaster rows (original employee list).
--- /teacher-master: StaffTypeID IN (1, 2) OR legacy rows with teacher subject/qualification fields.
-
-USE SmartERP;
-GO
-
-UPDATE dbo.UserMaster
-SET StaffTypeID = NULL;
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Employee_GetList
-    @OrgID BIGINT = NULL,
-    @Search NVARCHAR(100) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        um.UserID,
-        um.Firstname,
-        um.MiddleName,
-        um.LastName,
-        um.EmployeeName,
-        um.EmployeeShortName,
-        um.MobileNo1,
-        um.OrgID,
-        om.OrganizationName,
-        um.DesignationID AS DesignationCode,
-        dm.DesignationName,
-        um.UserRoleID,
-        ur.UserRoleName,
-        um.IsActive
-    FROM dbo.UserMaster um
-    LEFT JOIN dbo.OrgMaster om
-        ON om.OrgID = um.OrgID
-       AND ISNULL(om.IsActive, 1) = 1
-    LEFT JOIN dbo.DesignationMaster dm
-        ON dm.DesignationID = um.DesignationID
-    LEFT JOIN dbo.UserRoleMaster ur
-        ON ur.UserRoleID = um.UserRoleID
-    WHERE um.IsActive = 1
-      AND (@OrgID IS NULL OR um.OrgID = @OrgID)
-      AND (
-          @Search IS NULL
-          OR @Search = ''
-          OR um.Firstname LIKE '%' + @Search + '%'
-          OR um.LastName LIKE '%' + @Search + '%'
-          OR um.EmployeeName LIKE '%' + @Search + '%'
-          OR um.EmployeeShortName LIKE '%' + @Search + '%'
-          OR um.MobileNo1 LIKE '%' + @Search + '%'
-          OR um.AppUserName LIKE '%' + @Search + '%'
-      )
-    ORDER BY um.Firstname, um.LastName, um.UserID;
-END
+-- Teacher Master: scope list/save by SansthaID + OrgID (school)
+SET NOCOUNT ON;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_Teacher_GetList
     @OrgID BIGINT = NULL,
+    @SansthaID BIGINT = NULL,
     @Search NVARCHAR(100) = NULL,
     @ShalarthID NVARCHAR(50) = NULL,
     @MobileNo NVARCHAR(50) = NULL,
@@ -110,7 +57,25 @@ BEGIN
                 )
             )
         )
-      AND (@OrgID IS NULL OR um.OrgID = @OrgID)
+      AND ISNULL(ur.UserRoleName, N'') <> N'SuperAdmin'
+      AND ISNULL(um.UserRoleID, 0) <> 5
+      AND (
+            (@OrgID IS NOT NULL AND um.OrgID = @OrgID)
+            OR (
+                @OrgID IS NULL
+                AND @SansthaID IS NOT NULL
+                AND EXISTS (
+                    SELECT 1
+                    FROM dbo.OrgMaster omScope
+                    WHERE omScope.OrgID = um.OrgID
+                      AND ISNULL(omScope.IsActive, 1) = 1
+                      AND (
+                            omScope.OrgID = @SansthaID
+                            OR omScope.UnderOrgID = @SansthaID
+                          )
+                )
+            )
+          )
       AND (@IsActive IS NULL OR um.IsActive = @IsActive)
       AND (@DesignationCode IS NULL OR um.DesignationID = @DesignationCode)
       AND (@UserRoleID IS NULL OR um.UserRoleID = @UserRoleID)
@@ -135,153 +100,12 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE dbo.sp_Teacher_GetById
-    @UserID BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        um.UserID,
-        um.SrNo,
-        um.OrgID,
-        um.StaffTypeID,
-        um.UserRoleID,
-        um.DesignationID AS DesignationCode,
-        um.Firstname,
-        um.MiddleName,
-        um.LastName,
-        um.EmployeeName,
-        um.EmployeeShortName,
-        um.Address AS PermanentAddress,
-        um.CityName,
-        um.PhotoPath,
-        um.GenderID AS GenderCode,
-        um.Dob,
-        um.AdharCardNo,
-        um.ShalarthID,
-        um.ScaleOfPay,
-        um.CasteName,
-        um.ReligionID,
-        um.CategoryID,
-        um.BloodGroupID,
-        um.MobileNo1,
-        um.MobileNo2,
-        um.EmailID,
-        um.PanNo,
-        um.Remark,
-        um.SubjectName1,
-        um.SubjectName2,
-        um.SubjectName3,
-        um.SQualification,
-        um.BQualification,
-        um.AfterDegreePassedSubjects,
-        um.SansthaOrderNoAndDate,
-        um.ZPOrderNoAndDate,
-        um.SansthaServiceOrderNoAndDate,
-        um.ZPServiceOrderNoAndDate,
-        um.DateOfWorkingStart,
-        um.JTCategoryID,
-        um.PaymentGradeDate,
-        um.NivadGradeDate,
-        um.RetirementYear,
-        um.ServiceOutDate,
-        um.ShiftID,
-        um.AppUserName,
-        CAST(NULL AS VARCHAR(50)) AS AppPassword,
-        um.CloseFlag,
-        um.IsActive,
-        um.CreatedAt
-    FROM dbo.UserMaster um
-    WHERE um.UserID = @UserID
-      AND (
-            um.StaffTypeID IN (1, 2)
-            OR (
-                um.StaffTypeID IS NULL
-                AND (
-                    NULLIF(LTRIM(RTRIM(um.SubjectName1)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(um.SubjectName2)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(um.SubjectName3)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(um.SQualification)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(um.BQualification)), N'') IS NOT NULL
-                )
-            )
-        );
-END
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Teacher_GetNextSrNo
-    @OrgID BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    DECLARE @NextSrNo INT;
-    SELECT @NextSrNo = ISNULL(MAX(um.SrNo), 0) + 1
-    FROM dbo.UserMaster um
-    WHERE um.OrgID = @OrgID
-      AND (
-            um.StaffTypeID IN (1, 2)
-            OR (
-                um.StaffTypeID IS NULL
-                AND (
-                    NULLIF(LTRIM(RTRIM(um.SubjectName1)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(um.SubjectName2)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(um.SubjectName3)), N'') IS NOT NULL
-                )
-            )
-        );
-    SELECT ISNULL(@NextSrNo, 1) AS NextSrNo;
-END
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Teacher_Delete
-    @UserID BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE dbo.UserMaster
-    SET IsActive = 0, CloseFlag = 1
-    WHERE UserID = @UserID
-      AND (
-            StaffTypeID IN (1, 2)
-            OR (
-                StaffTypeID IS NULL
-                AND (
-                    NULLIF(LTRIM(RTRIM(SubjectName1)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(SubjectName2)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(SubjectName3)), N'') IS NOT NULL
-                )
-            )
-        );
-END
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Teacher_ResetPassword
-    @UserID BIGINT,
-    @AppPassword VARCHAR(50)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE dbo.UserMaster
-    SET AppPassword = @AppPassword
-    WHERE UserID = @UserID
-      AND (
-            StaffTypeID IN (1, 2)
-            OR (
-                StaffTypeID IS NULL
-                AND (
-                    NULLIF(LTRIM(RTRIM(SubjectName1)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(SubjectName2)), N'') IS NOT NULL
-                    OR NULLIF(LTRIM(RTRIM(SubjectName3)), N'') IS NOT NULL
-                )
-            )
-        );
-END
-GO
-
+-- Add @SansthaID validation to live save proc (extends 095)
 CREATE OR ALTER PROCEDURE dbo.sp_Teacher_Save
     @UserID BIGINT = NULL OUTPUT,
     @OrgID BIGINT = NULL,
+    @SansthaID BIGINT = NULL,
+    @SrNo INT = NULL,
     @StaffTypeID INT = 2,
     @UserRoleID INT = NULL,
     @DesignationCode BIGINT = NULL,
@@ -295,6 +119,8 @@ CREATE OR ALTER PROCEDURE dbo.sp_Teacher_Save
     @GenderCode BIGINT = NULL,
     @Dob DATETIME = NULL,
     @AdharCardNo NVARCHAR(50) = NULL,
+    @NationalCode NVARCHAR(100) = NULL,
+    @AGID BIGINT = NULL,
     @ShalarthID NVARCHAR(50) = NULL,
     @ScaleOfPay NVARCHAR(50) = NULL,
     @CasteName NVARCHAR(100) = NULL,
@@ -317,6 +143,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_Teacher_Save
     @SansthaServiceOrderNoAndDate NVARCHAR(255) = NULL,
     @ZPServiceOrderNoAndDate NVARCHAR(255) = NULL,
     @DateOfWorkingStart DATE = NULL,
+    @DoWSCurrentSchool DATE = NULL,
     @JTCategoryID INT = NULL,
     @PaymentGradeDate DATE = NULL,
     @NivadGradeDate DATE = NULL,
@@ -329,11 +156,44 @@ CREATE OR ALTER PROCEDURE dbo.sp_Teacher_Save
     @IsActive BIT = 1,
     @UpdatePassword BIT = 0,
     @DocumentsJson NVARCHAR(MAX) = NULL,
-    @SchoolsJson NVARCHAR(MAX) = NULL
+    @SchoolsJson NVARCHAR(MAX) = NULL,
+    @ActorUserID BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
+
+    IF @OrgID IS NULL OR @OrgID <= 0
+    BEGIN
+        RAISERROR('Organization is required.', 16, 1);
+        RETURN;
+    END
+
+    IF @SansthaID IS NULL OR @SansthaID <= 0
+    BEGIN
+        SELECT @SansthaID = CASE
+            WHEN om.OrgID = ISNULL(om.UnderOrgID, om.OrgID) THEN om.OrgID
+            ELSE om.UnderOrgID
+        END
+        FROM dbo.OrgMaster om
+        WHERE om.OrgID = @OrgID;
+    END
+
+    IF @SansthaID IS NOT NULL AND @SansthaID > 0
+       AND NOT EXISTS (
+            SELECT 1
+            FROM dbo.OrgMaster om
+            WHERE om.OrgID = @OrgID
+              AND ISNULL(om.IsActive, 1) = 1
+              AND (
+                    om.OrgID = @SansthaID
+                    OR om.UnderOrgID = @SansthaID
+                  )
+       )
+    BEGIN
+        RAISERROR('Selected organization does not belong to the specified sanstha.', 16, 1);
+        RETURN;
+    END
 
     IF @StaffTypeID IS NULL SET @StaffTypeID = 2;
 
@@ -348,56 +208,58 @@ BEGIN
     ));
 
     SET @EmployeeShortName = NULLIF(LTRIM(RTRIM(@EmployeeShortName)), N'');
+    SET @NationalCode = NULLIF(LTRIM(RTRIM(@NationalCode)), N'');
 
     BEGIN TRANSACTION;
 
     IF @UserID IS NULL OR @UserID = 0
     BEGIN
-        DECLARE @SrNo INT;
-        SELECT @SrNo = ISNULL(MAX(um.SrNo), 0) + 1
-        FROM dbo.UserMaster um
-        WHERE um.OrgID = @OrgID
-          AND (
-                um.StaffTypeID IN (1, 2)
-                OR (
-                    um.StaffTypeID IS NULL
-                    AND (
-                        NULLIF(LTRIM(RTRIM(um.SubjectName1)), N'') IS NOT NULL
-                        OR NULLIF(LTRIM(RTRIM(um.SubjectName2)), N'') IS NOT NULL
-                        OR NULLIF(LTRIM(RTRIM(um.SubjectName3)), N'') IS NOT NULL
+        DECLARE @ResolvedSrNo INT = @SrNo;
+        IF @ResolvedSrNo IS NULL
+        BEGIN
+            SELECT @ResolvedSrNo = ISNULL(MAX(um.SrNo), 0) + 1
+            FROM dbo.UserMaster um
+            WHERE um.OrgID = @OrgID
+              AND (
+                    um.StaffTypeID IN (1, 2)
+                    OR (
+                        um.StaffTypeID IS NULL
+                        AND (
+                            NULLIF(LTRIM(RTRIM(um.SubjectName1)), N'') IS NOT NULL
+                            OR NULLIF(LTRIM(RTRIM(um.SubjectName2)), N'') IS NOT NULL
+                            OR NULLIF(LTRIM(RTRIM(um.SubjectName3)), N'') IS NOT NULL
+                        )
                     )
-                )
-            );
+                );
+        END
 
         INSERT INTO dbo.UserMaster (
             OrgID, StaffTypeID, SrNo, UserRoleID, DesignationID,
             Firstname, MiddleName, LastName, EmployeeName, EmployeeShortName,
-            Address, CityName, PhotoPath,
-            GenderID, Dob, AdharCardNo, ShalarthID, ScaleOfPay, CasteName,
-            ReligionID, CategoryID, BloodGroupID,
+            Address, CityName, PhotoPath, GenderID, Dob, AdharCardNo, NationalCode, AGID, ShalarthID,
+            ScaleOfPay, CasteName, ReligionID, CategoryID, BloodGroupID,
             MobileNo1, MobileNo2, EmailID, PanNo, Remark,
             SubjectName1, SubjectName2, SubjectName3,
             SQualification, BQualification, AfterDegreePassedSubjects,
             SansthaOrderNoAndDate, ZPOrderNoAndDate,
             SansthaServiceOrderNoAndDate, ZPServiceOrderNoAndDate,
-            DateOfWorkingStart, JTCategoryID, PaymentGradeDate, NivadGradeDate,
+            DateOfWorkingStart, DoWSCurrentSchool, JTCategoryID, PaymentGradeDate, NivadGradeDate,
             RetirementYear, ServiceOutDate, ShiftID,
-            AppUserName, AppPassword, CloseFlag, IsActive, CreatedAt
+            AppUserName, AppPassword, CloseFlag, IsActive, CreatedDate, CreatedUserID, ModifiedDate, ModifiedUserID
         )
         VALUES (
-            @OrgID, @StaffTypeID, @SrNo, @UserRoleID, @DesignationCode,
+            @OrgID, @StaffTypeID, ISNULL(@ResolvedSrNo, 1), @UserRoleID, @DesignationCode,
             @Firstname, @MiddleName, @LastName, @EmployeeName, @EmployeeShortName,
-            @PermanentAddress, @CityName, @PhotoPath,
-            @GenderCode, @Dob, @AdharCardNo, @ShalarthID, @ScaleOfPay, @CasteName,
-            @ReligionID, @CategoryID, @BloodGroupID,
+            @PermanentAddress, @CityName, @PhotoPath, @GenderCode, @Dob, @AdharCardNo, @NationalCode, @AGID, @ShalarthID,
+            @ScaleOfPay, @CasteName, @ReligionID, @CategoryID, @BloodGroupID,
             @MobileNo1, @MobileNo2, @EmailID, @PanNo, @Remark,
             @SubjectName1, @SubjectName2, @SubjectName3,
             @SQualification, @BQualification, @AfterDegreePassedSubjects,
             @SansthaOrderNoAndDate, @ZPOrderNoAndDate,
             @SansthaServiceOrderNoAndDate, @ZPServiceOrderNoAndDate,
-            @DateOfWorkingStart, @JTCategoryID, @PaymentGradeDate, @NivadGradeDate,
+            @DateOfWorkingStart, @DoWSCurrentSchool, @JTCategoryID, @PaymentGradeDate, @NivadGradeDate,
             @RetirementYear, @ServiceOutDate, @ShiftID,
-            @AppUserName, @AppPassword, @CloseFlag, @IsActive, GETDATE()
+            @AppUserName, @AppPassword, @CloseFlag, @IsActive, GETDATE(), @ActorUserID, GETDATE(), @ActorUserID
         );
 
         SET @UserID = SCOPE_IDENTITY();
@@ -408,6 +270,7 @@ BEGIN
         SET
             OrgID = @OrgID,
             StaffTypeID = @StaffTypeID,
+            SrNo = CASE WHEN @SrNo IS NOT NULL THEN @SrNo ELSE SrNo END,
             UserRoleID = @UserRoleID,
             DesignationID = @DesignationCode,
             Firstname = @Firstname,
@@ -421,6 +284,8 @@ BEGIN
             GenderID = @GenderCode,
             Dob = @Dob,
             AdharCardNo = @AdharCardNo,
+            NationalCode = @NationalCode,
+            AGID = @AGID,
             ShalarthID = @ShalarthID,
             ScaleOfPay = @ScaleOfPay,
             CasteName = @CasteName,
@@ -443,6 +308,7 @@ BEGIN
             SansthaServiceOrderNoAndDate = @SansthaServiceOrderNoAndDate,
             ZPServiceOrderNoAndDate = @ZPServiceOrderNoAndDate,
             DateOfWorkingStart = @DateOfWorkingStart,
+            DoWSCurrentSchool = @DoWSCurrentSchool,
             JTCategoryID = @JTCategoryID,
             PaymentGradeDate = @PaymentGradeDate,
             NivadGradeDate = @NivadGradeDate,
@@ -452,7 +318,9 @@ BEGIN
             AppUserName = @AppUserName,
             AppPassword = CASE WHEN @UpdatePassword = 1 AND @AppPassword IS NOT NULL AND @AppPassword <> '' THEN @AppPassword ELSE AppPassword END,
             CloseFlag = @CloseFlag,
-            IsActive = @IsActive
+            IsActive = @IsActive,
+            ModifiedDate = GETDATE(),
+            ModifiedUserID = @ActorUserID
         WHERE UserID = @UserID
           AND (
                 StaffTypeID IN (1, 2)
@@ -509,5 +377,5 @@ BEGIN
 END
 GO
 
-PRINT 'Staff + Teacher shared UserMaster fix deployed.';
+PRINT '099_Teacher_Sanstha_Scope applied.';
 GO

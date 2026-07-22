@@ -1,59 +1,8 @@
--- UserMaster is shared by /staff and /teacher-master.
--- Undo StaffTypeID=2 mass backfill (047) that hid legacy staff from /staff.
--- /staff: all active UserMaster rows (original employee list).
--- /teacher-master: StaffTypeID IN (1, 2) OR legacy rows with teacher subject/qualification fields.
-
-USE SmartERP;
-GO
-
-UPDATE dbo.UserMaster
-SET StaffTypeID = NULL;
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_Employee_GetList
-    @OrgID BIGINT = NULL,
-    @Search NVARCHAR(100) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        um.UserID,
-        um.Firstname,
-        um.MiddleName,
-        um.LastName,
-        um.EmployeeName,
-        um.EmployeeShortName,
-        um.MobileNo1,
-        um.OrgID,
-        om.OrganizationName,
-        um.DesignationID AS DesignationCode,
-        dm.DesignationName,
-        um.UserRoleID,
-        ur.UserRoleName,
-        um.IsActive
-    FROM dbo.UserMaster um
-    LEFT JOIN dbo.OrgMaster om
-        ON om.OrgID = um.OrgID
-       AND ISNULL(om.IsActive, 1) = 1
-    LEFT JOIN dbo.DesignationMaster dm
-        ON dm.DesignationID = um.DesignationID
-    LEFT JOIN dbo.UserRoleMaster ur
-        ON ur.UserRoleID = um.UserRoleID
-    WHERE um.IsActive = 1
-      AND (@OrgID IS NULL OR um.OrgID = @OrgID)
-      AND (
-          @Search IS NULL
-          OR @Search = ''
-          OR um.Firstname LIKE '%' + @Search + '%'
-          OR um.LastName LIKE '%' + @Search + '%'
-          OR um.EmployeeName LIKE '%' + @Search + '%'
-          OR um.EmployeeShortName LIKE '%' + @Search + '%'
-          OR um.MobileNo1 LIKE '%' + @Search + '%'
-          OR um.AppUserName LIKE '%' + @Search + '%'
-      )
-    ORDER BY um.Firstname, um.LastName, um.UserID;
-END
+-- Include StaffTypeID = 1 (Employee) on Teacher Master list alongside StaffTypeID = 2 (Teacher).
+-- Fixes users like UserID=12 (Sanstha admin / employee) not appearing on /teacher-master.
+-- LIVE DB: after this script, also run 095_Teacher_StaffType1_LiveSchema_Hotfix.sql
+-- (live UserMaster uses CreatedDate, not CreatedAt — GetById/Save in this file fail on live).
+SET NOCOUNT ON;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_Teacher_GetList
@@ -110,6 +59,8 @@ BEGIN
                 )
             )
         )
+      AND ISNULL(ur.UserRoleName, N'') <> N'SuperAdmin'
+      AND ISNULL(um.UserRoleID, 0) <> 5
       AND (@OrgID IS NULL OR um.OrgID = @OrgID)
       AND (@IsActive IS NULL OR um.IsActive = @IsActive)
       AND (@DesignationCode IS NULL OR um.DesignationID = @DesignationCode)
@@ -279,6 +230,7 @@ BEGIN
 END
 GO
 
+-- sp_Teacher_Save: only patch StaffTypeID eligibility in UPDATE/SrNo blocks (full proc from 048 with IN (1,2))
 CREATE OR ALTER PROCEDURE dbo.sp_Teacher_Save
     @UserID BIGINT = NULL OUTPUT,
     @OrgID BIGINT = NULL,
@@ -509,5 +461,5 @@ BEGIN
 END
 GO
 
-PRINT 'Staff + Teacher shared UserMaster fix deployed.';
+PRINT '094_Teacher_List_Include_StaffType1 applied.';
 GO

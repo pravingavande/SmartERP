@@ -82,6 +82,7 @@ public sealed class TeacherRepository : ITeacherRepository
     {
         var p = new DynamicParameters();
         p.Add("@OrgID", filter.OrgID);
+        p.Add("@SansthaID", filter.SansthaID);
         p.Add("@Search", filter.Search);
         p.Add("@ShalarthID", filter.ShalarthID);
         p.Add("@MobileNo", filter.MobileNo);
@@ -190,6 +191,7 @@ public sealed class TeacherRepository : ITeacherRepository
         p.Add("@UserID", request.UserID > 0 ? request.UserID : null, dbType: DbType.Int64, direction: ParameterDirection.InputOutput);
         p.Add("@ActorUserID", actorUserId > 0 ? actorUserId : null);
         p.Add("@OrgID", request.OrgID);
+        p.Add("@SansthaID", request.SansthaID);
         p.Add("@SrNo", request.SrNo);
         p.Add("@StaffTypeID", request.StaffTypeID ?? 2);
         p.Add("@UserRoleID", request.UserRoleID);

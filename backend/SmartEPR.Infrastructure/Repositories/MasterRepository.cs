@@ -186,6 +186,80 @@ public sealed class MasterRepository : IMasterRepository
         return row ?? new ImportClassResultDto { ImportedCount = p.Get<int?>("@ImportedCount") ?? 0, SkippedCount = p.Get<int?>("@SkippedCount") ?? 0 };
     }
 
+    public Task<IReadOnlyList<DesignationOptionDto>> GetDesignationMasterAsync(long? underOrgId = null, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        return _executor.QueryListAsync<DesignationOptionDto>("dbo.sp_Designation_GetMaster", p, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<DesignationMasterDto>> GetDesignationListAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        return _executor.QueryListAsync<DesignationMasterDto>("dbo.sp_Designation_GetList", p, cancellationToken);
+    }
+
+    public Task<DesignationMasterDto?> GetDesignationByIdAsync(long designationId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@Designation D", designationId);
+        return _executor.QuerySingleOrDefaultAsync<DesignationMasterDto>("dbo.sp_Designation_GetById", p, cancellationToken);
+    }
+
+    public async Task<long> GetNextDesignationSrNoAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        var row = await _executor.QuerySingleOrDefaultAsync<NextSrNoDto>("dbo.sp_Designation_GetNextSrNo", p, cancellationToken).ConfigureAwait(false);
+        return row?.NextSrNo ?? 1;
+    }
+
+    public async Task<long> SaveDesignationAsync(SaveDesignationRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DesignationID", request.DesignationID > 0 ? request.DesignationID : null, DbType.Int64, ParameterDirection.InputOutput);
+        p.Add("@UnderOrgID", request.UnderOrgID);
+        p.Add("@SrNo", request.SrNo > 0 ? request.SrNo : null);
+        p.Add("@DesignationName", request.DesignationName);
+        p.Add("@DesignationNameShort", request.DesignationNameShort);
+        p.Add("@LeaveYear", request.LeaveYear);
+        p.Add("@HMOrPrincipal", request.HMOrPrincipal);
+        p.Add("@IsActive", request.IsActive);
+        await _executor.ExecuteAsync("dbo.sp_Designation_Save", p, cancellationToken).ConfigureAwait(false);
+        return p.Get<long>("@DesignationID");
+    }
+
+    public Task DeleteDesignationAsync(long designationId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DesignationID", designationId);
+        return _executor.ExecuteAsync("dbo.sp_Designation_Delete", p, cancellationToken);
+    }
+
+    public async Task<ImportClassResultDto> ImportDesignationsAsync(
+        long destinationUnderOrgId,
+        IReadOnlyList<long> designationIds,
+        CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@DestinationUnderOrgID", destinationUnderOrgId);
+        p.Add("@DesignationIdsJson", JsonSerializer.Serialize(designationIds));
+        p.Add("@ImportedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        p.Add("@SkippedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+        var row = await _executor.QuerySingleOrDefaultAsync<ImportClassResultDto>(
+            "dbo.sp_Designation_Import",
+            p,
+            cancellationToken).ConfigureAwait(false);
+
+        return row ?? new ImportClassResultDto
+        {
+            ImportedCount = p.Get<int?>("@ImportedCount") ?? 0,
+            SkippedCount = p.Get<int?>("@SkippedCount") ?? 0
+        };
+    }
+
     public Task<IReadOnlyList<SubjectMasterDto>> GetSubjectListAsync(long orgId, string? search, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();

@@ -51,6 +51,7 @@ export interface TeacherLookupsBundle {
 
 export interface TeacherListFilter {
   orgId?: number | null;
+  sansthaId?: number | null;
   search?: string | null;
   shalarthID?: string | null;
   mobileNo?: string | null;
@@ -90,6 +91,7 @@ export interface TeacherFormState {
   userID: number | null;
   srNo: number | null;
   orgID: number | null;
+  sansthaID: number | null;
   staffTypeID: number | null;
   userRoleID: number | null;
   designationCode: number | null;

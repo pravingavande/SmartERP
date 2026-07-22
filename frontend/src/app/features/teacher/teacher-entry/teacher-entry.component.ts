@@ -198,9 +198,14 @@ export class TeacherEntryComponent {
             return;
           }
 
-          const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
-          this.listFilter.update((f) => ({ ...f, orgId }));
-          this.ensureDocumentLookups(data, orgId, underOrgID);
+          const defaultOrgId = resolveDefaultSchoolOrgId(data.orgs, profile);
+          const sessionSansthaId = this.auth.currentUser()?.sansthaId ?? (underOrgID || null);
+          this.listFilter.update((f) => ({
+            ...f,
+            orgId: null,
+            sansthaId: sessionSansthaId
+          }));
+          this.ensureDocumentLookups(data, defaultOrgId, underOrgID);
           this.loadList();
         },
         error: () => {
@@ -237,10 +242,17 @@ export class TeacherEntryComponent {
   }
 
   private resolveDocumentUnderOrgId(orgId: number | null | undefined): number | null {
-    if (!orgId) return null;
-    const school = this.lookups()?.orgs?.find((o) => o.orgID === orgId);
-    const under = school?.underOrgID;
-    return under && under > 0 ? under : orgId;
+    return this.resolveSansthaId(orgId);
+  }
+
+  private resolveSansthaId(orgId: number | null | undefined): number | null {
+    if (orgId) {
+      const school = this.lookups()?.orgs?.find((o) => o.orgID === orgId);
+      const under = school?.underOrgID;
+      if (under && under > 0) return under;
+      if (school && school.orgID === school.underOrgID) return school.orgID;
+    }
+    return this.listFilter().sansthaId ?? this.auth.currentUser()?.sansthaId ?? null;
   }
 
   private ensureSearchDebounce(): void {
@@ -326,7 +338,11 @@ export class TeacherEntryComponent {
         this.fieldErrors.set({});
         this.saveError.set(null);
         this.showAppPassword.set(false);
-        this.form.set(this.ensureChildRows(data));
+        const form = this.ensureChildRows(data);
+        if (!form.sansthaID && form.orgID) {
+          form.sansthaID = this.resolveSansthaId(form.orgID);
+        }
+        this.form.set(form);
         this.refreshPhotoPreview(data.photoPath);
         this.captureDocumentsSnapshot(this.form().documents);
       });
@@ -439,7 +455,8 @@ export class TeacherEntryComponent {
   }
 
   onOrgChange(orgId: number | null): void {
-    this.form.update((f) => ({ ...f, orgID: orgId }));
+    const sansthaId = this.resolveSansthaId(orgId);
+    this.form.update((f) => ({ ...f, orgID: orgId, sansthaID: sansthaId }));
     const underOrgId = this.resolveDocumentUnderOrgId(orgId);
     if (underOrgId) this.reloadDocumentLookups(underOrgId);
     if (orgId && !this.form().userID) {
@@ -882,6 +899,7 @@ export class TeacherEntryComponent {
       userID: null,
       srNo: null,
       orgID: null,
+      sansthaID: null,
       staffTypeID: TEACHER_STAFF_TYPE_ID,
       userRoleID: null,
       designationCode: null,

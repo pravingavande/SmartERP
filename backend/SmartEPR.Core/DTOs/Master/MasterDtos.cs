@@ -145,6 +145,67 @@ public sealed class ImportCategoryRequestDto
     public IReadOnlyList<long> CategoryIds { get; set; } = [];
 }
 
+public sealed class DesignationMasterDto
+{
+    public long DesignationID { get; init; }
+    public long UnderOrgID { get; init; }
+    public long SrNo { get; init; }
+    public string DesignationName { get; init; } = string.Empty;
+    public string? DesignationNameShort { get; init; }
+    public int? LeaveYear { get; init; }
+    public bool HMOrPrincipal { get; init; }
+    public bool IsActive { get; init; }
+    public string? OrganizationName { get; init; }
+}
+
+public sealed class DesignationOptionDto
+{
+    public long DesignationID { get; init; }
+    public long? UnderOrgID { get; init; }
+    public long? SrNo { get; init; }
+    public string DesignationName { get; init; } = string.Empty;
+    public string? DesignationNameShort { get; init; }
+    public int? LeaveYear { get; init; }
+    public bool HMOrPrincipal { get; init; }
+    public bool IsActive { get; init; }
+}
+
+public sealed class SaveDesignationRequestDto
+{
+    [JsonPropertyName("designationID")]
+    public long DesignationID { get; set; }
+
+    [JsonPropertyName("underOrgID")]
+    public long UnderOrgID { get; set; }
+
+    [JsonPropertyName("srNo")]
+    public long SrNo { get; set; }
+
+    [JsonPropertyName("designationName")]
+    public string DesignationName { get; set; } = string.Empty;
+
+    [JsonPropertyName("designationNameShort")]
+    public string? DesignationNameShort { get; set; }
+
+    [JsonPropertyName("leaveYear")]
+    public int? LeaveYear { get; set; }
+
+    [JsonPropertyName("hmOrPrincipal")]
+    public bool HMOrPrincipal { get; set; }
+
+    [JsonPropertyName("isActive")]
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class ImportDesignationRequestDto
+{
+    [JsonPropertyName("destinationUnderOrgID")]
+    public long DestinationUnderOrgID { get; set; }
+
+    [JsonPropertyName("designationIds")]
+    public IReadOnlyList<long> DesignationIds { get; set; } = [];
+}
+
 public sealed class SubjectMasterDto
 {
     public long SubjectID { get; init; }

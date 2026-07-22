@@ -53,6 +53,8 @@ export class TeacherService {
   getList(filter: TeacherListFilter): Observable<TeacherListItem[]> {
     let params = new HttpParams();
     if (filter.orgId) params = params.set('orgID', filter.orgId.toString());
+    const sansthaId = filter.sansthaId ?? this.auth.currentUser()?.sansthaId ?? null;
+    if (sansthaId) params = params.set('sansthaID', sansthaId.toString());
     if (filter.search?.trim()) params = params.set('search', filter.search.trim());
     if (filter.shalarthID?.trim()) params = params.set('shalarthID', filter.shalarthID.trim());
     if (filter.mobileNo?.trim()) params = params.set('mobileNo', filter.mobileNo.trim());
@@ -80,6 +82,7 @@ export class TeacherService {
     const payload = {
       userID: form.userID ?? 0,
       orgID: form.orgID,
+      sansthaID: form.sansthaID ?? this.auth.currentUser()?.sansthaId ?? null,
       srNo: form.srNo,
       staffTypeID: form.staffTypeID ?? TEACHER_STAFF_TYPE_ID,
       userRoleID: form.userRoleID,
@@ -343,6 +346,7 @@ export class TeacherService {
       userID: (r['userID'] ?? r['UserID'] ?? null) as number | null,
       srNo: (r['srNo'] ?? r['SrNo'] ?? null) as number | null,
       orgID: (r['orgID'] ?? r['OrgID'] ?? null) as number | null,
+      sansthaID: (r['sansthaID'] ?? r['SansthaID'] ?? null) as number | null,
       staffTypeID: (r['staffTypeID'] ?? r['StaffTypeID'] ?? TEACHER_STAFF_TYPE_ID) as number | null,
       userRoleID: (r['userRoleID'] ?? r['UserRoleID'] ?? null) as number | null,
       designationCode: (r['designationCode'] ?? r['DesignationCode'] ?? null) as number | null,

@@ -48,6 +48,7 @@ public sealed class TeacherLookupsBundleDto
 public sealed class TeacherListFilterDto
 {
     public long? OrgID { get; init; }
+    public long? SansthaID { get; init; }
     public string? Search { get; init; }
     public string? ShalarthID { get; init; }
     public string? MobileNo { get; init; }
@@ -181,6 +182,7 @@ public sealed class SaveTeacherRequestDto
 {
     public long UserID { get; set; }
     public long? OrgID { get; set; }
+    public long? SansthaID { get; set; }
     public int? StaffTypeID { get; set; }
     public int? SrNo { get; set; }
     public int? UserRoleID { get; set; }

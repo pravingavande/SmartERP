@@ -28,7 +28,7 @@
           fieldClass="field-org-filter"
           [label]="lbl('SansthaName', 'संस्थेचे नाव')"
           [nullLabel]="lbl('All', '-- All --')"
-          [orgs]="sansthaOrgs()"
+          [orgs]="schoolOrgs()"
           [value]="listFilter().orgId ?? null"
           (valueChange)="onFilterChange('orgId', $event)"
         />
