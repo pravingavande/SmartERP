@@ -7,8 +7,10 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { LeaveApplyFormState, LeaveApplyListItem, LeaveApplyLookupsBundle, EmployeeOption } from '../../../core/models/leave.model';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { LeaveService } from '../../../core/services/leave.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
@@ -25,6 +27,7 @@ type FormMode = 'new' | 'edit' | 'view';
 })
 export class LeaveApplyComponent {
   private readonly leaveService = inject(LeaveService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -50,6 +53,8 @@ export class LeaveApplyComponent {
   /** Same as Teacher Master — orgs already filtered in LeaveService via auth.filterSchoolOrgs. */
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   readonly isViewMode = computed(() => this.formMode() === 'view');
+  /** UserRole 1/2 (sanstha admin) may edit existing leave; employees (role 3) may only add new. */
+  readonly canManageLeave = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
   readonly paginatedItems = computed(() => {
     const list = this.items();
     const start = this.listPageIndex() * this.listPageSize();
@@ -171,6 +176,10 @@ export class LeaveApplyComponent {
   }
 
   editEntry(item: LeaveApplyListItem): void {
+    if (!this.canManageLeave()) {
+      this.toast.showError('You cannot edit a leave application after it has been submitted. Contact admin.', 'Not allowed');
+      return;
+    }
     this.loading.set(true);
     this.leaveService
       .getById(item.userLeaveApplyID)
@@ -227,6 +236,10 @@ export class LeaveApplyComponent {
   save(): void {
     if (this.isViewMode()) return;
     const f = this.form();
+    if (f.userLeaveApplyID && !this.canManageLeave()) {
+      this.toast.showError('You cannot edit a leave application after it has been submitted. Contact admin.', 'Not allowed');
+      return;
+    }
     const errors: FieldErrors = {};
     if (!f.orgID) errors['orgID'] = 'Org / School is required.';
     if (!f.userID) errors['userID'] = 'Employee is required.';

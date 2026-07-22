@@ -95,7 +95,7 @@ export class TeacherEntryComponent {
   readonly wizardActive = signal(false);
   readonly highestUnlockedStep = signal(1);
   readonly formSteps = FORM_STEPS;
-  readonly listFilter = signal<TeacherListFilter>({ isActive: null });
+  readonly listFilter = signal<TeacherListFilter>({ isActive: true });
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
   readonly showAppPassword = signal(false);
@@ -152,14 +152,6 @@ export class TeacherEntryComponent {
     this.listReload$
       .pipe(
         switchMap(() => {
-          const orgId = this.listFilter().orgId;
-          // Only load teachers for the selected school — never pull all-org data.
-          if (!orgId) {
-            this.listLoading.set(false);
-            this.teachers.set([]);
-            this.listPageIndex.set(0);
-            return of([] as TeacherListItem[]);
-          }
           this.listLoading.set(true);
           return this.teacherService.getList(this.listFilter());
         }),
@@ -225,8 +217,14 @@ export class TeacherEntryComponent {
     const school = bundle.orgs.find((o) => o.orgID === orgId);
     const fallbackUnder = school?.underOrgID;
     if (!fallbackUnder || fallbackUnder <= 0 || fallbackUnder === sessionSansthaId) return;
+    this.reloadDocumentLookups(fallbackUnder);
+  }
+
+  /** Load document name options scoped to the school's parent sanstha. */
+  private reloadDocumentLookups(underOrgId: number): void {
+    if (!underOrgId || underOrgId <= 0) return;
     this.teacherService
-      .getLookups(fallbackUnder)
+      .getLookups(underOrgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((reloaded) => {
         if (!reloaded?.lookups?.documents?.length) return;
@@ -236,6 +234,13 @@ export class TeacherEntryComponent {
             : current
         );
       });
+  }
+
+  private resolveDocumentUnderOrgId(orgId: number | null | undefined): number | null {
+    if (!orgId) return null;
+    const school = this.lookups()?.orgs?.find((o) => o.orgID === orgId);
+    const under = school?.underOrgID;
+    return under && under > 0 ? under : orgId;
   }
 
   private ensureSearchDebounce(): void {
@@ -365,6 +370,13 @@ export class TeacherEntryComponent {
   setSection(section: FormSection): void {
     if (!this.isSectionEnabled(section)) return;
     this.activeSection.set(section);
+    if (section === 'documents') {
+      const orgId = this.form().orgID ?? this.listFilter().orgId;
+      const underOrgId = this.resolveDocumentUnderOrgId(orgId);
+      if (underOrgId && !(this.masterLookups()?.documents?.length ?? 0)) {
+        this.reloadDocumentLookups(underOrgId);
+      }
+    }
   }
 
   saveAndNext(): void {
@@ -428,6 +440,8 @@ export class TeacherEntryComponent {
 
   onOrgChange(orgId: number | null): void {
     this.form.update((f) => ({ ...f, orgID: orgId }));
+    const underOrgId = this.resolveDocumentUnderOrgId(orgId);
+    if (underOrgId) this.reloadDocumentLookups(underOrgId);
     if (orgId && !this.form().userID) {
       this.teacherService
         .getNextSrNo(orgId)
@@ -526,6 +540,7 @@ export class TeacherEntryComponent {
       const isDuplicate = this.form().documents.some((row, i) => i !== index && row.empDocumentCode === patch.empDocumentCode);
       if (isDuplicate) {
         this.saveError.set(DUPLICATE_DOCUMENT_NAME_MESSAGE);
+        this.toast.showError(DUPLICATE_DOCUMENT_NAME_MESSAGE, 'Duplicate document');
         return;
       }
     }
@@ -535,8 +550,11 @@ export class TeacherEntryComponent {
       documents[index] = { ...documents[index], ...patch };
       return { ...f, documents };
     });
-    if (options?.persist !== false && (patch.empDocumentCode != null || patch.empDocumentPath != null)) {
-      this.persistDocuments({ silent: true });
+    if (options?.persist !== false) {
+      const row = this.form().documents[index];
+      if (patch.empDocumentPath != null || (patch.empDocumentCode != null && row.empDocumentPath?.trim())) {
+        this.persistDocuments({ silent: true });
+      }
     }
   }
 
@@ -546,24 +564,30 @@ export class TeacherEntryComponent {
     if (!file) return;
     const row = this.form().documents[index];
     if (!row?.empDocumentCode) {
-      this.toast.showError('Please select Document Type before uploading.');
+      this.toast.showError('Please select Document Name before uploading.', 'Document required');
       input.value = '';
       return;
     }
     const ext = '.' + (file.name.split('.').pop() ?? '').toLowerCase();
     if (!['.pdf', '.jpg', '.jpeg', '.png'].includes(ext)) {
-      this.toast.showError('Only PDF, JPG, JPEG, and PNG files are allowed.');
+      this.toast.showError('Only PDF, JPG, JPEG, and PNG files are allowed.', 'Invalid file');
       input.value = '';
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      this.toast.showError('Document must be 5 MB or smaller.');
+      this.toast.showError('Maximum file size is 5 MB.', 'File too large');
+      input.value = '';
+      return;
+    }
+    const userId = this.form().userID;
+    if (!userId) {
+      this.toast.showError('Save the teacher first, then upload documents.', 'Teacher required');
       input.value = '';
       return;
     }
     const orgId = this.form().orgID ?? this.listFilter().orgId;
     if (!orgId) {
-      this.toast.showError('Please select School / Organization before uploading document.');
+      this.toast.showError('Please select School / Organization before uploading document.', 'Organization required');
       input.value = '';
       return;
     }
@@ -573,7 +597,7 @@ export class TeacherEntryComponent {
       .subscribe(({ path: storedName, error }) => {
         input.value = '';
         if (!storedName) {
-          this.toast.showError(error ?? 'Unable to upload document.');
+          this.toast.showError(error ?? 'Unable to upload document.', 'Upload failed');
           return;
         }
         this.updateDocument(index, { empDocumentPath: storedName, selectedFileName: file.name }, { persist: false });
@@ -605,6 +629,21 @@ export class TeacherEntryComponent {
     return row.selectedFileName || (row.empDocumentPath ? row.empDocumentPath.split(/[/\\]/).pop() || row.empDocumentPath : '') || 'No file chosen';
   }
 
+  /** Document types already picked in other rows are hidden from this row's dropdown. */
+  documentTypesForRow(index: number) {
+    const rows = this.form().documents;
+    const currentCode = rows[index]?.empDocumentCode ?? null;
+    const usedCodes = new Set(
+      rows
+        .filter((_, i) => i !== index)
+        .map((r) => r.empDocumentCode)
+        .filter((code): code is number => code != null && code > 0)
+    );
+    return (this.masterLookups()?.documents ?? []).filter(
+      (d) => !usedCodes.has(d.code) || d.code === currentCode
+    );
+  }
+
   addSchoolRow(): void {
     this.form.update((f) => ({
       ...f,
@@ -633,7 +672,13 @@ export class TeacherEntryComponent {
 
   private persistDocuments(options?: { silent?: boolean; onSuccess?: () => void; onError?: (message: string) => void }): void {
     const userId = this.form().userID;
-    if (this.isViewMode() || !userId) return;
+    if (this.isViewMode()) return;
+    if (!userId) {
+      const message = 'Save the teacher first, then upload documents.';
+      if (options?.onError) options.onError(message);
+      else if (!options?.silent) this.saveError.set(message);
+      return;
+    }
 
     const docError = getTeacherDocumentsSaveError(this.form().documents);
     if (docError) {

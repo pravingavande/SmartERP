@@ -300,17 +300,15 @@
 
 
   th, td {
-
     border: 1px solid #c5d0de;
-
     padding: 0.55rem 0.5rem;
-
     vertical-align: middle;
-
     color: var(--epr-text-table);
-
     line-height: 1.45;
+  }
 
+  tbody td {
+    vertical-align: middle;
   }
 
 
@@ -487,10 +485,11 @@
 
 .action-group {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  white-space: nowrap;
 }
 
 

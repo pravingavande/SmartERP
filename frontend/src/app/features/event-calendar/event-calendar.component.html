@@ -155,7 +155,7 @@
 }
 
 @if (showModal()) {
-  <div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-overlay">
     <div class="modal-box wide" (click)="$event.stopPropagation()">
       <header class="modal-header">
         <h2>{{ isViewMode() ? 'View Event' : (form().eventID ? 'Edit Event' : 'New Event') }}</h2>

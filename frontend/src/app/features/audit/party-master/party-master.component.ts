@@ -13,7 +13,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapBackendMessageToFieldErrors, validatePartyForm } from '../../../core/utils/master-validation.util';
-import { pageCount, paginateRows } from '../../../core/utils/master-list.util';
+import { pageCount, paginateRows, filterMasterListByStatus } from '../../../core/utils/master-list.util';
 import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
@@ -43,11 +43,13 @@ export class PartyMasterComponent {
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
   readonly listOrgID = signal<number | null>(null);
+  readonly listStatusActive = signal(true);
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
 
-  readonly listPageCount = computed(() => pageCount(this.parties().length, this.listPageSize()));
-  readonly paginatedParties = computed(() => paginateRows(this.parties(), this.listPageIndex(), this.listPageSize()));
+  readonly filteredParties = computed(() => filterMasterListByStatus(this.parties(), this.listStatusActive()));
+  readonly listPageCount = computed(() => pageCount(this.filteredParties().length, this.listPageSize()));
+  readonly paginatedParties = computed(() => paginateRows(this.filteredParties(), this.listPageIndex(), this.listPageSize()));
 
   constructor() {
     this.loadLookups();
@@ -100,6 +102,11 @@ export class PartyMasterComponent {
 
   onListPageSizeChange(size: number): void {
     this.listPageSize.set(size);
+    this.listPageIndex.set(0);
+  }
+
+  onListStatusChange(active: boolean): void {
+    this.listStatusActive.set(active);
     this.listPageIndex.set(0);
   }
 

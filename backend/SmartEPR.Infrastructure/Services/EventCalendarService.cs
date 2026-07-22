@@ -195,15 +195,29 @@ public sealed class EventCalendarService : IEventCalendarService
     public async Task<IReadOnlyList<CalendarEventDto>> GetEventsAsync(long userId, DateTime fromDate, DateTime toDate, string? search, CancellationToken cancellationToken = default)
     {
         var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
-        var events = await _eventRepository.GetEventsAsync(userId, fromDate, toDate, null, search, cancellationToken).ConfigureAwait(false);
-        return events.Select(e => MapEvent(e, context.CanManageEvents)).ToList();
+        try
+        {
+            var events = await _eventRepository.GetEventsAsync(userId, fromDate, toDate, null, search, cancellationToken).ConfigureAwait(false);
+            return events.Select(e => MapEvent(e, context.CanManageEvents)).ToList();
+        }
+        catch (SqlException ex)
+        {
+            throw new InvalidOperationException(SqlErrorMapper.ToUserMessage(ex, "Event Calendar"), ex);
+        }
     }
 
     public async Task<CalendarEventDto?> GetEventByIdAsync(long userId, int eventId, CancellationToken cancellationToken = default)
     {
         var context = await _eventRepository.GetUserContextAsync(userId, cancellationToken).ConfigureAwait(false);
-        var item = await _eventRepository.GetEventByIdAsync(eventId, cancellationToken).ConfigureAwait(false);
-        return item is null ? null : MapEvent(item, context.CanManageEvents);
+        try
+        {
+            var item = await _eventRepository.GetEventByIdAsync(eventId, cancellationToken).ConfigureAwait(false);
+            return item is null ? null : MapEvent(item, context.CanManageEvents);
+        }
+        catch (SqlException ex)
+        {
+            throw new InvalidOperationException(SqlErrorMapper.ToUserMessage(ex, "Event Calendar"), ex);
+        }
     }
 
     public async Task<CalendarEventDto?> SaveEventAsync(long userId, SaveEventRequestDto request, CancellationToken cancellationToken = default)

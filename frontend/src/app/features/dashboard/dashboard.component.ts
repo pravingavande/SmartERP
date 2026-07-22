@@ -80,8 +80,7 @@ export class DashboardComponent {
         value: summary.totalTeacher,
         icon: 'staff',
         tone: 'orange',
-        hint: `Male ${summary.maleTeachers} | Female ${summary.femaleTeachers}`,
-        route: '/staff'
+        hint: `Male ${summary.maleTeachers} | Female ${summary.femaleTeachers}`
       },
       {
         label: 'Teaching Staff',

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Microsoft.Data.SqlClient;
 using SmartEPR.Core.DTOs.Organization;
 using SmartEPR.Core.Interfaces;
 
@@ -77,7 +78,15 @@ public sealed class OrganizationService : IOrganizationService
         if (validationError is not null)
             return (null, validationError);
 
-        await _repository.SaveDocumentsAsync(orgId, documents, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await _repository.SaveDocumentsAsync(orgId, documents, cancellationToken).ConfigureAwait(false);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
+        }
+
         var saved = await _repository.GetByIdAsync(orgId, cancellationToken).ConfigureAwait(false);
         return saved is null ? (null, "Documents saved but could not be reloaded.") : (saved, null);
     }

@@ -9,7 +9,7 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapEventTicketBackendMessage, validateEventTypeForm } from '../../../core/utils/event-ticket-validation.util';
-import { pageCount, paginateRows } from '../../../core/utils/master-list.util';
+import { pageCount, paginateRows, filterMasterListByStatus } from '../../../core/utils/master-list.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
@@ -35,6 +35,7 @@ export class EventTypesMasterComponent {
   readonly lookups = signal<EventLookups | null>(null);
   readonly items = signal<EventType[]>([]);
   readonly filterOrgId = signal<number | null>(null);
+  readonly listStatusActive = signal(true);
   readonly form = signal<SaveEventTypeRequest>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
@@ -49,8 +50,9 @@ export class EventTypesMasterComponent {
 
   private static readonly ImportSourceOrgID = 1;
 
-  readonly listPageCount = computed(() => pageCount(this.items().length, this.listPageSize()));
-  readonly paginatedItems = computed(() => paginateRows(this.items(), this.listPageIndex(), this.listPageSize()));
+  readonly filteredItems = computed(() => filterMasterListByStatus(this.items(), this.listStatusActive()));
+  readonly listPageCount = computed(() => pageCount(this.filteredItems().length, this.listPageSize()));
+  readonly paginatedItems = computed(() => paginateRows(this.filteredItems(), this.listPageIndex(), this.listPageSize()));
   readonly canManage = computed(() => this.lookups()?.canManageEvents ?? false);
   readonly canImport = computed(() => {
     const orgId = this.filterOrgId();
@@ -114,6 +116,11 @@ export class EventTypesMasterComponent {
     this.closeForm();
     this.closeImport();
     this.loadList();
+  }
+
+  onListStatusChange(active: boolean): void {
+    this.listStatusActive.set(active);
+    this.listPageIndex.set(0);
   }
 
   goToListPage(index: number): void {

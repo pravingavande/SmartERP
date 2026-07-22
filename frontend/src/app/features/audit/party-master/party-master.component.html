@@ -2,8 +2,11 @@
   <header class="page-header">
     <div>
       <h1>Party Master</h1>
+      <p>Manage parties for vouchers and transactions</p>
     </div>
-    <button type="button" class="btn btn-primary" (click)="newParty()">+ Add New</button>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="newParty()">+ Add New</button>
+    </div>
   </header>
 
   <div class="list-filters">
@@ -13,6 +16,13 @@
       [value]="listOrgID()"
       (valueChange)="onListOrgChange($event)"
     />
+    <label class="field">
+      <span class="field-label">Status</span>
+      <select class="field-control" [ngModel]="listStatusActive()" (ngModelChange)="onListStatusChange($event)" name="listStatus">
+        <option [ngValue]="true">Active</option>
+        <option [ngValue]="false">Inactive</option>
+      </select>
+    </label>
   </div>
   @if (errorMessage()) {
     <p class="error list-error">{{ errorMessage() }}</p>
@@ -20,7 +30,7 @@
 
   <div class="audit-layout list-only">
     <aside class="list-panel">
-      <h3>All Parties</h3>
+      @if (lookupsLoading()) { <p class="loading-hint">Loading parties...</p> }
       <div class="records-table-wrap">
         <table class="records-table">
           <thead>
@@ -29,7 +39,7 @@
               <th>Name</th>
               <th>Mobile</th>
               <th>Status</th>
-              <th class="actions-col">Actions</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -40,12 +50,10 @@
                 <td>{{ p.mobNo || '—' }}</td>
                 <td>{{ p.isActive ? 'Active' : 'Inactive' }}</td>
                 <td class="actions">
-                  <div class="action-group">
-                    <app-list-action-btn action="edit" (clicked)="editParty(p)" />
-                    @if (p.isActive) {
-                      <app-list-action-btn action="delete" (clicked)="deleteParty(p)" />
-                    }
-                  </div>
+                  <app-list-action-btn action="edit" (clicked)="editParty(p)" />
+                  @if (p.isActive) {
+                    <app-list-action-btn action="delete" (clicked)="deleteParty(p)" />
+                  }
                 </td>
               </tr>
             } @empty {
@@ -57,7 +65,7 @@
         </table>
       </div>
       <app-master-list-pagination
-        [total]="parties().length"
+        [total]="filteredParties().length"
         [pageIndex]="listPageIndex()"
         [pageSize]="listPageSize()"
         (pageIndexChange)="goToListPage($event)"

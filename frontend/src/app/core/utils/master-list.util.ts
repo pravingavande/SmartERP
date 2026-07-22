@@ -29,3 +29,17 @@ export function pageRange(total: number, pageIndex: number, pageSize: number): {
     end: Math.min(total, (pageIndex + 1) * pageSize)
   };
 }
+
+/** Missing isActive is treated as active (legacy rows). */
+export function isMasterRecordActive(isActive?: boolean | null): boolean {
+  return isActive !== false;
+}
+
+export function matchesMasterStatusFilter(isActive: boolean | undefined | null, showActive: boolean): boolean {
+  const active = isMasterRecordActive(isActive);
+  return showActive ? active : !active;
+}
+
+export function filterMasterListByStatus<T extends { isActive?: boolean | null }>(rows: T[], showActive: boolean): T[] {
+  return rows.filter((row) => matchesMasterStatusFilter(row.isActive, showActive));
+}

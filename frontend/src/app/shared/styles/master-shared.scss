@@ -122,6 +122,11 @@
     z-index: 5 !important;
     background: #e8eef6 !important;
     box-shadow: 0 2px 4px rgba(30, 58, 110, 0.12) !important;
+    vertical-align: middle !important;
+  }
+
+  tbody td {
+    vertical-align: middle !important;
   }
 
   thead th:last-child,
@@ -145,10 +150,11 @@
 
 .action-group {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap !important;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
+  white-space: nowrap;
 }
 
 /* Legacy text action buttons (forms, attachments) */

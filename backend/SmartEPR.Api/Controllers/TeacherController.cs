@@ -96,7 +96,10 @@ public sealed class TeacherController : ControllerBase
     [HttpPost("{teacherId:long}/documents")]
     public async Task<IActionResult> SaveDocuments(long teacherId, [FromBody] IReadOnlyList<SaveTeacherDocumentDto> documents, CancellationToken cancellationToken)
     {
-        var (data, error) = await _teacherService.SaveDocumentsAsync(teacherId, documents ?? Array.Empty<SaveTeacherDocumentDto>(), cancellationToken).ConfigureAwait(false);
+        if (!TryGetUserId(out var actorUserId))
+            return Unauthorized(ApiResponse<TeacherDto>.Fail("Invalid token."));
+
+        var (data, error) = await _teacherService.SaveDocumentsAsync(actorUserId, teacherId, documents ?? Array.Empty<SaveTeacherDocumentDto>(), cancellationToken).ConfigureAwait(false);
         return data is null
             ? Ok(ApiResponse<TeacherDto>.Fail(error ?? "Unable to save documents."))
             : Ok(ApiResponse<TeacherDto>.Ok(data, "Documents saved."));

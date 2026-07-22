@@ -26,12 +26,19 @@
         <app-org-school-select
           name="filterOrg"
           fieldClass="field-org-filter"
-          [label]="lbl('SansthaName', 'Sanstha Name')"
-          [nullLabel]="lbl('SelectSanstha', '-- Select Sanstha --')"
-          [orgs]="schoolOrgs()"
+          [label]="lbl('SansthaName', 'संस्थेचे नाव')"
+          [nullLabel]="lbl('All', '-- All --')"
+          [orgs]="sansthaOrgs()"
           [value]="listFilter().orgId ?? null"
           (valueChange)="onFilterChange('orgId', $event)"
         />
+        <label class="field">
+          <span class="field-label">{{ lbl('Status', 'Status') }}</span>
+          <select class="field-control" [ngModel]="listFilter().isActive" (ngModelChange)="onFilterChange('isActive', $event)" name="listStatus">
+            <option [ngValue]="true">Active</option>
+            <option [ngValue]="false">Inactive</option>
+          </select>
+        </label>
         <label class="field field-org-search">
           <span class="field-label">{{ lbl('Search', 'Search') }}</span>
           <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" [placeholder]="lbl('Search', 'Search')">
@@ -262,7 +269,7 @@
                       <td>
                         <select class="field-control" [disabled]="isViewMode()" [ngModel]="row.documentID" (ngModelChange)="updateDocument(i, { documentID: $event ? +$event : null })" [name]="'docName' + i">
                           <option [ngValue]="null">-- Select --</option>
-                          @for (d of documentOptions(); track d.documentID) {
+                          @for (d of documentOptionsForRow(i); track d.documentID) {
                             <option [ngValue]="d.documentID">{{ d.documentName }}</option>
                           }
                         </select>
@@ -270,9 +277,9 @@
                       <td>
                         <div class="file-row">
                           @if (!isViewMode()) {
-                            <label class="file-pick-btn">
+                            <label class="file-pick-btn" [class.disabled]="!row.documentID" [attr.title]="row.documentID ? null : 'Select Document Name first'">
                               Choose File
-                              <input class="file-input-hidden" type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onDocumentFileSelected(i, $event)" [name]="'docFile' + i">
+                              <input class="file-input-hidden" type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onDocumentFileSelected(i, $event)" [name]="'docFile' + i" [disabled]="!row.documentID">
                             </label>
                           }
                           <span class="file-name">{{ documentDisplayName(row) }}</span>

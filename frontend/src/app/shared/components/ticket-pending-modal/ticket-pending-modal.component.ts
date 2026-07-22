@@ -6,6 +6,7 @@ import { TicketPendingNotification } from '../../../core/models/ticket.model';
 import { TicketNotificationService } from '../../../core/services/ticket-notification.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { looksLikeMojibake } from '../../../core/utils/ticket-status.util';
 
 @Component({
   selector: 'app-ticket-pending-modal',
@@ -26,6 +27,8 @@ export class TicketPendingModalComponent {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly agreed = signal(false);
+
+  readonly looksLikeMojibake = looksLikeMojibake;
 
   acknowledge(): void {
     if (!this.agreed()) {

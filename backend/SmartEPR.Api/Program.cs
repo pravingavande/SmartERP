@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using SmartEPR.Api.Hubs;
+using SmartEPR.Api.Middleware;
 using SmartEPR.Core.Interfaces;
 using SmartEPR.Infrastructure;
 
@@ -83,6 +84,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseCors("Frontend");
+app.UseGlobalExceptionHandling();
 
 if (!app.Environment.IsDevelopment())
 {

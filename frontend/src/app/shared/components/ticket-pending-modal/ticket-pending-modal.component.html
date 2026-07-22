@@ -51,10 +51,10 @@
             <span class="value">{{ ticket().replyRequired }}</span>
           </li>
         }
-        @if (ticket().statusNameMr || ticket().statusName) {
+        @if (ticket().statusName || ticket().statusNameMr) {
           <li>
             <span class="label">स्थिती:</span>
-            <span class="value">{{ ticket().statusNameMr || ticket().statusName }}</span>
+            <span class="value">{{ ticket().statusNameMr && !looksLikeMojibake(ticket().statusNameMr!) ? ticket().statusNameMr : (ticket().statusName || ticket().statusNameMr) }}</span>
           </li>
         }
         @if (ticket().submittedDate) {

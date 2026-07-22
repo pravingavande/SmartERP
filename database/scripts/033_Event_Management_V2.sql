@@ -552,7 +552,7 @@ BEGIN
     LEFT JOIN dbo.LocationMaster lm ON lm.LocationID = e.LocationID
     OUTER APPLY (
         SELECT
-            STRING_AGG(sch.OrganizationName, N', ') WITHIN GROUP (ORDER BY sch.OrganizationName) AS SchoolNames,
+            STRING_AGG(sch.OrganizationName, N', ') WITHIN GROUP (ORDER BY eo.OrgID) AS SchoolNames,
             STRING_AGG(CAST(eo.OrgID AS NVARCHAR(20)), N',') WITHIN GROUP (ORDER BY eo.OrgID) AS OrgIDs
         FROM dbo.EventOrg eo
         INNER JOIN dbo.OrgMaster sch ON sch.OrgID = eo.OrgID
@@ -631,7 +631,7 @@ BEGIN
     LEFT JOIN dbo.LocationMaster lm ON lm.LocationID = e.LocationID
     OUTER APPLY (
         SELECT
-            STRING_AGG(sch.OrganizationName, N', ') WITHIN GROUP (ORDER BY sch.OrganizationName) AS SchoolNames,
+            STRING_AGG(sch.OrganizationName, N', ') WITHIN GROUP (ORDER BY eo.OrgID) AS SchoolNames,
             STRING_AGG(CAST(eo.OrgID AS NVARCHAR(20)), N',') WITHIN GROUP (ORDER BY eo.OrgID) AS OrgIDs
         FROM dbo.EventOrg eo
         INNER JOIN dbo.OrgMaster sch ON sch.OrgID = eo.OrgID

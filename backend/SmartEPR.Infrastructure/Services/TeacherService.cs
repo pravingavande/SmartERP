@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Microsoft.Data.SqlClient;
 using SmartEPR.Core.DTOs.Teacher;
 using SmartEPR.Core.Interfaces;
 
@@ -66,6 +67,7 @@ public sealed class TeacherService : ITeacherService
     }
 
     public async Task<(TeacherDto? Data, string? Error)> SaveDocumentsAsync(
+        long actorUserId,
         long userId,
         IReadOnlyList<SaveTeacherDocumentDto> documents,
         CancellationToken cancellationToken = default)
@@ -77,10 +79,107 @@ public sealed class TeacherService : ITeacherService
         if (validationError is not null)
             return (null, validationError);
 
-        await _teacherRepository.SaveDocumentsAsync(userId, documents, cancellationToken).ConfigureAwait(false);
-        var saved = await _teacherRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
-        return saved is null ? (null, "Documents saved but could not be reloaded.") : (saved, null);
+        try
+        {
+            await _teacherRepository.SaveDocumentsAsync(userId, documents, cancellationToken).ConfigureAwait(false);
+            var saved = await _teacherRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
+            return saved is null ? (null, "Documents saved but could not be reloaded.") : (saved, null);
+        }
+        catch (SqlException ex) when (IsMissingSaveDocumentsProcedure(ex))
+        {
+            return await SaveDocumentsViaFullTeacherSaveAsync(actorUserId, userId, documents, cancellationToken).ConfigureAwait(false);
+        }
+        catch (SqlException ex)
+        {
+            return (null, ex.Message);
+        }
     }
+
+    private async Task<(TeacherDto? Data, string? Error)> SaveDocumentsViaFullTeacherSaveAsync(
+        long actorUserId,
+        long userId,
+        IReadOnlyList<SaveTeacherDocumentDto> documents,
+        CancellationToken cancellationToken)
+    {
+        var existing = await _teacherRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (existing is null)
+            return (null, "Teacher not found.");
+
+        var request = MapToSaveRequest(existing, documents);
+        return await SaveAsync(actorUserId, request, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static bool IsMissingSaveDocumentsProcedure(SqlException ex) =>
+        ex.Number is 2812 or 208
+        || ex.Message.Contains("sp_Teacher_SaveDocuments", StringComparison.OrdinalIgnoreCase);
+
+    private static SaveTeacherRequestDto MapToSaveRequest(TeacherDto teacher, IReadOnlyList<SaveTeacherDocumentDto> documents) => new()
+    {
+        UserID = teacher.UserID,
+        OrgID = teacher.OrgID,
+        SrNo = teacher.SrNo,
+        StaffTypeID = teacher.StaffTypeID,
+        UserRoleID = teacher.UserRoleID,
+        DesignationCode = teacher.DesignationCode,
+        Firstname = teacher.Firstname,
+        MiddleName = teacher.MiddleName,
+        LastName = teacher.LastName,
+        EmployeeShortName = teacher.EmployeeShortName,
+        PermanentAddress = teacher.PermanentAddress,
+        CityName = teacher.CityName,
+        PhotoPath = teacher.PhotoPath,
+        GenderCode = teacher.GenderCode,
+        Dob = teacher.Dob,
+        AdharCardNo = teacher.AdharCardNo,
+        NationalCode = teacher.NationalCode,
+        AGID = teacher.AGID,
+        ShalarthID = teacher.ShalarthID,
+        ScaleOfPay = teacher.ScaleOfPay,
+        CasteName = teacher.CasteName,
+        ReligionID = teacher.ReligionID,
+        CategoryID = teacher.CategoryID,
+        BloodGroupID = teacher.BloodGroupID,
+        MobileNo1 = teacher.MobileNo1,
+        MobileNo2 = teacher.MobileNo2,
+        EmailID = teacher.EmailID,
+        PanNo = teacher.PanNo,
+        Remark = teacher.Remark,
+        SubjectName1 = teacher.SubjectName1,
+        SubjectName2 = teacher.SubjectName2,
+        SubjectName3 = teacher.SubjectName3,
+        SQualification = teacher.SQualification,
+        BQualification = teacher.BQualification,
+        AfterDegreePassedSubjects = teacher.AfterDegreePassedSubjects,
+        SansthaOrderNoAndDate = teacher.SansthaOrderNoAndDate,
+        ZPOrderNoAndDate = teacher.ZPOrderNoAndDate,
+        SansthaServiceOrderNoAndDate = teacher.SansthaServiceOrderNoAndDate,
+        ZPServiceOrderNoAndDate = teacher.ZPServiceOrderNoAndDate,
+        DateOfWorkingStart = teacher.DateOfWorkingStart,
+        DoWSCurrentSchool = teacher.DoWSCurrentSchool,
+        JTCategoryID = teacher.JTCategoryID,
+        PaymentGradeDate = teacher.PaymentGradeDate,
+        NivadGradeDate = teacher.NivadGradeDate,
+        RetirementYear = teacher.RetirementYear,
+        ServiceOutDate = teacher.ServiceOutDate,
+        ShiftID = teacher.ShiftID,
+        AppUserName = teacher.AppUserName,
+        CloseFlag = teacher.CloseFlag ?? false,
+        IsActive = teacher.IsActive ?? true,
+        Documents = documents,
+        Schools = teacher.Schools.Select(s => new SaveTeacherSchoolDto
+        {
+            SrNo = s.SrNo ?? 0,
+            OrgID = s.OrgID,
+            SchoolCode = s.SchoolCode,
+            DesignationCode = s.DesignationCode,
+            TeachClass = s.TeachClass,
+            TeachSubject = s.TeachSubject,
+            SchoolJoiningDate = s.SchoolJoiningDate,
+            SchoolLeaveDate = s.SchoolLeaveDate,
+            SansthaTransferOrderNoAndDate = s.SansthaTransferOrderNoAndDate,
+            ZPTransferOrderNoAndDate = s.ZPTransferOrderNoAndDate
+        }).ToList()
+    };
 
     public async Task<(bool Success, string? Error)> DeleteAsync(long userId, CancellationToken cancellationToken = default)
     {

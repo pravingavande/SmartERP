@@ -51,12 +51,8 @@ export class TeacherService {
   }
 
   getList(filter: TeacherListFilter): Observable<TeacherListItem[]> {
-    // Require OrgID so we never return teachers across schools.
-    if (!filter.orgId) {
-      return of([]);
-    }
-
-    let params = new HttpParams().set('orgID', filter.orgId.toString());
+    let params = new HttpParams();
+    if (filter.orgId) params = params.set('orgID', filter.orgId.toString());
     if (filter.search?.trim()) params = params.set('search', filter.search.trim());
     if (filter.shalarthID?.trim()) params = params.set('shalarthID', filter.shalarthID.trim());
     if (filter.mobileNo?.trim()) params = params.set('mobileNo', filter.mobileNo.trim());
@@ -167,12 +163,12 @@ export class TeacherService {
 
   saveDocuments(userId: number, documents: TeacherDocumentLine[]): Observable<{ data: TeacherFormState | null; message?: string }> {
     const payload = documents
-      .filter((d) => d.empDocumentCode)
-      .map((d) => ({ empDocumentCode: d.empDocumentCode, empDocumentPath: d.empDocumentPath || '' }));
+      .filter((d) => d.empDocumentCode && d.empDocumentPath?.trim())
+      .map((d) => ({ empDocumentCode: d.empDocumentCode, empDocumentPath: d.empDocumentPath!.trim() }));
 
     return this.http.post<ApiResponse<Record<string, unknown>>>(`${this.base}/${userId}/documents`, payload).pipe(
       map((r) => ({ data: r.success && r.data ? this.mapToForm(r.data) : null, message: r.message })),
-      catchError(() => of({ data: null, message: 'Unable to save documents.' }))
+      catchError((err) => of({ data: null, message: apiUploadHttpError(err, 'Unable to save documents.') }))
     );
   }
 

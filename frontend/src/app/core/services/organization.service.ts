@@ -156,10 +156,10 @@ export class OrganizationService {
   private normalizeLookups(raw: Record<string, unknown>): OrganizationLookups {
     const businessCategories = (raw['businessCategories'] ?? raw['BusinessCategories'] ?? []) as Array<Record<string, unknown>>;
     const schoolCategories = (raw['schoolCategories'] ?? raw['SchoolCategories'] ?? []) as Array<Record<string, unknown>>;
-    // Prefer orgs (Teacher Master); fall back to legacy sansthaOrgs until API is updated
+    const rawSansthaOrgs =
+      ((raw['sansthaOrgs'] ?? raw['SansthaOrgs']) as Array<Record<string, unknown>>) ?? [];
     const rawOrgs =
-      ((raw['orgs'] ?? raw['Orgs'] ?? raw['sansthaOrgs'] ?? raw['SansthaOrgs']) as Array<Record<string, unknown>>) ?? [];
-    const mapped = rawOrgs.map((x) => this.normalizeOrg(x));
+      ((raw['orgs'] ?? raw['Orgs']) as Array<Record<string, unknown>>) ?? [];
     return {
       businessCategories: businessCategories.map((x) => ({
         id: Number(x['id'] ?? x['Id'] ?? 0),
@@ -169,7 +169,8 @@ export class OrganizationService {
         id: Number(x['id'] ?? x['Id'] ?? 0),
         name: String(x['name'] ?? x['Name'] ?? '')
       })),
-      orgs: this.auth.filterSchoolOrgs(mapped)
+      orgs: this.auth.filterSchoolOrgs(rawOrgs.map((x) => this.normalizeOrg(x))),
+      sansthaOrgs: rawSansthaOrgs.map((x) => this.normalizeOrg(x))
     };
   }
 

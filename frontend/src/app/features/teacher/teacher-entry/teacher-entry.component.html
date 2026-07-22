@@ -51,7 +51,6 @@
         <select class="field-control" [ngModel]="listFilter().isActive" (ngModelChange)="updateListFilter('isActive', $event)" name="filterActive">
           <option [ngValue]="true">Active</option>
           <option [ngValue]="false">Inactive</option>
-          <option [ngValue]="null">All</option>
         </select>
       </label>
     </div>
@@ -608,7 +607,7 @@
                           <td>
                             <select class="field-control" [ngModel]="row.empDocumentCode" (ngModelChange)="updateDocument(i, { empDocumentCode: $event ? +$event : null })" [name]="'docType' + i">
                               <option [ngValue]="null">-- Select --</option>
-                              @for (d of masterLookups()?.documents ?? []; track d.code) {
+                              @for (d of documentTypesForRow(i); track d.code) {
                                 <option [ngValue]="d.code">{{ d.name }}</option>
                               }
                             </select>
@@ -616,7 +615,7 @@
                           <td>
                             <div class="file-row">
                               @if (!isViewMode()) {
-                                <label class="file-pick-btn" [class.disabled]="!row.empDocumentCode" [attr.title]="row.empDocumentCode ? null : 'Select Document Type first'">
+                                <label class="file-pick-btn" [class.disabled]="!row.empDocumentCode" [attr.title]="row.empDocumentCode ? null : 'Select Document Name first'">
                                   Choose File
                                   <input class="file-input-hidden" type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onDocumentFileSelected(i, $event)" [name]="'docFile' + i" [disabled]="!row.empDocumentCode">
                                 </label>

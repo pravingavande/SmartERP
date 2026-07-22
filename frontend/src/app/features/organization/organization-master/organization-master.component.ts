@@ -23,7 +23,7 @@ import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows } from '../../../core/utils/master-list.util';
 import { mapOrganizationBackendMessage, validateOrganizationForm, getOrganizationDocumentsSaveError } from '../../../core/utils/organization-validation.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId, resolveSansthaOrgs } from '../../../core/utils/org-access.util';
 import {
   serializeOrganizationDocuments,
   DUPLICATE_DOCUMENT_NAME_MESSAGE
@@ -82,7 +82,9 @@ export class OrganizationMasterComponent {
   readonly isSansthaCategory = computed(() => this.form().businessCategoryID === SANSTHA_BUSINESS_CATEGORY_ID);
   /** UserRoleID 3 (Employee) — view/edit only; cannot add or delete. */
   readonly canManageOrganizations = computed(() => this.auth.currentUser()?.userRoleId !== 3);
-  /** Same as Teacher Master — orgs already filtered in OrganizationService via auth.filterSchoolOrgs. */
+  /** Sanstha orgs for list filter (UnderOrgID scope). */
+  readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
+  /** School orgs for form Org / School select. */
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   /** Form Org / School select value: school itself on edit, list selection context on new. */
   readonly formOrgSelectValue = computed(() => {
@@ -116,27 +118,14 @@ export class OrganizationMasterComponent {
           this.items.set([]);
           return;
         }
-        if (!data.orgs?.length) {
-          this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
-          this.items.set([]);
-          return;
-        }
-        // Same default selection as Teacher Master
-        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
-        this.listFilter.update((f) => ({ ...f, orgId }));
+        const sansthaOrgs = resolveSansthaOrgs(data.sansthaOrgs ?? [], this.auth.currentUser());
+        this.lookups.set({ ...data, sansthaOrgs });
+        this.listFilter.update((f) => ({ ...f, orgId: null, isActive: true }));
         this.loadList();
       });
   }
 
   loadList(): void {
-    const orgId = this.listFilter().orgId;
-    // Same as Teacher Master — only load for selected school
-    if (!orgId) {
-      this.listLoading.set(false);
-      this.items.set([]);
-      this.listPageIndex.set(0);
-      return;
-    }
     this.listLoading.set(true);
     this.organization.getList(this.listFilter()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((rows) => {
       this.listLoading.set(false);
@@ -160,9 +149,11 @@ export class OrganizationMasterComponent {
     if (this.formVisible()) this.closeForm();
     const lookups = this.lookups();
     const orgId =
-      this.listFilter().orgId ?? resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
+      this.listFilter().orgId ??
+      this.sansthaOrgs()[0]?.orgID ??
+      resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
     if (!orgId) {
-      this.errorMessage.set('Select Sanstha on the list page before adding a new organization.');
+      this.errorMessage.set('Select a sanstha on the list page before adding a new organization.');
       return;
     }
     this.errorMessage.set(null);
@@ -326,6 +317,7 @@ export class OrganizationMasterComponent {
       const isDuplicate = this.form().documents.some((row, i) => i !== index && row.documentID === patch.documentID);
       if (isDuplicate) {
         this.saveError.set(DUPLICATE_DOCUMENT_NAME_MESSAGE);
+        this.toast.showError(DUPLICATE_DOCUMENT_NAME_MESSAGE, 'Duplicate document');
         return;
       }
     }
@@ -395,6 +387,19 @@ export class OrganizationMasterComponent {
     if (!path) return 'No file chosen';
     const parts = path.split(/[/\\]/);
     return parts[parts.length - 1] || path;
+  }
+
+  /** Document names already picked in other rows are hidden from this row's dropdown. */
+  documentOptionsForRow(index: number): OrganizationDocumentOption[] {
+    const rows = this.form().documents;
+    const currentId = rows[index]?.documentID ?? null;
+    const usedIds = new Set(
+      rows
+        .filter((_, i) => i !== index)
+        .map((r) => r.documentID)
+        .filter((id): id is number => id != null && id > 0)
+    );
+    return this.documentOptions().filter((d) => !usedIds.has(d.documentID) || d.documentID === currentId);
   }
 
   openDocument(path: string | null | undefined): void {
@@ -533,7 +538,7 @@ export class OrganizationMasterComponent {
       schoolCategoryID: null,
       orgId: null,
       cityName: '',
-      isActive: null
+      isActive: true
     };
   }
 

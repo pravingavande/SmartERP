@@ -16,7 +16,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
-import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
+import { pageCount, pageRange, paginateRows, sortRows, SortDirection, filterMasterListByStatus } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateAccountRegisterForm } from '../../../core/utils/master-validation.util';
 import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
@@ -56,6 +56,7 @@ export class AccountRegisterMasterComponent {
   readonly importSelectedIds = signal<Set<number>>(new Set());
   readonly importLanguage = signal<ImportLanguage>('M');
   readonly listOrgID = signal<number | null>(null);
+  readonly listStatusActive = signal(true);
   readonly searchText = signal('');
   readonly sortKey = signal<keyof AccountRegisterMaster>('srNo');
   readonly sortDir = signal<SortDirection>('asc');
@@ -87,7 +88,7 @@ export class AccountRegisterMasterComponent {
 
   readonly filteredItems = computed(() => {
     const q = this.searchText().trim().toLowerCase();
-    let rows = this.items();
+    let rows = filterMasterListByStatus(this.items(), this.listStatusActive());
     if (q) rows = rows.filter((x) => x.accountRegister.toLowerCase().includes(q));
     return sortRows(rows, this.sortKey(), this.sortDir());
   });
@@ -187,6 +188,11 @@ export class AccountRegisterMasterComponent {
 
   onSearchChange(value: string): void {
     this.searchText.set(value);
+    this.listPageIndex.set(0);
+  }
+
+  onListStatusChange(active: boolean): void {
+    this.listStatusActive.set(active);
     this.listPageIndex.set(0);
   }
 

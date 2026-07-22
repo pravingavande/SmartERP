@@ -137,8 +137,15 @@ public sealed class EventCalendarController : ControllerBase
 
         var fromDate = from?.Date ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var toDate = to?.Date ?? fromDate.AddMonths(1).AddDays(-1);
-        var events = await _service.GetEventsAsync(userId, fromDate, toDate, search, cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<IReadOnlyList<CalendarEventDto>>.Ok(events));
+        try
+        {
+            var events = await _service.GetEventsAsync(userId, fromDate, toDate, search, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<CalendarEventDto>>.Ok(events));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<CalendarEventDto>>.Fail(ex.Message));
+        }
     }
 
     [HttpGet("events/{eventId:int}")]
@@ -147,10 +154,17 @@ public sealed class EventCalendarController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Unauthorized(ApiResponse<CalendarEventDto>.Fail("Invalid token."));
 
-        var item = await _service.GetEventByIdAsync(userId, eventId, cancellationToken).ConfigureAwait(false);
-        return item is null
-            ? Ok(ApiResponse<CalendarEventDto>.Fail("Event not found."))
-            : Ok(ApiResponse<CalendarEventDto>.Ok(item));
+        try
+        {
+            var item = await _service.GetEventByIdAsync(userId, eventId, cancellationToken).ConfigureAwait(false);
+            return item is null
+                ? Ok(ApiResponse<CalendarEventDto>.Fail("Event not found."))
+                : Ok(ApiResponse<CalendarEventDto>.Ok(item));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Ok(ApiResponse<CalendarEventDto>.Fail(ex.Message));
+        }
     }
 
     [HttpPost("events")]

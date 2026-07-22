@@ -19,6 +19,7 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapEventTicketBackendMessage, validateTicketForm, validateTicketReply } from '../../../core/utils/event-ticket-validation.util';
 import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { ticketStatusLabel } from '../../../core/utils/ticket-status.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
@@ -415,9 +416,7 @@ export class TicketEntryComponent {
   }
 
   statusLabel(item: { statusNameMr?: string | null; statusName?: string | null }): string {
-    const mr = item.statusNameMr?.trim();
-    if (mr) return mr;
-    return item.statusName?.trim() || '—';
+    return ticketStatusLabel(item);
   }
 
   priorityClass(priority?: string | null): string {

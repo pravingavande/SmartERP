@@ -11,7 +11,7 @@ import { LeaveService } from '../../../core/services/leave.service';
 import { MasterService } from '../../../core/services/master.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
-import { pageCount, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
+import { pageCount, paginateRows, sortRows, SortDirection, filterMasterListByStatus } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateLeaveTypeForm } from '../../../core/utils/master-validation.util';
 import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
@@ -52,6 +52,7 @@ export class LeaveTypeMasterComponent {
   readonly importSelectedIds = signal<Set<number>>(new Set());
   readonly importLanguage = signal<ImportLanguage>('M');
   readonly listOrgID = signal<number | null>(null);
+  readonly listStatusActive = signal(true);
   readonly searchText = signal('');
   readonly sortKey = signal<keyof LeaveTypeItem>('srNo');
   readonly sortDir = signal<SortDirection>('asc');
@@ -81,7 +82,7 @@ export class LeaveTypeMasterComponent {
 
   readonly filteredItems = computed(() => {
     const q = this.searchText().trim().toLowerCase();
-    let rows = this.items();
+    let rows = filterMasterListByStatus(this.items(), this.listStatusActive());
     if (q) rows = rows.filter((x) => x.leaveTypeName.toLowerCase().includes(q));
     return sortRows(rows, this.sortKey(), this.sortDir());
   });
@@ -137,6 +138,11 @@ export class LeaveTypeMasterComponent {
 
   onSearchChange(value: string): void {
     this.searchText.set(value);
+    this.listPageIndex.set(0);
+  }
+
+  onListStatusChange(active: boolean): void {
+    this.listStatusActive.set(active);
     this.listPageIndex.set(0);
   }
 

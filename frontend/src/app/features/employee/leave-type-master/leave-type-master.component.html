@@ -23,6 +23,13 @@
       <span class="field-label">Search</span>
       <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search leave type name">
     </label>
+    <label class="field">
+      <span class="field-label">Status</span>
+      <select class="field-control" [ngModel]="listStatusActive()" (ngModelChange)="onListStatusChange($event)" name="listStatus">
+        <option [ngValue]="true">Active</option>
+        <option [ngValue]="false">Inactive</option>
+      </select>
+    </label>
   </div>
   @if (errorMessage()) {
     <p class="error list-error">{{ errorMessage() }}</p>

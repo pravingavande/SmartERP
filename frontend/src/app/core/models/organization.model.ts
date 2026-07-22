@@ -32,6 +32,8 @@ export interface OrganizationLookups {
   schoolCategories: LongIdNameOption[];
   /** School orgs — same as Teacher Master (filtered via auth.filterSchoolOrgs). */
   orgs: SansthaOrgOption[];
+  /** Sanstha orgs for list filter (UnderOrgID scope). */
+  sansthaOrgs: SansthaOrgOption[];
 }
 
 export interface OrganizationListFilter {

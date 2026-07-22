@@ -25,7 +25,7 @@ export function serializeTeacherDocuments(docs: TeacherDocumentLine[]): string {
   );
 }
 
-export const DUPLICATE_DOCUMENT_NAME_MESSAGE = 'Select a different document name for each row.';
+export const DUPLICATE_DOCUMENT_NAME_MESSAGE = 'This document name is already selected in another row.';
 
 export function getDuplicateDocumentNameError(ids: Array<number | null | undefined>): string | null {
   const seen = new Set<number>();

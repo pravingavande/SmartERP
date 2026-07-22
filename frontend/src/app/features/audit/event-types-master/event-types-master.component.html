@@ -27,6 +27,13 @@
             }
           </select>
         </label>
+        <label class="field">
+          <span class="field-label">Status</span>
+          <select class="field-control" [ngModel]="listStatusActive()" (ngModelChange)="onListStatusChange($event)" name="listStatus">
+            <option [ngValue]="true">Active</option>
+            <option [ngValue]="false">Inactive</option>
+          </select>
+        </label>
       </div>
       @if (listLoading()) { <p class="loading-hint">Loading event types...</p> }
       <div class="records-table-wrap">
@@ -61,7 +68,7 @@
         </table>
       </div>
       <app-master-list-pagination
-        [total]="items().length"
+        [total]="filteredItems().length"
         [pageIndex]="listPageIndex()"
         [pageSize]="listPageSize()"
         (pageIndexChange)="goToListPage($event)"

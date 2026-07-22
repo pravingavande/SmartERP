@@ -33,7 +33,7 @@ BEGIN
         FROM OPENJSON(@DocumentsJson)
         WITH (
             EmpDocumentCode BIGINT '$.empDocumentCode',
-            EmpDocumentPath VARCHAR(255) '$.empDocumentPath'
+            EmpDocumentPath VARCHAR(510) '$.empDocumentPath'
         ) j
         WHERE j.EmpDocumentCode IS NOT NULL
           AND NULLIF(LTRIM(RTRIM(j.EmpDocumentPath)), '') IS NOT NULL;

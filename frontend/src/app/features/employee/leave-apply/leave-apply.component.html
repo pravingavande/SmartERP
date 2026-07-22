@@ -73,7 +73,9 @@
                     <td>{{ item.leavePermissionName || '—' }}</td>
                     <td class="actions">
                       <app-list-action-btn action="view" (clicked)="viewEntry(item)" />
-                      <app-list-action-btn action="edit" (clicked)="editEntry(item)" />
+                      @if (canManageLeave()) {
+                        <app-list-action-btn action="edit" (clicked)="editEntry(item)" />
+                      }
                     </td>
                   </tr>
                 } @empty {

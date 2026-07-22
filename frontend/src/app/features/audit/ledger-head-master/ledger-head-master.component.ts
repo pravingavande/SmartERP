@@ -18,6 +18,7 @@ import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { mapBackendMessageToFieldErrors, validateLedgerHeadForm } from '../../../core/utils/master-validation.util';
 import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { filterMasterListByStatus } from '../../../core/utils/master-list.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
@@ -55,6 +56,7 @@ export class LedgerHeadMasterComponent {
   readonly importLanguage = signal<ImportLanguage>('M');
   readonly listOrgID = signal<number | null>(null);
   readonly listLedgerTypeID = signal<number | null>(null);
+  readonly listStatusActive = signal(true);
   readonly listPageSize = signal(10);
   readonly listPageIndex = signal(0);
 
@@ -78,9 +80,9 @@ export class LedgerHeadMasterComponent {
 
   readonly filteredLedgerHeads = computed(() => {
     const typeId = this.listLedgerTypeID();
-    const list = this.ledgerHeads();
-    if (!typeId) return list;
-    return list.filter((h) => h.ledgerTypeID === typeId);
+    let list = filterMasterListByStatus(this.ledgerHeads(), this.listStatusActive());
+    if (typeId) list = list.filter((h) => h.ledgerTypeID === typeId);
+    return list;
   });
   readonly listPageCount = computed(() => {
     const total = this.filteredLedgerHeads().length;
@@ -149,6 +151,11 @@ export class LedgerHeadMasterComponent {
     this.listLedgerTypeID.set(typeId);
     this.listPageIndex.set(0);
     this.closeForm();
+  }
+
+  onListStatusChange(active: boolean): void {
+    this.listStatusActive.set(active);
+    this.listPageIndex.set(0);
   }
 
   onListPageSizeChange(size: number): void {

@@ -15,10 +15,12 @@ namespace SmartEPR.Api.Controllers;
 public sealed class LeaveController : ControllerBase
 {
     private readonly ILeaveService _leaveService;
+    private readonly IUserRepository _userRepository;
 
-    public LeaveController(ILeaveService leaveService)
+    public LeaveController(ILeaveService leaveService, IUserRepository userRepository)
     {
         _leaveService = leaveService;
+        _userRepository = userRepository;
     }
 
     [HttpGet("types")]
@@ -111,6 +113,9 @@ public sealed class LeaveController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Save([FromBody] SaveLeaveApplyRequestDto request, CancellationToken cancellationToken)
     {
+        if (request.UserLeaveApplyID > 0 && await IsEmployeeUserAsync(cancellationToken).ConfigureAwait(false))
+            return Ok(ApiResponse<LeaveApplyDto>.Fail("Employees cannot edit leave applications after submission. Contact admin."));
+
         var saved = await _leaveService.SaveLeaveApplyAsync(request, cancellationToken).ConfigureAwait(false);
         return saved is null
             ? Ok(ApiResponse<LeaveApplyDto>.Fail("Unable to save leave application. Check required fields."))
@@ -123,5 +128,14 @@ public sealed class LeaveController : ControllerBase
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
         return long.TryParse(claim, out userId);
+    }
+
+    private async Task<bool> IsEmployeeUserAsync(CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return false;
+
+        var profile = await _userRepository.GetProfileByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        return profile?.UserRoleID == 3;
     }
 }

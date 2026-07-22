@@ -8,8 +8,8 @@ internal static class SqlErrorMapper
     {
         return ex.Number switch
         {
-            2812 => $"{module} database objects are missing. Run SQL script 033_Event_Management_V2.sql (or hotfix 034/035) on the server.",
-            208 => $"{module} table schema is outdated. Run SQL script 033_Event_Management_V2.sql (or hotfix 034/035) on the server.",
+            2812 => $"{module} database objects are missing. Run the latest SQL migration scripts on the server (e.g. 033, 035, 092 for Event Calendar).",
+            208 => $"{module} table schema is outdated. Run the latest SQL migration scripts on the server (e.g. 033, 035, 092 for Event Calendar).",
             51001 => "Organization is required.",
             51002 => "Event Type is required.",
             51003 => "Organization is required.",
