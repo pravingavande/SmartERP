@@ -13,12 +13,21 @@
   </header>
 
   <div class="list-filters">
-    <app-org-school-select
-      name="listOrgID"
-      [orgs]="lookups()?.orgs ?? []"
-      [value]="listOrgID()"
-      (valueChange)="onListOrgChange($event)"
-    />
+    <label class="field">
+      <span class="field-label">Org / Sanstha</span>
+      <select
+        class="field-control"
+        [disabled]="lookupsLoading()"
+        [ngModel]="listOrgID()"
+        (ngModelChange)="onListOrgChange($event ? +$event : null)"
+        name="listOrgID"
+      >
+        <option [ngValue]="null">-- Select Sanstha --</option>
+        @for (o of sansthaOrgs(); track o.orgID) {
+          <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
+        }
+      </select>
+    </label>
     <label class="field">
       <span class="field-label">Search</span>
       <input class="field-control" [ngModel]="searchText()" (ngModelChange)="onSearchChange($event)" name="search" placeholder="Search leave type name">
@@ -60,7 +69,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="4" class="empty">No leave types for selected school</td></tr>
+              <tr><td colspan="4" class="empty">No leave types for selected Sanstha</td></tr>
             }
           </tbody>
         </table>
@@ -84,15 +93,10 @@
         <form class="master-modal-form voucher-form" (ngSubmit)="save()">
           @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
           <div class="form-grid">
-            <app-org-school-select
-              name="formUnderOrgID"
-              [orgs]="lookups()?.orgs ?? []"
-              [value]="form().underOrgID ?? null"
-              [required]="true"
-              [invalid]="!!fieldError('underOrgID')"
-              [error]="fieldError('underOrgID')"
-              (valueChange)="onFormOrgChange($event)"
-            />
+            <label class="field full">
+              <span class="field-label">Org / Sanstha</span>
+              <input class="field-control field-readonly" type="text" readonly [value]="selectedOrgName()">
+            </label>
             <label class="field" [class.field-invalid]="fieldError('srNo')">
               <span class="field-label">Sr No *</span>
               <input

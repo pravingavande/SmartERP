@@ -1,35 +1,36 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
-import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { InventoryLookups } from '../../../core/models/master.model';
+import { AuditLookups } from '../../../core/models/audit.model';
 import { LeaveTypeFormState, LeaveTypeItem } from '../../../core/models/leave.model';
+import { AuditService } from '../../../core/services/audit.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { LeaveService } from '../../../core/services/leave.service';
-import { MasterService } from '../../../core/services/master.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, paginateRows, sortRows, SortDirection, filterMasterListByStatus } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateLeaveTypeForm } from '../../../core/utils/master-validation.util';
 import { ImportLanguage, matchesImportLanguage } from '../../../core/utils/import-language.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { resolveDefaultSansthaOrgId, resolveSansthaOrgs } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit';
 
 @Component({
   selector: 'app-leave-type-master',
-  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent, OrgSchoolSelectComponent],
+  imports: [FormsModule, MasterListPaginationComponent, ListActionBtnComponent],
   templateUrl: './leave-type-master.component.html',
   styleUrl: './leave-type-master.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LeaveTypeMasterComponent {
   private readonly leaveService = inject(LeaveService);
-  private readonly master = inject(MasterService);
+  private readonly audit = inject(AuditService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -40,7 +41,7 @@ export class LeaveTypeMasterComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly saveError = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
-  readonly lookups = signal<InventoryLookups | null>(null);
+  readonly lookups = signal<AuditLookups | null>(null);
   readonly items = signal<LeaveTypeItem[]>([]);
   readonly form = signal<LeaveTypeFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
@@ -61,6 +62,7 @@ export class LeaveTypeMasterComponent {
 
   private static readonly ImportSourceOrgID = 1;
 
+  readonly sansthaOrgs = computed(() => this.lookups()?.sansthaOrgs ?? []);
   readonly canImport = computed(() => {
     const orgId = this.listOrgID();
     return orgId != null && orgId > 0 && orgId !== LeaveTypeMasterComponent.ImportSourceOrgID;
@@ -77,7 +79,7 @@ export class LeaveTypeMasterComponent {
   });
   readonly selectedOrgName = computed(() => {
     const orgId = this.listOrgID();
-    return this.lookups()?.orgs?.find((o) => o.orgID === orgId)?.organizationName ?? '—';
+    return this.sansthaOrgs().find((o) => o.orgID === orgId)?.organizationName ?? '—';
   });
 
   readonly filteredItems = computed(() => {
@@ -96,18 +98,19 @@ export class LeaveTypeMasterComponent {
   loadLookups(): void {
     this.lookupsLoading.set(true);
     forkJoin({
-      lookups: this.master.getInventoryLookups(),
+      lookups: this.audit.getLookups(),
       profile: this.dashboardService.getProfile()
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ lookups: data, profile }) => {
         this.lookupsLoading.set(false);
-        this.lookups.set(data);
-        if (!data?.orgs?.length) {
-          this.errorMessage.set('No schools found for your login.');
+        const sansthaOrgs = resolveSansthaOrgs(data?.sansthaOrgs ?? [], this.auth.currentUser());
+        this.lookups.set(data ? { ...data, sansthaOrgs } : null);
+        if (!sansthaOrgs.length) {
+          this.errorMessage.set('No Sanstha found for your login.');
           return;
         }
-        const orgId = resolveDefaultSchoolOrgId(data.orgs, profile);
+        const orgId = resolveDefaultSansthaOrgId(sansthaOrgs, profile, this.auth.currentUser());
         this.listOrgID.set(orgId);
         if (orgId) this.loadList();
       });
@@ -167,7 +170,7 @@ export class LeaveTypeMasterComponent {
   newItem(): void {
     const orgId = this.listOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select Org / School on the list page before adding new.');
+      this.errorMessage.set('Select Sanstha on the list page before adding new.');
       return;
     }
     this.formMode.set('new');
@@ -221,7 +224,7 @@ export class LeaveTypeMasterComponent {
   openImport(): void {
     const orgId = this.listOrgID();
     if (!orgId) {
-      this.errorMessage.set('Select Org / School before importing.');
+      this.errorMessage.set('Select Sanstha before importing.');
       return;
     }
     if (!this.canImport()) {
@@ -288,7 +291,7 @@ export class LeaveTypeMasterComponent {
     const orgId = this.listOrgID();
     const ids = Array.from(this.importSelectedIds());
     if (!orgId || !this.canImport()) {
-      this.toast.showError('Select a destination organization first.', 'Import');
+      this.toast.showError('Select a destination Sanstha first.', 'Import');
       return;
     }
     if (!ids.length) {
@@ -313,13 +316,6 @@ export class LeaveTypeMasterComponent {
           'Imported'
         );
       });
-  }
-
-  onFormOrgChange(orgId: number | null): void {
-    this.fieldErrors.update((e) => removeFieldError(e, 'underOrgID'));
-    this.form.update((f) => ({ ...f, underOrgID: orgId }));
-    this.listOrgID.set(orgId);
-    if (this.formMode() === 'new' && orgId) this.loadNextSrNo(orgId);
   }
 
   updateForm<K extends keyof LeaveTypeFormState>(key: K, value: LeaveTypeFormState[K]): void {

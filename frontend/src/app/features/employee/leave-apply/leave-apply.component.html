@@ -150,7 +150,7 @@
                   <span class="field-label">Leave Type *</span>
                   <select class="field-control" [ngModel]="form().leaveTypeID" (ngModelChange)="updateForm('leaveTypeID', $event ? +$event : null)" name="leaveTypeID">
                     <option [ngValue]="null">-- Select --</option>
-                    @for (lt of masterLookups()?.leaveTypes ?? []; track lt.id) {
+                    @for (lt of leaveTypes(); track lt.id) {
                       <option [ngValue]="lt.id">{{ lt.name }}</option>
                     }
                   </select>

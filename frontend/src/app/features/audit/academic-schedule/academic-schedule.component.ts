@@ -3,16 +3,18 @@ import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import {
   AcademicScheduleFilter,
   AcademicScheduleFormState,
   AcademicScheduleItem,
   AcademicScheduleLookups,
+  MasterOption,
   MONTH_OPTIONS,
   monthLabel
 } from '../../../core/models/master.model';
 import { UserProfile } from '../../../core/models/dashboard.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { MasterService } from '../../../core/services/master.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -20,7 +22,7 @@ import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/uti
 import { pageCount, pageRange, paginateRows, sortRows, SortDirection } from '../../../core/utils/master-list.util';
 import { mapBackendMessageToFieldErrors, validateAcademicScheduleForm } from '../../../core/utils/master-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId, resolveSansthaIdFromSchool } from '../../../core/utils/org-access.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit' | 'view';
@@ -36,6 +38,7 @@ const ALLOWED_FILE_EXT = new Set(['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']);
 })
 export class AcademicScheduleComponent {
   private readonly master = inject(MasterService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -51,6 +54,8 @@ export class AcademicScheduleComponent {
   readonly saveError = signal<string | null>(null);
   readonly fieldErrors = signal<FieldErrors>({});
   readonly lookups = signal<AcademicScheduleLookups | null>(null);
+  readonly classes = signal<MasterOption[]>([]);
+  readonly subjects = signal<MasterOption[]>([]);
   readonly items = signal<AcademicScheduleItem[]>([]);
   readonly form = signal<AcademicScheduleFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
@@ -112,6 +117,7 @@ export class AcademicScheduleComponent {
         if (data.ayList?.length) {
           this.listAyId.set(data.ayList[0].ayID);
         }
+        this.loadScopedMasters(this.listOrgID());
         this.loadList();
       });
   }
@@ -149,8 +155,11 @@ export class AcademicScheduleComponent {
 
   onListOrgChange(orgId: number | null): void {
     this.listOrgID.set(orgId);
+    this.listClassId.set(null);
+    this.listSubjectId.set(null);
     this.listPageIndex.set(0);
     this.closeForm();
+    this.loadScopedMasters(orgId);
     this.loadList();
   }
 
@@ -193,6 +202,7 @@ export class AcademicScheduleComponent {
     const base = this.emptyForm();
     base.underOrgID = orgId;
     this.form.set(base);
+    this.loadScopedMasters(orgId);
     this.master
       .getCurrentAyId()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -241,7 +251,13 @@ export class AcademicScheduleComponent {
   }
 
   onFormOrgChange(orgId: number | null): void {
-    this.updateForm('underOrgID', orgId);
+    this.form.update((f) => ({
+      ...f,
+      underOrgID: orgId,
+      classID: null,
+      subjectID: null
+    }));
+    this.loadScopedMasters(orgId);
   }
 
   onFileSelected(event: Event): void {
@@ -356,6 +372,35 @@ export class AcademicScheduleComponent {
         this.fieldErrors.set({});
         this.saveError.set(null);
         this.form.set(data);
+        if (data.underOrgID) this.loadScopedMasters(data.underOrgID);
+      });
+  }
+
+  private loadScopedMasters(schoolOrgId: number | null): void {
+    if (!schoolOrgId) {
+      this.classes.set([]);
+      this.subjects.set([]);
+      return;
+    }
+
+    const sansthaId = resolveSansthaIdFromSchool(schoolOrgId, this.schoolOrgs(), this.auth.currentUser());
+
+    forkJoin({
+      classes: this.master.getClasses(schoolOrgId),
+      subjects: sansthaId ? this.master.getSubjects(sansthaId) : of([])
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ classes, subjects }) => {
+        this.classes.set(
+          classes
+            .filter((c) => c.isActive !== false)
+            .map((c) => ({ id: c.classID, name: c.className }))
+        );
+        this.subjects.set(
+          subjects
+            .filter((s) => s.isActive !== false)
+            .map((s) => ({ id: s.subjectID, name: s.subjectName }))
+        );
       });
   }
 

@@ -133,3 +133,24 @@ export function resolveDefaultSchoolOrgId(
 
   return orgs[0]?.orgID ?? null;
 }
+
+/**
+ * Resolve Sanstha org ID from a selected school (leave types, subjects, etc.).
+ * 1) school.underOrgID  2) login schoolContext  3) session sansthaId.
+ */
+export function resolveSansthaIdFromSchool(
+  schoolOrgId: number | null | undefined,
+  schoolOrgs: SchoolOrgSelectOption[],
+  user?: AuthUser | null
+): number | null {
+  if (!schoolOrgId) return user?.sansthaId ?? null;
+
+  const school = schoolOrgs.find((o) => o.orgID === schoolOrgId);
+  if (school?.underOrgID) return school.underOrgID;
+
+  for (const ctx of user?.schoolContexts ?? []) {
+    if (ctx.schoolId === schoolOrgId && ctx.sansthaId) return ctx.sansthaId;
+  }
+
+  return user?.sansthaId ?? null;
+}

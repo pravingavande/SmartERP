@@ -5,16 +5,15 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { LeaveApplyFormState, LeaveApplyListItem, LeaveApplyLookupsBundle, EmployeeOption } from '../../../core/models/leave.model';
+import { LeaveApplyFormState, LeaveApplyListItem, LeaveApplyLookupsBundle, EmployeeOption, LeaveOption } from '../../../core/models/leave.model';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LeaveService } from '../../../core/services/leave.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { isSansthaAdminUser } from '../../../core/utils/org-access.util';
+import { isSansthaAdminUser, resolveDefaultSchoolOrgId, resolveSansthaIdFromSchool } from '../../../core/utils/org-access.util';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
@@ -41,6 +40,7 @@ export class LeaveApplyComponent {
   readonly lookups = signal<LeaveApplyLookupsBundle | null>(null);
   readonly items = signal<LeaveApplyListItem[]>([]);
   readonly employees = signal<EmployeeOption[]>([]);
+  readonly leaveTypes = signal<LeaveOption[]>([]);
   readonly form = signal<LeaveApplyFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
   readonly formVisible = signal(false);
@@ -169,6 +169,7 @@ export class LeaveApplyComponent {
     this.saveError.set(null);
     this.form.set(this.emptyForm(orgId, ayId));
     this.loadEmployees(orgId);
+    this.loadLeaveTypesForSchool(orgId);
     this.leaveService
       .getNextRecordNo(orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -195,7 +196,10 @@ export class LeaveApplyComponent {
         this.fieldErrors.set({});
         this.saveError.set(null);
         this.form.set(data);
-        if (data.orgID) this.loadEmployees(data.orgID);
+        if (data.orgID) {
+          this.loadEmployees(data.orgID);
+          this.loadLeaveTypesForSchool(data.orgID);
+        }
       });
   }
 
@@ -217,9 +221,14 @@ export class LeaveApplyComponent {
   }
 
   onFormOrgChange(orgId: number | null): void {
-    this.form.update((f) => ({ ...f, orgID: orgId, userID: null }));
-    if (orgId) this.loadEmployees(orgId);
-    else this.employees.set([]);
+    this.form.update((f) => ({ ...f, orgID: orgId, userID: null, leaveTypeID: null }));
+    if (orgId) {
+      this.loadEmployees(orgId);
+      this.loadLeaveTypesForSchool(orgId);
+    } else {
+      this.employees.set([]);
+      this.leaveTypes.set([]);
+    }
   }
 
   onDateRangeChange(): void {
@@ -282,6 +291,24 @@ export class LeaveApplyComponent {
       .getEmployees(orgId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((list) => this.employees.set(list));
+  }
+
+  private loadLeaveTypesForSchool(schoolOrgId: number | null): void {
+    const sansthaId = resolveSansthaIdFromSchool(schoolOrgId, this.schoolOrgs(), this.auth.currentUser());
+    if (!sansthaId) {
+      this.leaveTypes.set([]);
+      return;
+    }
+    this.leaveService
+      .getLeaveTypes(sansthaId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((list) => {
+        this.leaveTypes.set(
+          list
+            .filter((x) => x.isActive !== false)
+            .map((x) => ({ id: x.leaveTypeID, name: x.leaveTypeName }))
+        );
+      });
   }
 
   private emptyForm(orgId: number | null = null, ayId: number | null = null): LeaveApplyFormState {
