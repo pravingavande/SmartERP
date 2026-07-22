@@ -32,16 +32,16 @@
           [value]="listFilter().orgId ?? null"
           (valueChange)="onFilterChange('orgId', $event)"
         />
+        <label class="field field-org-search">
+          <span class="field-label">{{ lbl('Search', 'Search') }}</span>
+          <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" [placeholder]="lbl('Search', 'Search')">
+        </label>
         <label class="field">
           <span class="field-label">{{ lbl('Status', 'Status') }}</span>
           <select class="field-control" [ngModel]="listFilter().isActive" (ngModelChange)="onFilterChange('isActive', $event)" name="listStatus">
             <option [ngValue]="true">Active</option>
             <option [ngValue]="false">Inactive</option>
           </select>
-        </label>
-        <label class="field field-org-search">
-          <span class="field-label">{{ lbl('Search', 'Search') }}</span>
-          <input class="field-control" [ngModel]="listFilter().search" (ngModelChange)="onFilterChange('search', $event)" name="search" [placeholder]="lbl('Search', 'Search')">
         </label>
       </div>
 

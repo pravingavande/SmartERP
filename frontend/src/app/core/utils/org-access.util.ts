@@ -8,6 +8,7 @@ export interface SchoolOrgOption {
 export interface SchoolOrgSelectOption extends SchoolOrgOption {
   organizationName: string;
   schoolCode?: number | null;
+  underOrgID?: number | null;
 }
 
 export interface SchoolOrgProfileHint {
