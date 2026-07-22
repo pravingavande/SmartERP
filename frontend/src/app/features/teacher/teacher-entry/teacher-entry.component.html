@@ -19,6 +19,7 @@
         fieldClass="field-org-wide"
         name="filterOrg"
         label="शाळा / कॉलेज / संस्था"
+        [showAllOption]="canShowAllSchoolFilter()"
         [nullLabel]="lbl('All', '-- All --')"
         [orgs]="schoolOrgs()"
         [value]="listFilter().orgId ?? null"

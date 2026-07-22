@@ -1,4 +1,5 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { LedgerNarrationInputComponent } from '../../../shared/components/ledger-narration-input/ledger-narration-input.component';
 import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
@@ -8,6 +9,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin, of, Subject, switchMap } from 'rxjs';
 import { AuditPrintService } from '../../../core/services/audit-print.service';
 import { AuditService } from '../../../core/services/audit.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ToastService } from '../../../core/services/toast.service';
 import {
@@ -32,23 +34,23 @@ import { coerceEnglishIntegerString, coerceEnglishNumber } from '../../../core/u
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
 import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { canModifyPaymentReceiptVoucher } from '../../../core/utils/voucher-access.util';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-voucher-entry',
-  imports: [FormsModule, DatePipe, CurrencyPipe, RouterLink, MarathiNumberInputDirective, ListActionBtnComponent, OrgSchoolSelectComponent],
+  imports: [FormsModule, DatePipe, CurrencyPipe, RouterLink, MarathiNumberInputDirective, ListActionBtnComponent, LedgerNarrationInputComponent, OrgSchoolSelectComponent],
   templateUrl: './voucher-entry.component.html',
   styleUrl: './voucher-entry.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VoucherEntryComponent {
-  private static readonly MAX_NARRATION_CACHE = 25;
-
   readonly vType = input.required<'R' | 'P'>();
   readonly title = input.required<string>();
 
   private readonly audit = inject(AuditService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly printService = inject(AuditPrintService);
   private readonly dashboardService = inject(DashboardService);
@@ -63,7 +65,6 @@ export class VoucherEntryComponent {
   readonly lookups = signal<AuditLookups | null>(null);
   readonly accountRegisters = signal<AccountRegisterOption[]>([]);
   readonly parties = signal<PartyOption[]>([]);
-  readonly narrations = signal<Record<number, string[]>>({});
   readonly vouchers = signal<VoucherListItem[]>([]);
   readonly form = signal<VoucherFormState>(this.emptyForm());
   readonly formMode = signal<FormMode>('new');
@@ -351,23 +352,13 @@ export class VoucherEntryComponent {
     this.listReload$.next();
   }
 
-  loadNarrations(ledgerHeadId: number | null): void {
-    if (!ledgerHeadId) return;
-    if (this.narrations()[ledgerHeadId]) return;
-    this.audit
-      .getLedgerNarrations(ledgerHeadId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((list) => {
-        this.narrations.update((n) => {
-          const next = { ...n, [ledgerHeadId]: list };
-          const ids = Object.keys(next).map(Number);
-          if (ids.length <= VoucherEntryComponent.MAX_NARRATION_CACHE) return next;
-          for (const id of ids.slice(0, ids.length - VoucherEntryComponent.MAX_NARRATION_CACHE)) {
-            delete next[id];
-          }
-          return next;
-        });
-      });
+  onLedgerHeadChange(index: number, ledgerHeadId: number | null): void {
+    this.fieldErrors.update((e) => removeFieldError(e, detailFieldKey(index, 'ledgerHeadId')));
+    this.form.update((f) => {
+      const details = [...f.details];
+      details[index] = { ...details[index], ledgerHeadId, ledgerHeadNarration: '' };
+      return { ...f, details };
+    });
   }
 
   addDetailRow(): void {
@@ -426,11 +417,33 @@ export class VoucherEntryComponent {
   }
 
   editVoucher(item: VoucherListItem): void {
+    if (!this.canModifyVoucher(item)) {
+      this.toast.showError('You cannot edit vouchers from a previous date.');
+      return;
+    }
     this.loadVoucher(item.voucherID, 'edit');
   }
 
   viewVoucher(item: VoucherListItem): void {
     this.loadVoucher(item.voucherID, 'view');
+  }
+
+  canModifyVoucher(item: VoucherListItem): boolean {
+    return canModifyPaymentReceiptVoucher(
+      this.auth.currentUser()?.userRoleId,
+      this.vType(),
+      item.vDate,
+      todayIsoDate()
+    );
+  }
+
+  private canModifyFormVoucher(vDate: string | null | undefined): boolean {
+    return canModifyPaymentReceiptVoucher(
+      this.auth.currentUser()?.userRoleId,
+      this.vType(),
+      vDate,
+      todayIsoDate()
+    );
   }
 
   reprintVoucher(item: VoucherListItem): void {
@@ -443,13 +456,17 @@ export class VoucherEntryComponent {
   }
 
   confirmDeleteVoucher(item: VoucherListItem): void {
+    if (!this.canModifyVoucher(item)) {
+      this.toast.showError('You cannot delete vouchers from a previous date.');
+      return;
+    }
     if (!confirm(`Delete ${this.isReceiptVoucher() ? 'receipt' : 'payment'} voucher #${item.vCode}?`)) return;
     this.audit
       .deleteVoucher(item.voucherID)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((ok) => {
-        if (!ok) {
-          this.errorMessage.set('Unable to delete voucher.');
+      .subscribe((result) => {
+        if (!result.ok) {
+          this.errorMessage.set(result.message ?? 'Unable to delete voucher.');
           return;
         }
         this.errorMessage.set(null);
@@ -463,7 +480,12 @@ export class VoucherEntryComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((v) => {
         if (!v) return;
-        this.formMode.set(mode);
+        const effectiveMode =
+          mode === 'edit' && !this.canModifyFormVoucher(v.vDate.slice(0, 10)) ? 'view' : mode;
+        if (mode === 'edit' && effectiveMode === 'view') {
+          this.toast.showError('You cannot edit vouchers from a previous date.');
+        }
+        this.formMode.set(effectiveMode);
         this.formVisible.set(true);
         this.applyVoucherToForm(v);
         this.listOrgID.set(v.orgID);
@@ -475,7 +497,6 @@ export class VoucherEntryComponent {
           .subscribe((r) => this.accountRegisters.set(r));
         this.refreshLedgerLookups(v.orgID);
         this.loadParties(v.orgID, v.partyTID ?? null);
-        v.details.forEach((d) => this.loadNarrations(d.ledgerHeadID));
       });
   }
 
@@ -506,6 +527,10 @@ export class VoucherEntryComponent {
 
   save(): void {
     if (this.isViewMode()) return;
+    if (this.isEditMode() && !this.canModifyFormVoucher(this.form().vDate)) {
+      this.toast.showError('You cannot edit vouchers from a previous date.');
+      return;
+    }
     this.normalizeNumericFields();
     const validationError = this.validateForm();
     if (hasFieldErrors(validationError)) {
@@ -657,7 +682,6 @@ export class VoucherEntryComponent {
     this.errorMessage.set(null);
     this.fieldErrors.set({});
     this.saveError.set(null);
-    this.narrations.set({});
     this.loadVoucherList();
   }
 
@@ -773,10 +797,6 @@ export class VoucherEntryComponent {
   updatePartyForm(field: 'partyName' | 'mobNo' | 'address', value: string): void {
     this.partyFieldErrors.update((e) => removeFieldError(e, field));
     this.partyForm.update((p) => ({ ...p, [field]: value }));
-  }
-
-  narrationList(ledgerHeadId: number | null): string[] {
-    return ledgerHeadId ? this.narrations()[ledgerHeadId] ?? [] : [];
   }
 
   private isDateWithinFy(date: string): boolean {

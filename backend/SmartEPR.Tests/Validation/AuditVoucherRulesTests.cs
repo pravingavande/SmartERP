@@ -316,4 +316,39 @@ public sealed class AuditVoucherRulesTests
 
         Assert.Equal("Organization is required.", AuditVoucherRules.ValidateSaveOrUpdate(request));
     }
+
+    [Fact]
+    public void ValidateEmployeeSameDayModify_AllowsSansthaAdminOnPreviousDate()
+    {
+        var today = new DateTime(2026, 7, 21);
+        var previous = new DateTime(2026, 7, 20);
+
+        Assert.Null(AuditVoucherRules.ValidateEmployeeSameDayModify(2, "P", previous, today));
+    }
+
+    [Fact]
+    public void ValidateEmployeeSameDayModify_BlocksEmployeeOnPreviousPaymentVoucherDate()
+    {
+        var today = new DateTime(2026, 7, 21);
+        var previous = new DateTime(2026, 7, 20);
+
+        Assert.NotNull(AuditVoucherRules.ValidateEmployeeSameDayModify(3, "P", previous, today));
+    }
+
+    [Fact]
+    public void ValidateEmployeeSameDayModify_AllowsEmployeeOnSameDayReceiptVoucher()
+    {
+        var today = new DateTime(2026, 7, 21);
+
+        Assert.Null(AuditVoucherRules.ValidateEmployeeSameDayModify(3, "R", today, today));
+    }
+
+    [Fact]
+    public void ValidateEmployeeSameDayModify_IgnoresBankVoucherTypes()
+    {
+        var today = new DateTime(2026, 7, 21);
+        var previous = new DateTime(2026, 7, 20);
+
+        Assert.Null(AuditVoucherRules.ValidateEmployeeSameDayModify(3, "BD", previous, today));
+    }
 }

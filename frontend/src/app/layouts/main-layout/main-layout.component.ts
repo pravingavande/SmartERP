@@ -9,6 +9,7 @@ import { TicketNotificationService } from '../../core/services/ticket-notificati
 import { TicketService } from '../../core/services/ticket.service';
 import { APP_BADGE, APP_NAME } from '../../core/constants/app-brand';
 import { NavSection } from '../../core/models/nav.model';
+import { isAttendanceOnlyUser } from '../../core/utils/org-access.util';
 import { isAppSuperAdmin } from '../../core/utils/super-admin-access.util';
 import { TicketPendingModalComponent } from '../../shared/components/ticket-pending-modal/ticket-pending-modal.component';
 
@@ -46,6 +47,7 @@ export class MainLayoutComponent {
       .getLookups()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((lookups) => {
+        if (isAttendanceOnlyUser(this.auth.currentUser()?.userRoleId)) return;
         if (!lookups?.orgs?.length) return;
         const orgIds = lookups.orgs.map((o) => o.orgID);
         void this.ticketNotifications.start(orgIds);
@@ -57,6 +59,11 @@ export class MainLayoutComponent {
     });
   }
 
+  private readonly attendanceNavSection: NavSection = {
+    title: 'Main',
+    items: [{ label: 'Attendance', icon: 'attendance', route: '/attendance' }]
+  };
+
   private readonly baseNavSections: NavSection[] = [
     {
       title: 'Main',
@@ -66,7 +73,8 @@ export class MainLayoutComponent {
           label: 'School Dashboard',
           icon: 'school-dashboard',
           route: '/school-dashboard'
-        }
+        },
+        { label: 'Attendance', icon: 'attendance', route: '/attendance' }
       ]
     },
     {
@@ -94,7 +102,13 @@ export class MainLayoutComponent {
   ];
 
   readonly navSections = computed<NavSection[]>(() => {
-    if (!isAppSuperAdmin(this.auth.currentUser()?.userRoleId)) {
+    const userRoleId = this.auth.currentUser()?.userRoleId;
+
+    if (isAttendanceOnlyUser(userRoleId)) {
+      return [this.attendanceNavSection];
+    }
+
+    if (!isAppSuperAdmin(userRoleId)) {
       return this.baseNavSections;
     }
 

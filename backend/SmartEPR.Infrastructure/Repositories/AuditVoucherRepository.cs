@@ -71,18 +71,25 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         return _executor.QueryListAsync<LedgerHeadOptionDto>("dbo.sp_Audit_GetBankLedgerHeads", p, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long ledgerHeadId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(
+        long orgId,
+        long ledgerHeadId,
+        string? search = null,
+        CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
         p.Add("@LedgerHeadID", ledgerHeadId);
+        p.Add("@OrgID", orgId);
+        p.Add("@Search", string.IsNullOrWhiteSpace(search) ? null : search.Trim());
         var rows = await _executor.QueryListAsync<NarrationRow>("dbo.sp_Audit_GetLedgerNarrations", p, cancellationToken).ConfigureAwait(false);
         return rows.Select(r => r.LedgerHeadNarration).Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
     }
 
-    public Task SaveLedgerNarrationAsync(long ledgerHeadId, string narration, CancellationToken cancellationToken = default)
+    public Task SaveLedgerNarrationAsync(long orgId, long ledgerHeadId, string narration, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();
         p.Add("@LedgerHeadID", ledgerHeadId);
+        p.Add("@OrgID", orgId);
         p.Add("@LedgerHeadNarration", narration);
         return _executor.ExecuteAsync("dbo.sp_Audit_SaveLedgerNarration", p, cancellationToken);
     }
@@ -154,7 +161,7 @@ public sealed class AuditVoucherRepository : IAuditVoucherRepository
         {
             if (!string.IsNullOrWhiteSpace(line.LedgerHeadNarration))
             {
-                await SaveLedgerNarrationAsync(line.LedgerHeadId, line.LedgerHeadNarration.Trim(), cancellationToken).ConfigureAwait(false);
+                await SaveLedgerNarrationAsync(request.OrgID, line.LedgerHeadId, line.LedgerHeadNarration.Trim(), cancellationToken).ConfigureAwait(false);
             }
         }
 

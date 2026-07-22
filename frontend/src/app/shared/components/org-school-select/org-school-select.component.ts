@@ -19,6 +19,7 @@ export class OrgSchoolSelectComponent {
   readonly value = input<number | null>(null);
   readonly label = input('Org / School');
   readonly nullLabel = input('-- Select School --');
+  readonly showAllOption = input(true);
   readonly name = input('orgSchool');
   readonly disabled = input(false);
   readonly required = input(false);

@@ -22,7 +22,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId, isSansthaAdminUser, isSchoolCollegeAdminUser, filterTeacherAssignableRolesForSchoolUser, ATTENDANCE_ONLY_USER_ROLE_ID } from '../../../core/utils/org-access.util';
 import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import {
   serializeTeacherDocuments,
@@ -119,17 +119,18 @@ export class TeacherEntryComponent {
     return Math.min(total, (this.listPageIndex() + 1) * this.listPageSize());
   });
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
+  readonly canShowAllSchoolFilter = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
   /** Form/list User Role options — SuperAdmin hidden. */
   readonly selectableUserRoles = computed(() =>
     (this.masterLookups()?.userRoles ?? []).filter(
       (ur) => (ur.userRoleName ?? '').trim().toLowerCase() !== 'superadmin'
     )
   );
-  /** Add/Edit form — Employee login (role 3) may assign only Employee role (id 4). */
+  /** Add/Edit form — School College Admin (role 3) may assign Employee + School College Admin. */
   readonly formUserRoles = computed(() => {
     const roles = this.selectableUserRoles();
-    if (this.auth.currentUser()?.userRoleId === 3) {
-      return roles.filter((ur) => ur.userRoleID === 4);
+    if (isSchoolCollegeAdminUser(this.auth.currentUser()?.userRoleId)) {
+      return filterTeacherAssignableRolesForSchoolUser(roles);
     }
     return roles;
   });
@@ -202,7 +203,7 @@ export class TeacherEntryComponent {
           const sessionSansthaId = this.auth.currentUser()?.sansthaId ?? (underOrgID || null);
           this.listFilter.update((f) => ({
             ...f,
-            orgId: null,
+            orgId: this.canShowAllSchoolFilter() ? null : defaultOrgId,
             sansthaId: sessionSansthaId
           }));
           this.ensureDocumentLookups(data, defaultOrgId, underOrgID);
@@ -300,8 +301,8 @@ export class TeacherEntryComponent {
     this.saveError.set(null);
     this.showAppPassword.set(false);
     const empty = this.emptyForm();
-    if (this.auth.currentUser()?.userRoleId === 3) {
-      empty.userRoleID = 4;
+    if (isSchoolCollegeAdminUser(this.auth.currentUser()?.userRoleId)) {
+      empty.userRoleID = ATTENDANCE_ONLY_USER_ROLE_ID;
     }
     this.form.set(empty);
     if (orgId) this.onOrgChange(orgId);

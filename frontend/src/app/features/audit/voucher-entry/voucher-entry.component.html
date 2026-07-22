@@ -79,8 +79,10 @@
                 <td class="remark-col">{{ v.remark || '—' }}</td>
                 <td class="actions">
                   <div class="action-group">
-                    <app-list-action-btn action="edit" (clicked)="editVoucher(v)" />
-                    <app-list-action-btn action="delete" (clicked)="confirmDeleteVoucher(v)" />
+                    @if (canModifyVoucher(v)) {
+                      <app-list-action-btn action="edit" (clicked)="editVoucher(v)" />
+                      <app-list-action-btn action="delete" (clicked)="confirmDeleteVoucher(v)" />
+                    }
                     <button type="button" class="action-btn print" title="Print" (click)="reprintVoucher(v)">Print</button>
                   </div>
                 </td>
@@ -203,7 +205,7 @@
                       @for (line of form().details; track line.rowId; let i = $index) {
                         <tr>
                           <td class="ledger-col" [class.cell-invalid]="detailFieldError(i, 'ledgerHeadId')">
-                            <select required [disabled]="isViewMode()" [ngModel]="line.ledgerHeadId" (ngModelChange)="updateDetail(i, 'ledgerHeadId', $event ? +$event : null); loadNarrations($event ? +$event : null)" [name]="'lh' + i">
+                            <select required [disabled]="isViewMode()" [ngModel]="line.ledgerHeadId" (ngModelChange)="onLedgerHeadChange(i, $event ? +$event : null)" [name]="'lh' + i">
                               <option [ngValue]="null">-- Select --</option>
                               @for (lh of ledgerHeads(); track lh.ledgerHeadID) {
                                 <option [ngValue]="lh.ledgerHeadID">{{ lh.ledgerHead }}</option>
@@ -214,12 +216,13 @@
                             }
                           </td>
                           <td class="narration-col">
-                            <textarea class="narration-input" rows="1" [disabled]="isViewMode()" [attr.list]="'narr-' + i" [ngModel]="line.ledgerHeadNarration" (ngModelChange)="updateDetail(i, 'ledgerHeadNarration', $event)" [name]="'nar' + i"></textarea>
-                            <datalist [id]="'narr-' + i">
-                              @for (n of narrationList(line.ledgerHeadId); track n) {
-                                <option [value]="n"></option>
-                              }
-                            </datalist>
+                            <app-ledger-narration-input
+                              [orgId]="form().orgID"
+                              [ledgerHeadId]="line.ledgerHeadId"
+                              [value]="line.ledgerHeadNarration"
+                              [disabled]="isViewMode()"
+                              (valueChange)="updateDetail(i, 'ledgerHeadNarration', $event)"
+                            />
                           </td>
                           <td class="amount-col" [class.cell-invalid]="detailFieldError(i, 'amount')">
                             <input appMarathiNumber mode="decimal" [disabled]="isViewMode()" [ngModel]="line.amount" (ngModelChange)="updateDetail(i, 'amount', $event)" [name]="'amt' + i">

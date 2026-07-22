@@ -32,6 +32,29 @@ public sealed class SettingsRepository : ISettingsRepository
             "dbo.sp_SoftwareSetting_SaveLanguage", p, cancellationToken);
     }
 
+    public Task<AuditEntryDaysSettingDto?> GetAuditEntryDaysAsync(long underOrgId, CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        return _executor.QuerySingleOrDefaultAsync<AuditEntryDaysSettingDto>(
+            "dbo.sp_SoftwareSetting_GetAuditEntryDays", p, cancellationToken);
+    }
+
+    public Task<AuditEntryDaysSettingDto?> SaveAuditEntryDaysAsync(
+        long underOrgId,
+        int newEntryNoOfPreviousDayAllowed,
+        int editEntryNoOfPreviousDayAllowed,
+        CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@UnderOrgID", underOrgId);
+        p.Add("@NewEntryNoOfPreviousDayAllowed", newEntryNoOfPreviousDayAllowed);
+        p.Add("@EditEntryNoOfPreviousDayAllowed", editEntryNoOfPreviousDayAllowed);
+        p.Add("@ModifyBy", "O");
+        return _executor.QuerySingleOrDefaultAsync<AuditEntryDaysSettingDto>(
+            "dbo.sp_SoftwareSetting_SaveAuditEntryDays", p, cancellationToken);
+    }
+
     public Task<IReadOnlyList<LanguageKeyValueDto>> GetLanguageKeysAsync(CancellationToken cancellationToken = default)
         => _executor.QueryListAsync<LanguageKeyValueDto>("dbo.sp_LanguageKeyValue_GetAll", null, cancellationToken);
 }

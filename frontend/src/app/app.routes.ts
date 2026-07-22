@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminMasterGuard, guestGuard, superAdminGuard } from './core/guards/auth.guard';
+import { attendanceOnlyChildGuard, authGuard, adminMasterGuard, guestGuard, superAdminGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -13,6 +13,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./layouts/main-layout/main-layout.component').then((m) => m.MainLayoutComponent),
     canActivate: [authGuard],
+    canActivateChild: [attendanceOnlyChildGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {

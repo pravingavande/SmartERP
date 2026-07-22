@@ -205,6 +205,36 @@ BEGIN
         );
     END
 
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.SoftwareSetting
+        WHERE Title = N'AuditNewEntryNoOfPreviousDayAllowed' AND UnderOrgID = @SansthaOrgID
+    )
+    BEGIN
+        INSERT INTO dbo.SoftwareSetting (UnderOrgID, Title, Condition, Description, ModifyBy)
+        VALUES (
+            @SansthaOrgID,
+            N'AuditNewEntryNoOfPreviousDayAllowed',
+            N'0',
+            N'Number of previous days allowed for new Payment/Receipt voucher entry (0 = today only).',
+            N'O'
+        );
+    END
+
+    IF NOT EXISTS (
+        SELECT 1 FROM dbo.SoftwareSetting
+        WHERE Title = N'AuditEditEntryNoOfPreviousDayAllowed' AND UnderOrgID = @SansthaOrgID
+    )
+    BEGIN
+        INSERT INTO dbo.SoftwareSetting (UnderOrgID, Title, Condition, Description, ModifyBy)
+        VALUES (
+            @SansthaOrgID,
+            N'AuditEditEntryNoOfPreviousDayAllowed',
+            N'0',
+            N'Number of previous days allowed for edit/delete of Payment/Receipt vouchers (0 = today only).',
+            N'O'
+        );
+    END
+
     INSERT INTO dbo.UserMaster (
         OrgID, Firstname, MiddleName, LastName, EmployeeName, MobileNo1,
         UserRoleID, AppUserName, AppPassword, IsActive, StaffTypeID, CreatedAt

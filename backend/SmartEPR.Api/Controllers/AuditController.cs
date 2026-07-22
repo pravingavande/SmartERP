@@ -15,10 +15,12 @@ namespace SmartEPR.Api.Controllers;
 public sealed class AuditController : ControllerBase
 {
     private readonly IAuditVoucherService _auditService;
+    private readonly IUserRepository _userRepository;
 
-    public AuditController(IAuditVoucherService auditService)
+    public AuditController(IAuditVoucherService auditService, IUserRepository userRepository)
     {
         _auditService = auditService;
+        _userRepository = userRepository;
     }
 
     [HttpGet("dashboard")]
@@ -82,9 +84,18 @@ public sealed class AuditController : ControllerBase
     }
 
     [HttpGet("ledger-narrations")]
-    public async Task<IActionResult> GetLedgerNarrations([FromQuery] long ledgerHeadId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetLedgerNarrations(
+        [FromQuery] long orgId,
+        [FromQuery] long ledgerHeadId,
+        [FromQuery] string? search,
+        CancellationToken cancellationToken)
     {
-        var items = await _auditService.GetLedgerNarrationsAsync(ledgerHeadId, cancellationToken).ConfigureAwait(false);
+        if (orgId <= 0)
+            return Ok(ApiResponse<IReadOnlyList<string>>.Fail("Organization is required."));
+        if (ledgerHeadId <= 0)
+            return Ok(ApiResponse<IReadOnlyList<string>>.Fail("Ledger head is required."));
+
+        var items = await _auditService.GetLedgerNarrationsAsync(orgId, ledgerHeadId, search, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<IReadOnlyList<string>>.Ok(items));
     }
 
@@ -123,6 +134,14 @@ public sealed class AuditController : ControllerBase
         if (AuditVoucherRules.ValidateSaveOrUpdate(request) is { } validationError)
             return Ok(ApiResponse<VoucherDto>.Fail(validationError));
 
+        if (request.VoucherID is > 0)
+        {
+            var modifyError = await ValidateEmployeeVoucherModifyAsync(request.VoucherID.Value, cancellationToken)
+                .ConfigureAwait(false);
+            if (modifyError is not null)
+                return Ok(ApiResponse<VoucherDto>.Fail(modifyError));
+        }
+
         var saved = await _auditService.SaveVoucherAsync(userId, request, cancellationToken).ConfigureAwait(false);
         return saved is null
             ? Ok(ApiResponse<VoucherDto>.Fail("Unable to save voucher."))
@@ -132,6 +151,10 @@ public sealed class AuditController : ControllerBase
     [HttpDelete("vouchers/{voucherId:long}")]
     public async Task<IActionResult> DeleteVoucher(long voucherId, CancellationToken cancellationToken)
     {
+        var modifyError = await ValidateEmployeeVoucherModifyAsync(voucherId, cancellationToken).ConfigureAwait(false);
+        if (modifyError is not null)
+            return Ok(ApiResponse<bool>.Fail(modifyError));
+
         await _auditService.DeleteVoucherAsync(voucherId, cancellationToken).ConfigureAwait(false);
         return Ok(ApiResponse<bool>.Ok(true, "Voucher deleted."));
     }
@@ -293,5 +316,22 @@ public sealed class AuditController : ControllerBase
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
         return long.TryParse(claim, out userId);
+    }
+
+    private async Task<string?> ValidateEmployeeVoucherModifyAsync(long voucherId, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+            return "Invalid token.";
+
+        var profile = await _userRepository.GetProfileByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        var voucher = await _auditService.GetVoucherByIdAsync(voucherId, cancellationToken).ConfigureAwait(false);
+        if (voucher is null)
+            return "Voucher not found.";
+
+        return AuditVoucherRules.ValidateEmployeeSameDayModify(
+            profile?.UserRoleID,
+            voucher.VType,
+            voucher.VDate,
+            DateTime.Today);
     }
 }

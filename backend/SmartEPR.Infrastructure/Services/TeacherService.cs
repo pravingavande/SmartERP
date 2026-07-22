@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using SmartEPR.Core.DTOs.Teacher;
 using SmartEPR.Core.Interfaces;
+using SmartEPR.Infrastructure.Data;
 
 namespace SmartEPR.Infrastructure.Services;
 
@@ -61,9 +62,18 @@ public sealed class TeacherService : ITeacherService
             return (null, "Password is required for app login users.");
 
         var normalized = NormalizeRequest(request);
-        var userId = await _teacherRepository.SaveAsync(actorUserId, normalized, updatePassword, cancellationToken).ConfigureAwait(false);
-        var saved = await _teacherRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
-        return (saved, null);
+        try
+        {
+            var userId = await _teacherRepository.SaveAsync(actorUserId, normalized, updatePassword, cancellationToken).ConfigureAwait(false);
+            var saved = await _teacherRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
+            if (saved is null)
+                return (null, "Teacher saved but could not be reloaded. Run SQL script 109 on the server if Staff Type is not Employee/Teacher (ID 1 or 2).");
+            return (saved, null);
+        }
+        catch (SqlException ex)
+        {
+            return (null, SqlErrorMapper.ToUserMessage(ex, "Teacher"));
+        }
     }
 
     public async Task<(TeacherDto? Data, string? Error)> SaveDocumentsAsync(

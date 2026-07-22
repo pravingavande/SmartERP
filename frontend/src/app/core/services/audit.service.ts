@@ -202,8 +202,12 @@ export class AuditService {
     );
   }
 
-  getLedgerNarrations(ledgerHeadId: number): Observable<string[]> {
-    const params = new HttpParams().set('ledgerHeadId', ledgerHeadId.toString());
+  getLedgerNarrations(orgId: number, ledgerHeadId: number, search?: string | null): Observable<string[]> {
+    let params = new HttpParams()
+      .set('orgId', orgId.toString())
+      .set('ledgerHeadId', ledgerHeadId.toString());
+    const term = search?.trim();
+    if (term) params = params.set('search', term);
     return this.http.get<ApiResponse<string[]>>(`${this.base}/ledger-narrations`, { params }).pipe(
       map((r) => (r.success && r.data ? r.data : [])),
       catchError(() => of([]))
@@ -272,10 +276,10 @@ export class AuditService {
     );
   }
 
-  deleteVoucher(voucherId: number): Observable<boolean> {
+  deleteVoucher(voucherId: number): Observable<{ ok: boolean; message?: string }> {
     return this.http.delete<ApiResponse<boolean>>(`${this.base}/vouchers/${voucherId}`).pipe(
-      map((r) => r.success),
-      catchError(() => of(false))
+      map((r) => ({ ok: r.success, message: r.message ?? undefined })),
+      catchError(() => of({ ok: false, message: 'Unable to delete voucher.' }))
     );
   }
 

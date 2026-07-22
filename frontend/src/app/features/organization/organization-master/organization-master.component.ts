@@ -23,7 +23,7 @@ import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows } from '../../../core/utils/master-list.util';
 import { mapOrganizationBackendMessage, validateOrganizationForm, getOrganizationDocumentsSaveError } from '../../../core/utils/organization-validation.util';
-import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId, isSansthaAdminUser } from '../../../core/utils/org-access.util';
 import {
   serializeOrganizationDocuments,
   DUPLICATE_DOCUMENT_NAME_MESSAGE
@@ -82,6 +82,7 @@ export class OrganizationMasterComponent {
   readonly isSansthaCategory = computed(() => this.form().businessCategoryID === SANSTHA_BUSINESS_CATEGORY_ID);
   /** UserRoleID 3 (Employee) — view/edit only; cannot add or delete. */
   readonly canManageOrganizations = computed(() => this.auth.currentUser()?.userRoleId !== 3);
+  readonly canShowAllSchoolFilter = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
   /** Same as Teacher Master — user-scoped school orgs from lookups API. */
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   /** Form Org / School select value: school itself on edit, list selection context on new. */
@@ -119,7 +120,12 @@ export class OrganizationMasterComponent {
         if (!data.orgs?.length) {
           this.errorMessage.set('No schools found for your login. Contact admin to map org access.');
         }
-        this.listFilter.update((f) => ({ ...f, orgId: null, isActive: true }));
+        const defaultOrgId = resolveDefaultSchoolOrgId(data.orgs ?? [], profile);
+        this.listFilter.update((f) => ({
+          ...f,
+          orgId: this.canShowAllSchoolFilter() ? null : defaultOrgId,
+          isActive: true
+        }));
         this.loadList();
       });
   }

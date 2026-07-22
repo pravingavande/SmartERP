@@ -234,9 +234,9 @@ export class BankVoucherEntryComponent {
   confirmDeleteVoucher(item: VoucherListItem): void {
     const label = this.isDeposit() ? 'Bank Deposit' : 'Bank Withdraw';
     if (!confirm(`Delete ${label} voucher No. ${item.vCode}?`)) return;
-    this.audit.deleteVoucher(item.voucherID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ok) => {
-      if (!ok) {
-        this.toast.showError('Unable to delete voucher.');
+    this.audit.deleteVoucher(item.voucherID).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      if (!result.ok) {
+        this.toast.showError(result.message ?? 'Unable to delete voucher.');
         return;
       }
       this.toast.showSuccess('Voucher deleted.');
@@ -266,9 +266,10 @@ export class BankVoucherEntryComponent {
       return { ...f, details };
     });
     this.narrations.set([]);
-    if (ledgerHeadId) {
+    const orgId = this.form().orgID;
+    if (ledgerHeadId && orgId) {
       this.audit
-        .getLedgerNarrations(ledgerHeadId)
+        .getLedgerNarrations(orgId, ledgerHeadId)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((list) => this.narrations.set(list));
     }
@@ -373,9 +374,9 @@ export class BankVoucherEntryComponent {
         this.refreshLedgerLookups(v.orgID);
         this.loadAccountRegisters(v.orgID, false);
       }
-      if (detail?.ledgerHeadID) {
+      if (detail?.ledgerHeadID && v.orgID) {
         this.audit
-          .getLedgerNarrations(detail.ledgerHeadID)
+          .getLedgerNarrations(v.orgID, detail.ledgerHeadID)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe((list) => this.narrations.set(list));
       }

@@ -1,7 +1,8 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
+import { getDefaultHomeRoute, isAttendanceOnlyUser } from '../utils/org-access.util';
 import { canAccessAdminMasters } from '../utils/master-access.util';
 import { isAppSuperAdmin } from '../utils/super-admin-access.util';
 
@@ -16,6 +17,21 @@ export const authGuard: CanActivateFn = () => {
   return router.createUrlTree(['/login']);
 };
 
+/** UserRoleID 4 may access only /attendance. */
+export const attendanceOnlyChildGuard: CanActivateChildFn = (_route, state) => {
+  const auth = inject(AuthService);
+  if (!isAttendanceOnlyUser(auth.currentUser()?.userRoleId)) {
+    return true;
+  }
+
+  const path = state.url.split('?')[0].replace(/\/+$/, '') || '/';
+  if (path === '/attendance') {
+    return true;
+  }
+
+  return inject(Router).createUrlTree(['/attendance']);
+};
+
 export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -24,7 +40,7 @@ export const guestGuard: CanActivateFn = () => {
     return true;
   }
 
-  return router.createUrlTree(['/dashboard']);
+  return router.createUrlTree([getDefaultHomeRoute(auth.currentUser()?.userRoleId)]);
 };
 
 /** Restricts admin-only master screens to UserRoleID 1 (Super Admin) or 2 (Administrator). */

@@ -50,8 +50,8 @@ public sealed class AuditVoucherService : IAuditVoucherService
     public Task<IReadOnlyList<PartyOptionDto>> GetPartiesAsync(long orgId, CancellationToken cancellationToken = default)
         => _repository.GetPartiesAsync(orgId, cancellationToken);
 
-    public Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long ledgerHeadId, CancellationToken cancellationToken = default)
-        => _repository.GetLedgerNarrationsAsync(ledgerHeadId, cancellationToken);
+    public Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long orgId, long ledgerHeadId, string? search = null, CancellationToken cancellationToken = default)
+        => _repository.GetLedgerNarrationsAsync(orgId, ledgerHeadId, search, cancellationToken);
 
     public Task<long> GetNextVCodeAsync(long orgId, long accountRegisterId, long fyId, string vType, CancellationToken cancellationToken = default)
         => _repository.GetNextVCodeAsync(orgId, accountRegisterId, fyId, vType, cancellationToken);

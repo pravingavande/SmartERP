@@ -6,13 +6,13 @@
     </div>
   </header>
 
-  <div class="settings-card">
-    <h2>Software Language</h2>
-    <p class="hint">Controls field labels on Teacher Master. M = Marathi, E = English.</p>
+  @if (loading()) {
+    <p class="loading-hint">Loading settings...</p>
+  } @else {
+    <div class="settings-card">
+      <h2>Software Language</h2>
+      <p class="hint">Controls field labels on Teacher Master. M = Marathi, E = English.</p>
 
-    @if (loading()) {
-      <p class="loading-hint">Loading setting...</p>
-    } @else {
       <div class="lang-options" role="radiogroup" aria-label="Software Language">
         <label class="lang-option" [class.active]="selected() === 'E'">
           <input type="radio" name="softwareLanguage" [checked]="selected() === 'E'" (change)="onSelect('E')">
@@ -27,10 +27,58 @@
       </div>
 
       <div class="actions">
-        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
-          {{ saving() ? 'Saving...' : 'Save' }}
+        <button type="button" class="btn btn-primary" [disabled]="savingLanguage()" (click)="saveLanguage()">
+          {{ savingLanguage() ? 'Saving...' : 'Save Language' }}
         </button>
       </div>
-    }
-  </div>
+    </div>
+
+    <div class="settings-card">
+      <h2>Audit Voucher Entry Days</h2>
+      <p class="hint">
+        Configure how many previous days are allowed for Payment and Receipt vouchers.
+        Use 0 for today only.
+      </p>
+
+      <div class="audit-fields">
+        <label class="field">
+          <span class="field-label">AuditNewEntryNoOfPreviousDayAllowed</span>
+          <span class="field-desc">Number of previous days allowed for new voucher entry.</span>
+          <input
+            class="field-control"
+            type="text"
+            inputmode="numeric"
+            appMarathiNumber
+            mode="int"
+            [maxLength]="3"
+            [ngModel]="newEntryDays()"
+            (ngModelChange)="newEntryDays.set($event)"
+            name="auditNewEntryDays"
+          >
+        </label>
+
+        <label class="field">
+          <span class="field-label">AuditEditEntryNoOfPreviousDayAllowed</span>
+          <span class="field-desc">Number of previous days allowed for edit and delete.</span>
+          <input
+            class="field-control"
+            type="text"
+            inputmode="numeric"
+            appMarathiNumber
+            mode="int"
+            [maxLength]="3"
+            [ngModel]="editEntryDays()"
+            (ngModelChange)="editEntryDays.set($event)"
+            name="auditEditEntryDays"
+          >
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" [disabled]="savingAuditDays()" (click)="saveAuditDays()">
+          {{ savingAuditDays() ? 'Saving...' : 'Save Audit Settings' }}
+        </button>
+      </div>
+    </div>
+  }
 </section>

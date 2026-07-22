@@ -12,7 +12,9 @@
     [name]="name()"
     [disabled]="disabled()"
   >
-    <option [ngValue]="null">{{ nullLabel() }}</option>
+    @if (showAllOption()) {
+      <option [ngValue]="null">{{ nullLabel() }}</option>
+    }
     @for (o of orgs(); track o.orgID) {
       <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
     }

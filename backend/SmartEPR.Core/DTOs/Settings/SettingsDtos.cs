@@ -28,3 +28,22 @@ public sealed class LanguageKeyValueDto
     public string KeyValueMR { get; init; } = string.Empty;
     public string KeyValueEN { get; init; } = string.Empty;
 }
+
+public sealed class AuditEntryDaysSettingDto
+{
+    public long UnderOrgID { get; init; }
+    public int NewEntryNoOfPreviousDayAllowed { get; init; }
+    public int EditEntryNoOfPreviousDayAllowed { get; init; }
+}
+
+public sealed class SaveAuditEntryDaysSettingRequestDto
+{
+    [JsonPropertyName("underOrgID")]
+    public long UnderOrgID { get; set; }
+
+    [JsonPropertyName("newEntryNoOfPreviousDayAllowed")]
+    public int NewEntryNoOfPreviousDayAllowed { get; set; }
+
+    [JsonPropertyName("editEntryNoOfPreviousDayAllowed")]
+    public int EditEntryNoOfPreviousDayAllowed { get; set; }
+}

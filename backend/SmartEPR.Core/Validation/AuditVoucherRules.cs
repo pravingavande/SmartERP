@@ -7,6 +7,28 @@ namespace SmartEPR.Core.Validation;
 /// </summary>
 public static class AuditVoucherRules
 {
+    public const int EmployeeUserRoleId = 3;
+
+    public static bool IsPaymentOrReceiptVoucherType(string? vType)
+    {
+        var t = (vType ?? string.Empty).Trim().ToUpperInvariant();
+        return t is "P" or "PV" or "R" or "RV";
+    }
+
+    /// <summary>
+    /// School users (role 3) may edit/delete payment & receipt vouchers only when voucher date is today.
+    /// </summary>
+    public static string? ValidateEmployeeSameDayModify(int? userRoleId, string? vType, DateTime voucherDate, DateTime today)
+    {
+        if (userRoleId != EmployeeUserRoleId)
+            return null;
+        if (!IsPaymentOrReceiptVoucherType(vType))
+            return null;
+        if (voucherDate.Date != today.Date)
+            return "You cannot edit or delete vouchers except on the same day as the voucher date.";
+        return null;
+    }
+
     public static bool IsBankVoucherType(string? vType)
     {
         var t = (vType ?? string.Empty).Trim().ToUpperInvariant();

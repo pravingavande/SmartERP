@@ -12,8 +12,8 @@ public interface IAuditVoucherRepository
     Task<IReadOnlyList<FyOptionDto>> GetFyListAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<LedgerHeadOptionDto>> GetLedgerHeadsAsync(long? orgId = null, string? vType = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<LedgerHeadOptionDto>> GetBankLedgerHeadsAsync(long? orgId = null, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long ledgerHeadId, CancellationToken cancellationToken = default);
-    Task SaveLedgerNarrationAsync(long ledgerHeadId, string narration, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long orgId, long ledgerHeadId, string? search = null, CancellationToken cancellationToken = default);
+    Task SaveLedgerNarrationAsync(long orgId, long ledgerHeadId, string narration, CancellationToken cancellationToken = default);
     Task<long> GetNextVCodeAsync(long orgId, long accountRegisterId, long fyId, string vType, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<VoucherListItemDto>> GetVoucherListAsync(long orgId, string vType, long? fyId, CancellationToken cancellationToken = default);
     Task<VoucherDto?> GetVoucherByIdAsync(long voucherId, CancellationToken cancellationToken = default);
@@ -52,7 +52,7 @@ public interface IAuditVoucherService
     Task<IReadOnlyList<OrgOptionDto>> GetSansthaOrgsAsync(long userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AccountRegisterOptionDto>> GetAccountRegistersAsync(long orgId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PartyOptionDto>> GetPartiesAsync(long orgId, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long ledgerHeadId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> GetLedgerNarrationsAsync(long orgId, long ledgerHeadId, string? search = null, CancellationToken cancellationToken = default);
     Task<long> GetNextVCodeAsync(long orgId, long accountRegisterId, long fyId, string vType, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<VoucherListItemDto>> GetVoucherListAsync(long userId, long orgId, string vType, long? fyId, CancellationToken cancellationToken = default);
     Task<VoucherDto?> GetVoucherByIdAsync(long voucherId, CancellationToken cancellationToken = default);

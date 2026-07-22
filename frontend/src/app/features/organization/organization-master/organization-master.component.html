@@ -27,6 +27,7 @@
           name="filterOrg"
           fieldClass="field-org-filter"
           [label]="lbl('SansthaName', 'संस्थेचे नाव')"
+          [showAllOption]="canShowAllSchoolFilter()"
           [nullLabel]="lbl('All', '-- All --')"
           [orgs]="schoolOrgs()"
           [value]="listFilter().orgId ?? null"

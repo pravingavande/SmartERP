@@ -101,4 +101,73 @@ public sealed class SettingsServiceSaveTests
         Assert.Equal("E", result.Condition);
         Assert.Equal("Software Language", result.Title);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task SaveAuditEntryDaysAsync_RejectsMissingUnderOrg(long underOrgId)
+    {
+        var (data, error) = await CreateService().SaveAuditEntryDaysAsync(new SaveAuditEntryDaysSettingRequestDto
+        {
+            UnderOrgID = underOrgId,
+            NewEntryNoOfPreviousDayAllowed = 1,
+            EditEntryNoOfPreviousDayAllowed = 1
+        });
+
+        Assert.Null(data);
+        Assert.Equal("Under organization is required.", error);
+    }
+
+    [Fact]
+    public async Task SaveAuditEntryDaysAsync_RejectsNegativeDays()
+    {
+        var (data, error) = await CreateService().SaveAuditEntryDaysAsync(new SaveAuditEntryDaysSettingRequestDto
+        {
+            UnderOrgID = 1,
+            NewEntryNoOfPreviousDayAllowed = -1,
+            EditEntryNoOfPreviousDayAllowed = 0
+        });
+
+        Assert.Null(data);
+        Assert.Equal("Day count cannot be negative.", error);
+    }
+
+    [Fact]
+    public async Task SaveAuditEntryDaysAsync_SavesValues()
+    {
+        _repository
+            .Setup(r => r.SaveAuditEntryDaysAsync(2, 3, 5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AuditEntryDaysSettingDto
+            {
+                UnderOrgID = 2,
+                NewEntryNoOfPreviousDayAllowed = 3,
+                EditEntryNoOfPreviousDayAllowed = 5
+            });
+
+        var (data, error) = await CreateService().SaveAuditEntryDaysAsync(new SaveAuditEntryDaysSettingRequestDto
+        {
+            UnderOrgID = 2,
+            NewEntryNoOfPreviousDayAllowed = 3,
+            EditEntryNoOfPreviousDayAllowed = 5
+        });
+
+        Assert.Null(error);
+        Assert.NotNull(data);
+        Assert.Equal(3, data!.NewEntryNoOfPreviousDayAllowed);
+        Assert.Equal(5, data.EditEntryNoOfPreviousDayAllowed);
+    }
+
+    [Fact]
+    public async Task GetAuditEntryDaysAsync_ReturnsZeroDefaults_WhenMissing()
+    {
+        _repository
+            .Setup(r => r.GetAuditEntryDaysAsync(9, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AuditEntryDaysSettingDto?)null);
+
+        var result = await CreateService().GetAuditEntryDaysAsync(9);
+
+        Assert.Equal(9, result.UnderOrgID);
+        Assert.Equal(0, result.NewEntryNoOfPreviousDayAllowed);
+        Assert.Equal(0, result.EditEntryNoOfPreviousDayAllowed);
+    }
 }

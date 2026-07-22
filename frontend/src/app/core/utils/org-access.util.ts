@@ -24,9 +24,44 @@ export function isSansthaAdminUser(userRoleId?: number | null): boolean {
   return userRoleId === 1 || userRoleId === 2;
 }
 
+/** UserRoleID 3 = School / College Admin (school-scoped). */
+export const SCHOOL_COLLEGE_ADMIN_USER_ROLE_ID = 3;
+
+export function isSchoolCollegeAdminUser(userRoleId?: number | null): boolean {
+  return userRoleId === SCHOOL_COLLEGE_ADMIN_USER_ROLE_ID;
+}
+
+/** UserRoleID 4 = employee attendance-only access. */
+export const ATTENDANCE_ONLY_USER_ROLE_ID = 4;
+
+export function isAttendanceOnlyUser(userRoleId?: number | null): boolean {
+  return userRoleId === ATTENDANCE_ONLY_USER_ROLE_ID;
+}
+
+/** Default landing route after login. */
+export function getDefaultHomeRoute(userRoleId?: number | null): string {
+  return isAttendanceOnlyUser(userRoleId) ? '/attendance' : '/dashboard';
+}
+
 /** @deprecated Use isSansthaAdminUser — kept for callers that mean sanstha admin, not global all-schools. */
 export function canSeeAllSchools(userRoleId?: number | null): boolean {
   return isSansthaAdminUser(userRoleId);
+}
+
+export interface UserRoleOptionLike {
+  userRoleID: number;
+  userRoleName?: string | null;
+}
+
+/** Teacher Master — roles assignable by School / College Admin (UserRoleID 3). */
+export function filterTeacherAssignableRolesForSchoolUser<T extends UserRoleOptionLike>(roles: T[]): T[] {
+  return roles.filter((ur) => {
+    if (ur.userRoleID === SCHOOL_COLLEGE_ADMIN_USER_ROLE_ID || ur.userRoleID === ATTENDANCE_ONLY_USER_ROLE_ID) {
+      return true;
+    }
+    const name = (ur.userRoleName ?? '').trim().toLowerCase();
+    return name === 'employee' || name.includes('school college admin');
+  });
 }
 
 /**

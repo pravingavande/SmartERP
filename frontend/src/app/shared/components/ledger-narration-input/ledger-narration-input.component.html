@@ -1,0 +1,23 @@
+<div class="narration-typeahead">
+  <input
+    class="narration-input"
+    type="text"
+    autocomplete="off"
+    [disabled]="disabled() || !ledgerHeadId()"
+    [placeholder]="ledgerHeadId() ? placeholder() : 'Select ledger head first'"
+    [ngModel]="value()"
+    (ngModelChange)="onInput($event)"
+    (focus)="onFocus()"
+    (blur)="onBlur()"
+  />
+  @if (showSuggestions()) {
+    <ul class="suggestions" role="listbox">
+      @for (item of suggestions(); track item) {
+        <li role="option" (mousedown)="pickSuggestion(item)">{{ item }}</li>
+      }
+    </ul>
+  }
+  @if (loading() && ledgerHeadId()) {
+    <span class="loading-hint">Searching...</span>
+  }
+</div>

@@ -37,6 +37,25 @@ public sealed class SettingsController : ControllerBase
             : Ok(ApiResponse<SoftwareLanguageDto>.Ok(data, "Language setting saved."));
     }
 
+    [HttpGet("audit-entry-days")]
+    public async Task<IActionResult> GetAuditEntryDays([FromQuery] long underOrgID, CancellationToken cancellationToken)
+    {
+        if (underOrgID <= 0)
+            return Ok(ApiResponse<AuditEntryDaysSettingDto>.Fail("Under organization is required."));
+
+        var data = await _settingsService.GetAuditEntryDaysAsync(underOrgID, cancellationToken).ConfigureAwait(false);
+        return Ok(ApiResponse<AuditEntryDaysSettingDto>.Ok(data));
+    }
+
+    [HttpPost("audit-entry-days")]
+    public async Task<IActionResult> SaveAuditEntryDays([FromBody] SaveAuditEntryDaysSettingRequestDto request, CancellationToken cancellationToken)
+    {
+        var (data, error) = await _settingsService.SaveAuditEntryDaysAsync(request, cancellationToken).ConfigureAwait(false);
+        return data is null
+            ? Ok(ApiResponse<AuditEntryDaysSettingDto>.Fail(error ?? "Unable to save audit entry day settings."))
+            : Ok(ApiResponse<AuditEntryDaysSettingDto>.Ok(data, "Audit entry day settings saved."));
+    }
+
     [HttpGet("language-keys")]
     public async Task<IActionResult> GetLanguageKeys(CancellationToken cancellationToken)
     {

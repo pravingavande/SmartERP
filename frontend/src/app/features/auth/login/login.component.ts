@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { APP_BADGE, APP_NAME } from '../../../core/constants/app-brand';
+import { getDefaultHomeRoute } from '../../../core/utils/org-access.util';
 import { environment } from '../../../../environments/environment';
 
 export type LoginPortal = 'school' | 'sanstha' | 'default';
@@ -94,7 +95,8 @@ export class LoginComponent {
         this.loading.set(false);
 
         if (response.success) {
-          void this.router.navigate(['/dashboard']);
+          const home = getDefaultHomeRoute(response.data?.userRoleId);
+          void this.router.navigate([home]);
           return;
         }
 
