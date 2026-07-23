@@ -298,7 +298,12 @@ export class LeaveService {
   }): LeaveApplyFormState {
     const fromDate = this.toDateInput(raw.fromDate ?? raw.FromDate);
     const toDate = this.toDateInput(raw.toDate ?? raw.ToDate);
-    const noOfDay = raw.noOfDay ?? raw.NoOfDay ?? this.calcNoOfDays(fromDate, toDate);
+    const storedNoOfDay = raw.noOfDay ?? raw.NoOfDay;
+    const isHalfDay = isHalfDayLeave(storedNoOfDay != null ? Number(storedNoOfDay) : null);
+    const noOfDay =
+      storedNoOfDay != null
+        ? Number(storedNoOfDay)
+        : this.calcNoOfDays(fromDate, toDate, isHalfDay);
     return {
       userLeaveApplyID: raw.userLeaveApplyID ?? raw.UserLeaveApplyID ?? null,
       orgID: raw.orgID ?? raw.OrgID ?? null,
@@ -313,7 +318,7 @@ export class LeaveService {
       adminRemak: String(raw.adminRemak ?? raw.AdminRemak ?? ''),
       leavePermissionID: raw.leavePermissionID ?? raw.LeavePermissionID ?? null,
       ayID: raw.ayID ?? raw.AyID ?? null,
-      isHalfDay: isHalfDayLeave(noOfDay != null ? Number(noOfDay) : null)
+      isHalfDay
     };
   }
 

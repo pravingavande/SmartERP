@@ -176,13 +176,13 @@
                 </label>
                 <label class="field" [class.field-invalid]="fieldError('toDate')">
                   <span class="field-label">To Date *</span>
-                  <input class="field-control" type="date" [ngModel]="form().toDate" (ngModelChange)="updateForm('toDate', $event)" name="toDate" [readonly]="form().isHalfDay">
+                  <input class="field-control" type="date" [ngModel]="form().toDate" (ngModelChange)="updateForm('toDate', $event)" name="toDate">
                   @if (fieldError('toDate')) { <span class="field-error">{{ fieldError('toDate') }}</span> }
                 </label>
                 <label class="field field-checkbox">
                   <span class="field-label">Half Day Leave</span>
                   <input type="checkbox" [ngModel]="form().isHalfDay" (ngModelChange)="onHalfDayChange($event)" name="isHalfDay">
-                  <span class="field-hint">Single date only — counts as 0.5 day</span>
+                  <span class="field-hint">Subtracts 0.5 day from the date range (e.g. 23–24 with half day = 1.5 days)</span>
                 </label>
                 <label class="field">
                   <span class="field-label">No. of Days</span>
