@@ -19,9 +19,15 @@ export interface SchoolOrgProfileHint {
   sansthaId?: number | null;
 }
 
+/** UserRoleID 1 = Sanstha Owner (not assignable from Teacher Master). */
+export const SANSTHA_OWNER_USER_ROLE_ID = 1;
+
+/** UserRoleID 2 = Sanstha Client / admin (not assignable from Teacher Master). */
+export const SANSTHA_CLIENT_USER_ROLE_ID = 2;
+
 /** UserRoleID 1 or 2 = sanstha-scoped admin (all schools in OrgGroupID from API). */
 export function isSansthaAdminUser(userRoleId?: number | null): boolean {
-  return userRoleId === 1 || userRoleId === 2;
+  return userRoleId === SANSTHA_OWNER_USER_ROLE_ID || userRoleId === SANSTHA_CLIENT_USER_ROLE_ID;
 }
 
 /** UserRoleID 3 = School / College Admin (school-scoped). */
@@ -51,6 +57,21 @@ export function canSeeAllSchools(userRoleId?: number | null): boolean {
 export interface UserRoleOptionLike {
   userRoleID: number;
   userRoleName?: string | null;
+}
+
+/** Teacher Master — hide Owner, Client, and SuperAdmin from User Role dropdowns. */
+export function filterTeacherMasterUserRoles<T extends UserRoleOptionLike>(roles: T[]): T[] {
+  return roles.filter((ur) => {
+    if (
+      ur.userRoleID === 5 ||
+      ur.userRoleID === SANSTHA_OWNER_USER_ROLE_ID ||
+      ur.userRoleID === SANSTHA_CLIENT_USER_ROLE_ID
+    ) {
+      return false;
+    }
+    const name = (ur.userRoleName ?? '').trim().toLowerCase();
+    return name !== 'superadmin' && name !== 'owner' && name !== 'client';
+  });
 }
 
 /** Teacher Master — roles assignable by School / College Admin (UserRoleID 3). */

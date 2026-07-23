@@ -81,7 +81,7 @@ public sealed class LeaveApplyListItemDto
     public string? LeaveReason { get; init; }
     public DateTime? FromDate { get; init; }
     public DateTime? ToDate { get; init; }
-    public int? NoOfDay { get; init; }
+    public decimal? NoOfDay { get; init; }
     public string? AdminRemak { get; init; }
     public long? LeavePermissionID { get; init; }
     public string? LeavePermissionName { get; init; }
@@ -109,7 +109,7 @@ public sealed class LeaveApplyDto
     public string? LeaveReason { get; init; }
     public DateTime? FromDate { get; init; }
     public DateTime? ToDate { get; init; }
-    public int? NoOfDay { get; init; }
+    public decimal? NoOfDay { get; init; }
     public string? AdminRemak { get; init; }
     public long? LeavePermissionID { get; init; }
     public long? AyID { get; init; }
@@ -126,6 +126,7 @@ public sealed class SaveLeaveApplyRequestDto
     public string? LeaveReason { get; init; }
     public DateTime? FromDate { get; init; }
     public DateTime? ToDate { get; init; }
+    public decimal? NoOfDay { get; init; }
     public string? AdminRemak { get; init; }
     public long? LeavePermissionID { get; init; }
     public long? AyID { get; init; }

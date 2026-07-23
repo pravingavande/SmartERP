@@ -143,6 +143,7 @@ public sealed class LeaveRepository : ILeaveRepository
         p.Add("@LeaveReason", request.LeaveReason);
         p.Add("@FromDate", request.FromDate);
         p.Add("@ToDate", request.ToDate);
+        p.Add("@NoOfDay", request.NoOfDay);
         p.Add("@AdminRemak", request.AdminRemak);
         p.Add("@LeavePermissionID", request.LeavePermissionID);
         p.Add("@AyID", request.AyID);

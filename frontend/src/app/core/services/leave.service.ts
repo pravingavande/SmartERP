@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { calcLeaveNoOfDays, isHalfDayLeave } from '../utils/leave-days.util';
 import { AuthService } from './auth.service';
 import { OrgOption } from '../models/audit.model';
 import {
@@ -150,6 +151,7 @@ export class LeaveService {
       leaveReason: form.leaveReason,
       fromDate: form.fromDate || null,
       toDate: form.toDate || null,
+      noOfDay: form.noOfDay,
       adminRemak: form.adminRemak,
       leavePermissionID: form.leavePermissionID,
       ayID: form.ayID
@@ -160,13 +162,8 @@ export class LeaveService {
     );
   }
 
-  calcNoOfDays(fromDate: string, toDate: string): number | null {
-    if (!fromDate || !toDate) return null;
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
-    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) return null;
-    const ms = to.getTime() - from.getTime();
-    return Math.floor(ms / 86400000) + 1;
+  calcNoOfDays(fromDate: string, toDate: string, isHalfDay = false): number | null {
+    return calcLeaveNoOfDays(fromDate, toDate, isHalfDay);
   }
 
   private normalizeLookupsBundle(raw: LeaveApplyLookupsBundle & { Lookups?: LeaveApplyLookupsBundle['lookups']; Orgs?: OrgOption[] }): LeaveApplyLookupsBundle {
@@ -301,6 +298,7 @@ export class LeaveService {
   }): LeaveApplyFormState {
     const fromDate = this.toDateInput(raw.fromDate ?? raw.FromDate);
     const toDate = this.toDateInput(raw.toDate ?? raw.ToDate);
+    const noOfDay = raw.noOfDay ?? raw.NoOfDay ?? this.calcNoOfDays(fromDate, toDate);
     return {
       userLeaveApplyID: raw.userLeaveApplyID ?? raw.UserLeaveApplyID ?? null,
       orgID: raw.orgID ?? raw.OrgID ?? null,
@@ -311,10 +309,11 @@ export class LeaveService {
       leaveReason: String(raw.leaveReason ?? raw.LeaveReason ?? ''),
       fromDate,
       toDate,
-      noOfDay: raw.noOfDay ?? raw.NoOfDay ?? this.calcNoOfDays(fromDate, toDate),
+      noOfDay,
       adminRemak: String(raw.adminRemak ?? raw.AdminRemak ?? ''),
       leavePermissionID: raw.leavePermissionID ?? raw.LeavePermissionID ?? null,
-      ayID: raw.ayID ?? raw.AyID ?? null
+      ayID: raw.ayID ?? raw.AyID ?? null,
+      isHalfDay: isHalfDayLeave(noOfDay != null ? Number(noOfDay) : null)
     };
   }
 

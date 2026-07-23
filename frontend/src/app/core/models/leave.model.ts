@@ -95,4 +95,5 @@ export interface LeaveApplyFormState {
   adminRemak: string;
   leavePermissionID: number | null;
   ayID: number | null;
+  isHalfDay: boolean;
 }

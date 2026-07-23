@@ -22,7 +22,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { FieldErrors, hasFieldErrors } from '../../../core/utils/form-field-errors';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
-import { resolveDefaultSchoolOrgId, isSansthaAdminUser, isSchoolCollegeAdminUser, filterTeacherAssignableRolesForSchoolUser, ATTENDANCE_ONLY_USER_ROLE_ID } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId, isSansthaAdminUser, isSchoolCollegeAdminUser, filterTeacherAssignableRolesForSchoolUser, filterTeacherMasterUserRoles, ATTENDANCE_ONLY_USER_ROLE_ID } from '../../../core/utils/org-access.util';
 import { buildEmployeeName } from '../../../core/utils/employee-name.util';
 import {
   serializeTeacherDocuments,
@@ -120,11 +120,9 @@ export class TeacherEntryComponent {
   });
   readonly schoolOrgs = computed(() => this.lookups()?.orgs ?? []);
   readonly canShowAllSchoolFilter = computed(() => isSansthaAdminUser(this.auth.currentUser()?.userRoleId));
-  /** Form/list User Role options — SuperAdmin hidden. */
+  /** Form/list User Role options — Owner, Client, SuperAdmin hidden. */
   readonly selectableUserRoles = computed(() =>
-    (this.masterLookups()?.userRoles ?? []).filter(
-      (ur) => (ur.userRoleName ?? '').trim().toLowerCase() !== 'superadmin'
-    )
+    filterTeacherMasterUserRoles(this.masterLookups()?.userRoles ?? [])
   );
   /** Add/Edit form — School College Admin (role 3) may assign Employee + School College Admin. */
   readonly formUserRoles = computed(() => {

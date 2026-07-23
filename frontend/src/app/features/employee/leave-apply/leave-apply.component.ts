@@ -233,13 +233,29 @@ export class LeaveApplyComponent {
 
   onDateRangeChange(): void {
     const f = this.form();
-    const noOfDay = this.leaveService.calcNoOfDays(f.fromDate, f.toDate);
+    const noOfDay = this.leaveService.calcNoOfDays(f.fromDate, f.toDate, f.isHalfDay);
     this.form.update((x) => ({ ...x, noOfDay }));
   }
 
+  onHalfDayChange(checked: boolean): void {
+    this.form.update((f) => {
+      const toDate = checked ? f.fromDate : f.toDate;
+      const noOfDay = this.leaveService.calcNoOfDays(f.fromDate, toDate, checked);
+      return { ...f, isHalfDay: checked, toDate, noOfDay };
+    });
+  }
+
   updateForm<K extends keyof LeaveApplyFormState>(key: K, value: LeaveApplyFormState[K]): void {
-    this.form.update((f) => ({ ...f, [key]: value }));
-    if (key === 'fromDate' || key === 'toDate') this.onDateRangeChange();
+    this.form.update((f) => {
+      const next = { ...f, [key]: value };
+      if (key === 'fromDate' && next.isHalfDay) {
+        next.toDate = String(value);
+      }
+      if (key === 'fromDate' || key === 'toDate') {
+        next.noOfDay = this.leaveService.calcNoOfDays(next.fromDate, next.toDate, next.isHalfDay);
+      }
+      return next;
+    });
   }
 
   save(): void {
@@ -255,6 +271,9 @@ export class LeaveApplyComponent {
     if (!f.leaveTypeID) errors['leaveTypeID'] = 'Leave type is required.';
     if (!f.fromDate) errors['fromDate'] = 'From date is required.';
     if (!f.toDate) errors['toDate'] = 'To date is required.';
+    if (f.isHalfDay && f.fromDate !== f.toDate) {
+      errors['toDate'] = 'Half-day leave must be on a single date (From and To must match).';
+    }
     if (hasFieldErrors(errors)) {
       this.fieldErrors.set(errors);
       return;
@@ -325,7 +344,8 @@ export class LeaveApplyComponent {
       noOfDay: null,
       adminRemak: '',
       leavePermissionID: null,
-      ayID: ayId
+      ayID: ayId,
+      isHalfDay: false
     };
   }
 }
