@@ -8,6 +8,9 @@ namespace SmartEPR.Infrastructure.Services;
 
 public sealed class TeacherService : ITeacherService
 {
+    public const string DuplicateEmployeeMobileMessage =
+        "A teacher/employee with the same name and mobile no. 1 already exists.";
+
     private static readonly Regex MobileRegex = new(@"^\d{10}$", RegexOptions.Compiled);
     private static readonly Regex EmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex AadharRegex = new(@"^\d{12}$", RegexOptions.Compiled);
@@ -62,6 +65,20 @@ public sealed class TeacherService : ITeacherService
             return (null, "Password is required for app login users.");
 
         var normalized = NormalizeRequest(request);
+
+        if (!string.IsNullOrWhiteSpace(normalized.MobileNo1) && normalized.MobileNo1.Trim() != "0")
+        {
+            var duplicateEmployee = await _teacherRepository.IsEmployeeMobileDuplicateAsync(
+                normalized.Firstname ?? string.Empty,
+                normalized.MiddleName,
+                normalized.LastName,
+                normalized.MobileNo1,
+                request.UserID > 0 ? request.UserID : null,
+                cancellationToken).ConfigureAwait(false);
+            if (duplicateEmployee)
+                return (null, DuplicateEmployeeMobileMessage);
+        }
+
         try
         {
             var userId = await _teacherRepository.SaveAsync(actorUserId, normalized, updatePassword, cancellationToken).ConfigureAwait(false);

@@ -185,6 +185,24 @@ public sealed class TeacherRepository : ITeacherRepository
         return row?.IsDuplicate == 1;
     }
 
+    public async Task<bool> IsEmployeeMobileDuplicateAsync(
+        string firstname,
+        string? middleName,
+        string? lastName,
+        string mobileNo1,
+        long? excludeUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var p = new DynamicParameters();
+        p.Add("@Firstname", firstname);
+        p.Add("@MiddleName", middleName);
+        p.Add("@LastName", lastName);
+        p.Add("@MobileNo1", mobileNo1);
+        p.Add("@ExcludeUserID", excludeUserId);
+        var row = await _executor.QuerySingleOrDefaultAsync<DuplicateRow>("dbo.sp_Teacher_CheckEmployeeMobile", p, cancellationToken).ConfigureAwait(false);
+        return row?.IsDuplicate == 1;
+    }
+
     public async Task<long> SaveAsync(long actorUserId, SaveTeacherRequestDto request, bool updatePassword, CancellationToken cancellationToken = default)
     {
         var p = new DynamicParameters();

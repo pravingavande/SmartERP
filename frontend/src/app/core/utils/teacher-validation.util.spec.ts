@@ -244,6 +244,11 @@ describe('teacher-validation.util', () => {
       expect(mapTeacherBackendMessageToFieldErrors('First name is required.')['firstname']).toBeTruthy();
       expect(mapTeacherBackendMessageToFieldErrors('Last name is required.')['lastName']).toBeTruthy();
       expect(mapTeacherBackendMessageToFieldErrors('App user name must be unique.')['appUserName']).toBeTruthy();
+      expect(
+        mapTeacherBackendMessageToFieldErrors(
+          'A teacher/employee with the same name and mobile no. 1 already exists.'
+        )['mobileNo1']
+      ).toBeTruthy();
       expect(mapTeacherBackendMessageToFieldErrors('Password is required for app login users.')['appPassword']).toBeTruthy();
     });
 

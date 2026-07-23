@@ -117,6 +117,9 @@ export function mapTeacherBackendMessageToFieldErrors(message: string): Record<s
   if (lower.includes('category')) return { categoryID: message };
   if (lower.includes('shift')) return { shiftID: message };
   if (lower.includes('user role') || lower.includes('role')) return { userRoleID: message };
+  if (lower.includes('same name and mobile')) {
+    return { mobileNo1: message, firstname: message, lastName: message };
+  }
   if (lower.includes('mobile')) return { mobileNo1: message };
   if (lower.includes('email')) return { emailID: message };
   if (lower.includes('aadhar') || lower.includes('aadhaar')) return { adharCardNo: message };

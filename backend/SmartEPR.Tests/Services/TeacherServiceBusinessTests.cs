@@ -17,6 +17,7 @@ public sealed class TeacherServiceBusinessTests
         StaffTypeID = 2,
         DesignationCode = 1,
         GenderCode = 1,
+        AGID = 1,
         Firstname = "Ramesh",
         MiddleName = "Kumar",
         LastName = "Patil",
@@ -51,6 +52,30 @@ public sealed class TeacherServiceBusinessTests
 
         Assert.Null(data);
         Assert.Equal("Organization is required.", error);
+        _teacherRepository.Verify(
+            r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SaveAsync_RejectsDuplicateEmployeeNameAndMobile()
+    {
+        var request = ValidRequest();
+
+        _teacherRepository
+            .Setup(r => r.IsEmployeeMobileDuplicateAsync(
+                request.Firstname!,
+                request.MiddleName,
+                request.LastName!,
+                request.MobileNo1!,
+                null,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var (data, error) = await CreateService().SaveAsync(1, request);
+
+        Assert.Null(data);
+        Assert.Equal(TeacherService.DuplicateEmployeeMobileMessage, error);
         _teacherRepository.Verify(
             r => r.SaveAsync(It.IsAny<long>(), It.IsAny<SaveTeacherRequestDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
             Times.Never);

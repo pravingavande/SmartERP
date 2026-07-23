@@ -9,6 +9,7 @@ public interface ITeacherRepository
     Task<TeacherDto?> GetByIdAsync(long userId, CancellationToken cancellationToken = default);
     Task<int?> GetNextSrNoAsync(long orgId, CancellationToken cancellationToken = default);
     Task<bool> IsAppUserNameDuplicateAsync(string appUserName, long? excludeUserId, CancellationToken cancellationToken = default);
+    Task<bool> IsEmployeeMobileDuplicateAsync(string firstname, string? middleName, string? lastName, string mobileNo1, long? excludeUserId, CancellationToken cancellationToken = default);
     Task<long> SaveAsync(long actorUserId, SaveTeacherRequestDto request, bool updatePassword, CancellationToken cancellationToken = default);
     Task SaveDocumentsAsync(long userId, IReadOnlyList<SaveTeacherDocumentDto> documents, CancellationToken cancellationToken = default);
     Task DeleteAsync(long userId, CancellationToken cancellationToken = default);
