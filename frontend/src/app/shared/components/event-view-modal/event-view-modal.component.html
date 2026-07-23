@@ -1,0 +1,107 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-box wide" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <h2>View Event</h2>
+      <button type="button" class="icon-btn" (click)="close()" aria-label="Close">×</button>
+    </header>
+
+    <div class="modal-body">
+      @if (loading()) {
+        <p class="loading-text">Loading event details...</p>
+      } @else {
+        @if (event(); as ev) {
+          <dl class="detail-grid">
+          <div class="detail-row">
+            <dt>Date</dt>
+            <dd>{{ formatDate(ev.eventDate) }}</dd>
+          </div>
+
+          <div class="detail-row">
+            <dt>Time</dt>
+            <dd>
+              @if (ev.isAllDay) {
+                All day
+              } @else {
+                {{ timeLabel(ev.startTime) }}
+                @if (ev.endTime) {
+                  <span> – {{ timeLabel(ev.endTime) }}</span>
+                }
+              }
+            </dd>
+          </div>
+
+          <div class="detail-row">
+            <dt>Event Type</dt>
+            <dd>{{ ev.eventTypeName || '—' }}</dd>
+          </div>
+
+          <div class="detail-row">
+            <dt>Location</dt>
+            <dd>{{ ev.location || '—' }}</dd>
+          </div>
+
+          <div class="detail-row">
+            <dt>Title</dt>
+            <dd>{{ ev.title || '—' }}</dd>
+          </div>
+
+          <div class="detail-row">
+            <dt>Description</dt>
+            <dd class="multiline">{{ ev.description?.trim() || '—' }}</dd>
+          </div>
+
+          <div class="detail-row">
+            <dt>Status</dt>
+            <dd>{{ ev.status || '—' }}</dd>
+          </div>
+
+          <div class="detail-row">
+            <dt>Notes</dt>
+            <dd class="multiline">{{ ev.notes?.trim() || '—' }}</dd>
+          </div>
+        </dl>
+
+        @if (showReporting(ev)) {
+          <section class="reporting-section">
+            <h3>Event Completion / Reporting</h3>
+            <dl class="detail-grid">
+              <div class="detail-row">
+                <dt>Event Reporting</dt>
+                <dd class="multiline">{{ ev.eventReporting?.trim() || '—' }}</dd>
+              </div>
+
+              @if (ev.eventPhotoAttachment) {
+                <div class="detail-row">
+                  <dt>Event Photo</dt>
+                  <dd>
+                    <button type="button" class="attachment-link" (click)="openAttachment(ev.eventPhotoAttachment)">
+                      {{ attachmentLabel(ev.eventPhotoAttachment) }}
+                    </button>
+                  </dd>
+                </div>
+              }
+
+              @if (ev.eventNewsAttachment) {
+                <div class="detail-row">
+                  <dt>Event News</dt>
+                  <dd>
+                    <button type="button" class="attachment-link" (click)="openAttachment(ev.eventNewsAttachment)">
+                      {{ attachmentLabel(ev.eventNewsAttachment) }}
+                    </button>
+                  </dd>
+                </div>
+              }
+            </dl>
+          </section>
+        }
+        } @else {
+          <p class="loading-text">Event details are not available.</p>
+        }
+      }
+    </div>
+
+    <footer class="modal-footer">
+      <button type="button" class="btn btn-outline" (click)="close()">Close</button>
+    </footer>
+  </div>
+</div>

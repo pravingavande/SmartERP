@@ -30,6 +30,8 @@ public static class DependencyInjection
         services.AddScoped<IDonationReportService, DonationReportService>();
         services.AddScoped<ICashBookReportRepository, CashBookReportRepository>();
         services.AddScoped<ICashBookReportService, CashBookReportService>();
+        services.AddScoped<IModuleReportRepository, ModuleReportRepository>();
+        services.AddScoped<IModuleReportService, ModuleReportService>();
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<ITicketService, TicketService>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();

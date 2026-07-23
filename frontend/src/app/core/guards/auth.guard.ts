@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
-import { getDefaultHomeRoute, isAttendanceOnlyUser } from '../utils/org-access.util';
+import { canAccessSettings, getDefaultHomeRoute, isAttendanceOnlyUser } from '../utils/org-access.util';
 import { canAccessAdminMasters } from '../utils/master-access.util';
 import { isAppSuperAdmin } from '../utils/super-admin-access.util';
 
@@ -58,6 +58,20 @@ export const adminMasterGuard: CanActivateFn = (route) => {
   const routePath = route.routeConfig?.path ?? '';
   const fallback = routePath.startsWith('stock/') ? '/stock/dashboard' : '/audit/masters';
   return router.createUrlTree([fallback]);
+};
+
+/** Restricts Settings to UserRoleID 1, 2, or 5. */
+export const settingsGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const toast = inject(ToastService);
+
+  if (canAccessSettings(auth.currentUser()?.userRoleId)) {
+    return true;
+  }
+
+  toast.showError('You do not have permission to access Settings.', 'Access Denied');
+  return router.createUrlTree(['/dashboard']);
 };
 
 /** Restricts App Super Admin screens to UserRoleID 5. */

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { attendanceOnlyChildGuard, authGuard, adminMasterGuard, guestGuard, superAdminGuard } from './core/guards/auth.guard';
+import { attendanceOnlyChildGuard, authGuard, adminMasterGuard, guestGuard, settingsGuard, superAdminGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -268,7 +268,8 @@ export const routes: Routes = [
       {
         path: 'settings',
         loadComponent: () =>
-          import('./features/settings/settings.component').then((m) => m.SettingsComponent)
+          import('./features/settings/settings.component').then((m) => m.SettingsComponent),
+        canActivate: [settingsGuard]
       },
       {
         path: 'super-admin/sanstha-onboarding',

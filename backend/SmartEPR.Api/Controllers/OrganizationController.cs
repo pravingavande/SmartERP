@@ -85,6 +85,35 @@ public sealed class OrganizationController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Save([FromBody] SaveOrganizationRequestDto request, CancellationToken cancellationToken)
     {
+        if (request.BusinessCategoryID == 2 && TryGetSansthaId(out var sansthaId))
+        {
+            request = new SaveOrganizationRequestDto
+            {
+                OrgID = request.OrgID,
+                BusinessCategoryID = request.BusinessCategoryID,
+                UnderOrgID = sansthaId,
+                SchoolCategoryID = request.SchoolCategoryID,
+                SrNo = request.SrNo,
+                OrganizationName = request.OrganizationName,
+                Address = request.Address,
+                CityName = request.CityName,
+                UDiesNo = request.UDiesNo,
+                SchoolTinNo = request.SchoolTinNo,
+                SharlarthID = request.SharlarthID,
+                PanNo = request.PanNo,
+                EmailID = request.EmailID,
+                PhoneNo = request.PhoneNo,
+                MobileNo = request.MobileNo,
+                WebSite = request.WebSite,
+                EstablishmentYear = request.EstablishmentYear,
+                RegNo = request.RegNo,
+                Permission80G = request.Permission80G,
+                Remark = request.Remark,
+                IsActive = request.IsActive,
+                Documents = request.Documents
+            };
+        }
+
         var (data, error) = await _organizationService.SaveAsync(request, cancellationToken).ConfigureAwait(false);
         return data is null
             ? Ok(ApiResponse<OrganizationDto>.Fail(error ?? "Unable to save organization."))
@@ -173,5 +202,12 @@ public sealed class OrganizationController : ControllerBase
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
         return long.TryParse(claim, out userId);
+    }
+
+    private bool TryGetSansthaId(out long sansthaId)
+    {
+        sansthaId = 0;
+        var claim = User.FindFirstValue("sanstha_id");
+        return long.TryParse(claim, out sansthaId) && sansthaId > 0;
     }
 }

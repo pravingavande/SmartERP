@@ -10,9 +10,11 @@ import {
   OrganizationListFilter,
   OrganizationListItem,
   OrganizationLookups,
-  SansthaOrgOption
+  SansthaOrgOption,
+  SCHOOL_BUSINESS_CATEGORY_ID
 } from '../models/organization.model';
 import { AuthService } from './auth.service';
+import { resolveLoggedInSansthaId } from '../utils/org-access.util';
 import { apiUploadHttpError, apiUploadPath, UploadResult } from '../utils/api-response.util';
 import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 
@@ -91,10 +93,15 @@ export class OrganizationService {
   }
 
   save(form: OrganizationFormState): Observable<{ data: OrganizationFormState | null; message?: string }> {
+    const loggedInSansthaId = resolveLoggedInSansthaId(this.auth.currentUser());
+    const underOrgID = form.businessCategoryID === SCHOOL_BUSINESS_CATEGORY_ID && loggedInSansthaId
+      ? loggedInSansthaId
+      : form.underOrgID;
+
     const payload = {
       orgID: form.orgID ?? 0,
       businessCategoryID: form.businessCategoryID,
-      underOrgID: form.underOrgID,
+      underOrgID,
       schoolCategoryID: form.schoolCategoryID,
       organizationName: form.organizationName,
       address: form.address || null,
@@ -191,6 +198,13 @@ export class OrganizationService {
     };
   }
 
+  private readUdiseNo(raw: Record<string, unknown>): string | null {
+    const value = raw['udiesNo'] ?? raw['UDiesNo'] ?? raw['uDiesNo'];
+    if (value == null) return null;
+    const text = String(value).trim();
+    return text || null;
+  }
+
   private normalizeListItem(raw: Record<string, unknown>): OrganizationListItem {
     return {
       orgID: Number(raw['orgID'] ?? raw['OrgID'] ?? 0),
@@ -204,7 +218,7 @@ export class OrganizationService {
       organizationName: String(raw['organizationName'] ?? raw['OrganizationName'] ?? ''),
       address: (raw['address'] ?? raw['Address'] ?? null) as string | null,
       cityName: (raw['cityName'] ?? raw['CityName'] ?? null) as string | null,
-      udiesNo: (raw['udiesNo'] ?? raw['UDiesNo'] ?? null) as string | null,
+      udiesNo: this.readUdiseNo(raw),
       schoolTinNo: (raw['schoolTinNo'] ?? raw['SchoolTinNo'] ?? null) as string | null,
       sharlarthID: (raw['sharlarthID'] ?? raw['SharlarthID'] ?? null) as string | null,
       panNo: (raw['panNo'] ?? raw['PanNo'] ?? null) as string | null,
@@ -231,7 +245,7 @@ export class OrganizationService {
       organizationName: String(raw['organizationName'] ?? raw['OrganizationName'] ?? ''),
       address: String(raw['address'] ?? raw['Address'] ?? ''),
       cityName: String(raw['cityName'] ?? raw['CityName'] ?? ''),
-      udiesNo: String(raw['udiesNo'] ?? raw['UDiesNo'] ?? ''),
+      udiesNo: this.readUdiseNo(raw) ?? '',
       schoolTinNo: String(raw['schoolTinNo'] ?? raw['SchoolTinNo'] ?? ''),
       sharlarthID: String(raw['sharlarthID'] ?? raw['SharlarthID'] ?? ''),
       panNo: String(raw['panNo'] ?? raw['PanNo'] ?? ''),

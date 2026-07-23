@@ -9,7 +9,7 @@ import { TicketNotificationService } from '../../core/services/ticket-notificati
 import { TicketService } from '../../core/services/ticket.service';
 import { APP_BADGE, APP_NAME } from '../../core/constants/app-brand';
 import { NavSection } from '../../core/models/nav.model';
-import { isAttendanceOnlyUser } from '../../core/utils/org-access.util';
+import { canAccessSettings, isAttendanceOnlyUser } from '../../core/utils/org-access.util';
 import { isAppSuperAdmin } from '../../core/utils/super-admin-access.util';
 import { TicketPendingModalComponent } from '../../shared/components/ticket-pending-modal/ticket-pending-modal.component';
 
@@ -108,8 +108,22 @@ export class MainLayoutComponent {
       return [this.attendanceNavSection];
     }
 
+    let sections = this.baseNavSections;
+
+    if (!canAccessSettings(userRoleId)) {
+      sections = sections
+        .map((section) => {
+          if (section.title !== 'Administration') return section;
+          return {
+            ...section,
+            items: section.items.filter((item) => item.route !== '/settings')
+          };
+        })
+        .filter((section) => section.items.length > 0);
+    }
+
     if (!isAppSuperAdmin(userRoleId)) {
-      return this.baseNavSections;
+      return sections;
     }
 
     return [
@@ -119,7 +133,7 @@ export class MainLayoutComponent {
           { label: 'Sanstha Onboarding', icon: 'users', route: '/super-admin/sanstha-onboarding' }
         ]
       },
-      ...this.baseNavSections
+      ...sections
     ];
   });
 

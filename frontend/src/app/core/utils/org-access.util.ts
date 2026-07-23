@@ -1,4 +1,5 @@
 import { AuthUser } from '../models/auth.model';
+import { APP_SUPER_ADMIN_ROLE_ID } from './super-admin-access.util';
 
 export interface SchoolOrgOption {
   orgID: number;
@@ -52,6 +53,15 @@ export function getDefaultHomeRoute(userRoleId?: number | null): string {
 /** @deprecated Use isSansthaAdminUser — kept for callers that mean sanstha admin, not global all-schools. */
 export function canSeeAllSchools(userRoleId?: number | null): boolean {
   return isSansthaAdminUser(userRoleId);
+}
+
+/** Settings screen — UserRoleID 1, 2, or 5 only. */
+export function canAccessSettings(userRoleId?: number | null): boolean {
+  return (
+    userRoleId === SANSTHA_OWNER_USER_ROLE_ID ||
+    userRoleId === SANSTHA_CLIENT_USER_ROLE_ID ||
+    userRoleId === APP_SUPER_ADMIN_ROLE_ID
+  );
 }
 
 export interface UserRoleOptionLike {
@@ -188,6 +198,14 @@ export function resolveDefaultSchoolOrgId(
   }
 
   return orgs[0]?.orgID ?? null;
+}
+
+/**
+ * Logged-in user's Sanstha org ID — primary source for school UnderOrgID on save.
+ */
+export function resolveLoggedInSansthaId(user?: AuthUser | null): number | null {
+  const sansthaId = user?.sansthaId;
+  return sansthaId && sansthaId > 0 ? sansthaId : null;
 }
 
 /**

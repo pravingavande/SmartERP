@@ -23,7 +23,7 @@ import { UserProfile } from '../../../core/models/dashboard.model';
 import { FieldErrors, hasFieldErrors, removeFieldError } from '../../../core/utils/form-field-errors';
 import { pageCount, pageRange, paginateRows } from '../../../core/utils/master-list.util';
 import { mapOrganizationBackendMessage, validateOrganizationForm, getOrganizationDocumentsSaveError } from '../../../core/utils/organization-validation.util';
-import { resolveDefaultSchoolOrgId, isSansthaAdminUser } from '../../../core/utils/org-access.util';
+import { resolveDefaultSchoolOrgId, isSansthaAdminUser, resolveLoggedInSansthaId } from '../../../core/utils/org-access.util';
 import {
   serializeOrganizationDocuments,
   DUPLICATE_DOCUMENT_NAME_MESSAGE
@@ -153,10 +153,9 @@ export class OrganizationMasterComponent {
     }
     if (this.formVisible()) this.closeForm();
     const lookups = this.lookups();
-    const orgId =
-      this.listFilter().orgId ?? resolveDefaultSchoolOrgId(this.schoolOrgs(), this.userProfile());
-    if (!orgId) {
-      this.errorMessage.set('Select Sanstha on the list page before adding a new organization.');
+    const sansthaId = this.resolveLoggedInSansthaId();
+    if (!sansthaId) {
+      this.errorMessage.set('Unable to resolve logged-in Sanstha. Please log in again.');
       return;
     }
     this.errorMessage.set(null);
@@ -165,34 +164,35 @@ export class OrganizationMasterComponent {
     this.activeTab.set('basic');
     this.saveError.set(null);
     this.fieldErrors.set({});
-    const selected = this.schoolOrgs().find((s) => s.orgID === orgId);
-    const parentId = this.resolveParentOrgId(orgId, selected?.underOrgID);
     const defaultSchoolCategory = lookups?.schoolCategories.find((s) => s.id > 0)?.id ?? null;
-    const ownerBusinessCategory = selected?.businessCategoryID ?? SCHOOL_BUSINESS_CATEGORY_ID;
-    const businessCategoryID = ownerBusinessCategory === SANSTHA_BUSINESS_CATEGORY_ID
-      ? SCHOOL_BUSINESS_CATEGORY_ID
-      : (ownerBusinessCategory || SCHOOL_BUSINESS_CATEGORY_ID);
     this.form.set({
       ...this.emptyForm(),
-      businessCategoryID,
-      underOrgID: parentId,
+      businessCategoryID: SCHOOL_BUSINESS_CATEGORY_ID,
+      underOrgID: sansthaId,
       schoolCategoryID: defaultSchoolCategory
     });
     this.documentOptions.set([]);
-    if (parentId) {
-      this.refreshNextSrNo(parentId);
-      this.refreshDocumentOptions(businessCategoryID, true);
-    }
+    this.refreshNextSrNo(sansthaId);
+    this.refreshDocumentOptions(SCHOOL_BUSINESS_CATEGORY_ID, true);
     this.captureDocumentsSnapshot(this.form().documents);
   }
 
   onFormOrgChange(orgId: number | null): void {
-    const selected = this.schoolOrgs().find((s) => s.orgID === orgId);
-    const parentId = orgId ? this.resolveParentOrgId(orgId, selected?.underOrgID) : null;
-    this.updateForm('underOrgID', parentId);
-    if (parentId && this.isNewMode()) this.refreshNextSrNo(parentId);
+    const sansthaId = this.resolveLoggedInSansthaId();
+    if (sansthaId) {
+      this.updateForm('underOrgID', sansthaId);
+      if (this.isNewMode()) this.refreshNextSrNo(sansthaId);
+    } else if (orgId) {
+      const selected = this.schoolOrgs().find((s) => s.orgID === orgId);
+      const parentId = this.resolveParentOrgId(orgId, selected?.underOrgID);
+      this.updateForm('underOrgID', parentId);
+      if (this.isNewMode() && parentId) this.refreshNextSrNo(parentId);
+    } else {
+      this.updateForm('underOrgID', null);
+    }
     const bc = this.form().businessCategoryID;
-    if (bc && parentId) this.refreshDocumentOptions(bc, true);
+    const scopeId = this.resolveLoggedInSansthaId() ?? this.form().underOrgID;
+    if (bc && scopeId) this.refreshDocumentOptions(bc, true);
   }
 
   /** Parent sanstha for a school; if selection is already a sanstha, use itself. */
@@ -229,7 +229,16 @@ export class OrganizationMasterComponent {
       this.activeTab.set('basic');
       this.saveError.set(null);
       this.fieldErrors.set({});
-      this.form.set({ ...data, documents: data.documents.length ? data.documents : [this.emptyDocumentRow()] });
+      const sansthaId = this.resolveLoggedInSansthaId();
+      const underOrgID =
+        data.businessCategoryID === SCHOOL_BUSINESS_CATEGORY_ID && sansthaId
+          ? sansthaId
+          : data.underOrgID;
+      this.form.set({
+        ...data,
+        underOrgID,
+        documents: data.documents.length ? data.documents : [this.emptyDocumentRow()]
+      });
       if (data.businessCategoryID) this.refreshDocumentOptions(data.businessCategoryID, false);
       this.captureDocumentsSnapshot(this.form().documents);
     });
@@ -294,11 +303,25 @@ export class OrganizationMasterComponent {
 
   /** Sanstha org that owns DocumentMaster rows for this form. */
   private resolveDocumentUnderOrgId(): number | null {
+    const loggedInSansthaId = this.resolveLoggedInSansthaId();
+    if (loggedInSansthaId) return loggedInSansthaId;
+
     const form = this.form();
     if (form.underOrgID && form.underOrgID > 0) return form.underOrgID;
     if (form.businessCategoryID === SANSTHA_BUSINESS_CATEGORY_ID && form.orgID) return form.orgID;
-    const sansthaId = this.auth.currentUser()?.sansthaId;
-    return sansthaId && sansthaId > 0 ? sansthaId : null;
+    return null;
+  }
+
+  /** Logged-in user's Sanstha — used as UnderOrgID for school save/edit. */
+  private resolveLoggedInSansthaId(): number | null {
+    return resolveLoggedInSansthaId(this.auth.currentUser());
+  }
+
+  /** Apply logged-in Sanstha as parent org when saving a school/college. */
+  private withSchoolSansthaScope(form: OrganizationFormState): OrganizationFormState {
+    if (form.businessCategoryID !== SCHOOL_BUSINESS_CATEGORY_ID) return form;
+    const sansthaId = this.resolveLoggedInSansthaId();
+    return sansthaId ? { ...form, underOrgID: sansthaId } : form;
   }
 
   addDocumentRow(): void {
@@ -434,9 +457,11 @@ export class OrganizationMasterComponent {
 
   saveBasic(): void {
     if (this.isViewMode()) return;
-    const current = this.formMode() === 'new'
-      ? { ...this.form(), isActive: true }
-      : this.form();
+    const current = this.withSchoolSansthaScope(
+      this.formMode() === 'new'
+        ? { ...this.form(), isActive: true }
+        : this.form()
+    );
     const errors = validateOrganizationForm(current);
     if (hasFieldErrors(errors)) {
       this.fieldErrors.set(errors);
