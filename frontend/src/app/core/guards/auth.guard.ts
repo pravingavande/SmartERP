@@ -17,7 +17,7 @@ export const authGuard: CanActivateFn = () => {
   return router.createUrlTree(['/login']);
 };
 
-/** UserRoleID 4 may access only /attendance. */
+/** UserRoleID 4 — attendance-only access (module disabled in menu for now). */
 export const attendanceOnlyChildGuard: CanActivateChildFn = (_route, state) => {
   const auth = inject(AuthService);
   if (!isAttendanceOnlyUser(auth.currentUser()?.userRoleId)) {
@@ -25,11 +25,11 @@ export const attendanceOnlyChildGuard: CanActivateChildFn = (_route, state) => {
   }
 
   const path = state.url.split('?')[0].replace(/\/+$/, '') || '/';
-  if (path === '/attendance') {
+  if (path === '/dashboard' || path.startsWith('/attendance')) {
     return true;
   }
 
-  return inject(Router).createUrlTree(['/attendance']);
+  return inject(Router).createUrlTree(['/attendance/dashboard']);
 };
 
 export const guestGuard: CanActivateFn = () => {

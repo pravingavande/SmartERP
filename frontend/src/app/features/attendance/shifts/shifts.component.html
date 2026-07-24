@@ -1,0 +1,155 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Work Shifts</h1>
+      <p>Shift timing, required hours, and late rules</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="openForm()">+ Add New</button>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="shiftOrgID"
+      [orgs]="orgs()"
+      [value]="orgId()"
+      (valueChange)="onOrgChange($event)"
+    />
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (loading()) {
+        <p class="loading-hint">Loading shifts…</p>
+      }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Code</th>
+              <th>Hours</th>
+              <th>Mode</th>
+              <th>Required</th>
+              <th>Status</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of shifts(); track s.shiftID) {
+              <tr>
+                <td>
+                  <strong>{{ s.shiftName }}</strong>
+                  @if (s.isNightShift) { <span class="status-badge muted">Night</span> }
+                </td>
+                <td class="code">{{ s.shiftCode }}</td>
+                <td>{{ s.startTime }} – {{ s.endTime }}</td>
+                <td>{{ s.timingMode || 'fixed' }}</td>
+                <td>{{ formatRequired(s.requiredWorkMinutes) }}</td>
+                <td>{{ s.isActive ? 'Active' : 'Inactive' }}</td>
+                <td class="actions">
+                  <app-list-action-btn action="edit" (clicked)="openForm(s)" />
+                </td>
+              </tr>
+            } @empty {
+              @if (!loading()) {
+                <tr><td colspan="7" class="empty">No shifts found</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </aside>
+  </div>
+
+  @if (formVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box master-modal-wide">
+        <header class="master-modal-header">
+          <h2>{{ editing() ? 'Edit Shift' : 'New Shift' }}</h2>
+        </header>
+        <form class="master-modal-form voucher-form" (ngSubmit)="saveForm()">
+          @if (formError()) {
+            <p class="form-save-error">{{ formError() }}</p>
+          }
+          <div class="form-grid">
+            <label class="field">
+              <span class="field-label">Shift Name *</span>
+              <input class="field-control" [(ngModel)]="form.shiftName" name="shiftName" required />
+            </label>
+            <label class="field">
+              <span class="field-label">Shift Code *</span>
+              <input class="field-control" [(ngModel)]="form.shiftCode" name="shiftCode" style="text-transform: uppercase" required />
+            </label>
+            <label class="field">
+              <span class="field-label">Start (HH:mm)</span>
+              <input class="field-control" [(ngModel)]="form.startTime" name="startTime" />
+            </label>
+            <label class="field">
+              <span class="field-label">End (HH:mm)</span>
+              <input class="field-control" [(ngModel)]="form.endTime" name="endTime" />
+            </label>
+            <label class="field">
+              <span class="field-label">Timing mode</span>
+              <select class="field-control" [(ngModel)]="form.timingMode" name="timingMode">
+                <option value="fixed">Fixed shift</option>
+                <option value="flexible">Flexible hours</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Required net hours</span>
+              <input type="number" step="0.5" class="field-control" [(ngModel)]="form.requiredHours" name="requiredHours" />
+            </label>
+            <label class="field">
+              <span class="field-label">Lunch minutes</span>
+              <input type="number" class="field-control" [(ngModel)]="form.lunchMinutes" name="lunchMinutes" />
+            </label>
+            @if (form.timingMode === 'fixed') {
+              <label class="field">
+                <span class="field-label">Grace minutes (late after)</span>
+                <input type="number" class="field-control" [(ngModel)]="form.graceMinutes" name="graceMinutes" />
+              </label>
+              <label class="field">
+                <span class="field-label">Early check-in allowed (min)</span>
+                <input type="number" class="field-control" [(ngModel)]="form.earlyCheckinMinutes" name="earlyCheckinMinutes" />
+              </label>
+            }
+            @if (editing()) {
+              <label class="field">
+                <span class="field-label">Status</span>
+                <select class="field-control" [(ngModel)]="form.isActive" name="isActive">
+                  <option [ngValue]="true">Active</option>
+                  <option [ngValue]="false">Inactive</option>
+                </select>
+              </label>
+            }
+            <label class="field checkbox-field master-active-field full">
+              <input type="checkbox" [(ngModel)]="form.isNightShift" name="isNightShift" />
+              <span>Night shift (end time is next calendar day)</span>
+            </label>
+            <div class="field full">
+              <span class="field-label">Working days</span>
+              <div class="chip-row">
+                @for (label of dayLabels; track label; let i = $index) {
+                  <span class="day-chip" [class.active]="weekdays[i]" (click)="weekdays[i] = !weekdays[i]">{{ label }}</span>
+                }
+              </div>
+            </div>
+          </div>
+          <footer class="form-footer">
+            @if (editing()) {
+              <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="deleteForm()">Delete</button>
+            }
+            <button type="button" class="btn btn-outline" (click)="closeForm()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</section>

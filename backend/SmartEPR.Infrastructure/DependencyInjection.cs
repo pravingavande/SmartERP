@@ -52,6 +52,19 @@ public static class DependencyInjection
         services.AddScoped<ISettingsService, SettingsService>();
         services.AddScoped<ISuperAdminRepository, SuperAdminRepository>();
         services.AddScoped<ISuperAdminService, SuperAdminService>();
+        services.AddScoped<IAttendanceShiftRepository, AttendanceShiftRepository>();
+        services.AddScoped<IAttendanceShiftService, AttendanceShiftService>();
+        services.AddScoped<IAttendanceMonthlyOffRepository, AttendanceMonthlyOffRepository>();
+        services.AddScoped<IAttendanceMonthlyOffService, AttendanceMonthlyOffService>();
+        services.AddScoped<IAttendanceLeaveRequestRepository, AttendanceLeaveRequestRepository>();
+        services.AddScoped<IAttendanceLeaveRequestService, AttendanceLeaveRequestService>();
+        services.AddScoped<IAttendanceRecordRepository, AttendanceRecordRepository>();
+        services.AddScoped<IAttendanceRecordService, AttendanceRecordService>();
+        services.AddScoped<IAttendanceCorrectionRepository, AttendanceCorrectionRepository>();
+        services.AddScoped<IAttendanceCorrectionService, AttendanceCorrectionService>();
+        services.AddScoped<IAttendancePayrollRepository, AttendancePayrollRepository>();
+        services.AddScoped<IAttendancePayrollService, AttendancePayrollService>();
+        services.AddScoped<IAttendanceStatsService, AttendanceStatsService>();
 
         return services;
     }

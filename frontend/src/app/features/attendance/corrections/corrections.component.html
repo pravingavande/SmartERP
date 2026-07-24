@@ -1,0 +1,133 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Attendance Corrections</h1>
+      <p>Reverse mistaken punches or force check-out for employees who forgot</p>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="correctionsOrgID"
+      [orgs]="orgs()"
+      [value]="orgId()"
+      (valueChange)="onOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Date</span>
+      <input type="date" class="field-control" [(ngModel)]="filterDate" (ngModelChange)="onDateChange()" name="filterDate" />
+    </label>
+  </div>
+
+  <div class="panel-tabs">
+    <button type="button" class="panel-tab" [class.active]="activeTab === 'reverse'" (click)="onTabChange('reverse')">
+      Reverse attendance
+    </button>
+    <button type="button" class="panel-tab" [class.active]="activeTab === 'force_checkout'" (click)="onTabChange('force_checkout')">
+      Force check-out
+    </button>
+  </div>
+
+  <div class="corrections-panel">
+    @if (loading()) {
+      <p class="loading-hint">Loading records…</p>
+    } @else if (activeTab === 'reverse' && !reverseRecords().length) {
+      <p class="loading-hint">No attendance records for this date.</p>
+    } @else if (activeTab === 'force_checkout' && !forceCheckoutRecords().length) {
+      <p class="loading-hint">No employees currently checked in without check-out for this date.</p>
+    } @else {
+      <section class="form-section">
+        <h3>{{ activeTab === 'force_checkout' ? 'Select employee (checked in, no check-out)' : 'Select employee record' }}</h3>
+        <div class="records-table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Employee</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of (activeTab === 'force_checkout' ? forceCheckoutRecords() : reverseRecords()); track r.attendanceID) {
+                <tr [class.selected-row]="selectedRecordId === r.attendanceID">
+                  <td>
+                    <input type="radio" name="record" [value]="r.attendanceID" [ngModel]="selectedRecordId" (ngModelChange)="selectedRecordId = +$event" />
+                  </td>
+                  <td><strong>{{ r.userName || '—' }}</strong></td>
+                  <td>{{ formatTime(r.checkInTime) }}</td>
+                  <td>{{ formatTime(r.checkOutTime) }}</td>
+                  <td>
+                    @if (r.isDayComplete) {
+                      <span class="status-badge success">Complete</span>
+                    } @else if (r.checkOutTime) {
+                      <span class="status-badge muted">Shortfall</span>
+                    } @else if (r.checkInTime) {
+                      <span class="status-badge muted">In progress</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      @if (activeTab === 'reverse') {
+        <section class="form-section">
+          <h3>Reverse action</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span class="field-label">What to reverse</span>
+              <select class="field-control" [(ngModel)]="eventType" name="eventType">
+                <option value="check_in">Check-in (also clears check-out if any)</option>
+                <option value="check_out">Check-out only</option>
+              </select>
+            </label>
+            <label class="field full">
+              <span class="field-label">Reason *</span>
+              <textarea class="field-control" rows="3" [(ngModel)]="reason" name="reason" placeholder="e.g. Marked by mistake on wrong shift"></textarea>
+            </label>
+          </div>
+        </section>
+      } @else {
+        <section class="form-section">
+          <h3>Force check-out</h3>
+          <div class="form-grid">
+            <label class="field checkbox-field master-active-field full">
+              <input type="checkbox" [(ngModel)]="useCustomCheckoutTime" name="useCustomCheckoutTime" />
+              <span>Set custom check-out time (otherwise uses current time)</span>
+            </label>
+            @if (useCustomCheckoutTime) {
+              <label class="field">
+                <span class="field-label">Check-out time</span>
+                <input type="time" class="field-control" [(ngModel)]="checkoutTime" name="checkoutTime" />
+              </label>
+            }
+            <label class="field full">
+              <span class="field-label">Reason *</span>
+              <textarea class="field-control" rows="3" [(ngModel)]="reason" name="reasonForce" placeholder="e.g. Employee forgot to check out"></textarea>
+            </label>
+          </div>
+        </section>
+      }
+
+      @if (errorMessage()) {
+        <p class="error list-error">{{ errorMessage() }}</p>
+      }
+
+      <footer class="form-footer">
+        @if (activeTab === 'reverse') {
+          <button type="button" class="btn btn-primary" [disabled]="saving() || !selectedRecordId" (click)="submitReverse()">
+            {{ saving() ? 'Reversing…' : 'Reverse attendance' }}
+          </button>
+        } @else {
+          <button type="button" class="btn btn-primary" [disabled]="saving() || !selectedRecordId" (click)="submitForceCheckout()">
+            {{ saving() ? 'Checking out…' : 'Force check-out' }}
+          </button>
+        }
+      </footer>
+    }
+  </div>
+</section>

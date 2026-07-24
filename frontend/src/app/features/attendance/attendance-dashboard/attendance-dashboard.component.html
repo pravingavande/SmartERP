@@ -1,0 +1,106 @@
+<div class="dash-page">
+  <nav class="attendance-subnav" aria-label="Attendance navigation">
+    @for (link of navLinks; track link.route) {
+      <a
+        class="attendance-subnav__link"
+        [routerLink]="link.route"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: link.exact }"
+      >
+        {{ link.label }}
+      </a>
+    }
+  </nav>
+
+  <div class="row dash-header-row">
+    <div class="col-12">
+      <div class="card card-flat">
+        <div class="card-header">
+          <h3 class="card-title">Dashboard</h3>
+          <div class="card-tools">
+            <span class="badge badge-primary">{{ greeting() }}</span>
+          </div>
+        </div>
+        <div class="card-body card-body--compact">
+          <p class="lead text-muted mb-0">Overview of attendance activity (live from API)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (!isAttendanceOnlyUser()) {
+    <div class="row org-filter-row">
+      <div class="col-12">
+        <label class="org-filter-label" for="attendance-dash-org">School / Org</label>
+        <app-org-school-select
+          id="attendance-dash-org"
+          [orgs]="orgs()"
+          [value]="orgId()"
+          (valueChange)="onOrgChange($event)"
+        />
+      </div>
+    </div>
+  }
+
+  <div class="row">
+    @for (k of kpis(); track k.label) {
+      <div class="col-6 col-lg-3">
+        <div class="info-box" [class]="'info-box--' + k.tone">
+          <span class="info-box-icon" [attr.data-icon]="k.icon" aria-hidden="true"></span>
+          <div class="info-box-content">
+            <span class="info-box-text">{{ k.label }}</span>
+            <span class="info-box-number">{{ k.value }}</span>
+            <span class="info-box-sub">{{ k.sub }}</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-lg-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">Account</h3>
+        </div>
+        <div class="card-body">
+          <ul class="info-list">
+            <li><strong>User:</strong> {{ user()?.userName }}</li>
+            <li><strong>Organization:</strong> {{ organizationLabel() }}</li>
+            <li><strong>Display name:</strong> {{ user()?.displayName }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-8">
+      <div class="card chart-card">
+        <div class="card-body chart-card-body">
+          <div class="chart-wrap">
+            <canvas #barCanvas aria-label="Weekly check-ins bar chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-lg-7">
+      <div class="card chart-card">
+        <div class="card-body chart-card-body">
+          <div class="chart-wrap chart-wrap--tall">
+            <canvas #lineCanvas aria-label="On-time rate line chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-5">
+      <div class="card chart-card">
+        <div class="card-body chart-card-body">
+          <div class="chart-wrap chart-wrap--doughnut">
+            <canvas #doughnutCanvas aria-label="Attendance status doughnut chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

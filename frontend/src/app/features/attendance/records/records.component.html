@@ -1,0 +1,76 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Attendance Log</h1>
+      <p>Daily check-in and check-out records</p>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="recordsOrgID"
+      [orgs]="orgs()"
+      [value]="orgId()"
+      (valueChange)="onOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Date</span>
+      <input type="date" class="field-control" [ngModel]="filterDate()" (ngModelChange)="onDateChange($event)" name="filterDate" />
+    </label>
+  </div>
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (loading()) {
+        <p class="loading-hint">Loading attendance records…</p>
+      }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Date</th>
+              <th>Office</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Hours</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of rows(); track r.attendanceID) {
+              <tr>
+                <td>
+                  <strong>{{ r.userName || '—' }}</strong>
+                  @if (r.employeeCode) {
+                    <div class="small-muted">{{ r.employeeCode }}</div>
+                  }
+                </td>
+                <td>{{ r.attendanceDate | date:'dd/MM/yyyy' }}</td>
+                <td>{{ r.officeName || '—' }}</td>
+                <td>{{ formatTime(r.checkInTime) }}</td>
+                <td>{{ formatTime(r.checkOutTime) }}</td>
+                <td>{{ r.netHours ?? r.totalHours ?? '—' }}</td>
+                <td>
+                  @if (r.isDayComplete) {
+                    <span class="status-badge success">Complete</span>
+                  } @else if (r.checkOutTime) {
+                    <span class="status-badge warning">Shortfall</span>
+                  } @else if (r.checkInTime) {
+                    <span class="status-badge muted">In progress</span>
+                  } @else {
+                    <span class="status-badge muted">—</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              @if (!loading()) {
+                <tr><td colspan="7" class="empty">No attendance records for this date</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </aside>
+  </div>
+</section>

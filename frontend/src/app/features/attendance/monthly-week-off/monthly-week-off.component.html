@@ -1,0 +1,96 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Monthly Week Off</h1>
+      <p>Plan rotating week-offs per employee for the month</p>
+    </div>
+    @if (pendingCount() > 0) {
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'Saving…' : 'Save changes (' + pendingCount() + ')' }}
+        </button>
+        <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="discard()">Discard</button>
+      </div>
+    }
+  </header>
+
+  <p class="monthly-off-hint">
+    Default days come from each employee's weekly off setting. Click a day to cycle:
+    <em>default → week off → working → default</em>.
+  </p>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="monthlyOffOrgID"
+      [orgs]="orgs()"
+      [value]="orgId()"
+      (valueChange)="onOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Month</span>
+      <input type="month" class="field-control" [ngModel]="monthInput()" (ngModelChange)="onMonth($event)" name="monthInput" />
+    </label>
+    <label class="field checkbox-field master-active-field">
+      <input type="checkbox" [ngModel]="sundaysOnly()" (ngModelChange)="sundaysOnly.set($event)" name="sundaysOnly" />
+      <span>Show Sundays only</span>
+    </label>
+  </div>
+
+  <div class="monthly-off-legend">
+    <span><span class="legend-swatch legend-swatch--default-off"></span>Default week off</span>
+    <span><span class="legend-swatch legend-swatch--default-work"></span>Default working day</span>
+    <span><span class="legend-swatch legend-swatch--off"></span>Forced week off</span>
+    <span><span class="legend-swatch legend-swatch--working"></span>Forced working day</span>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (loading()) {
+        <p class="loading-hint">Loading monthly week-off plan…</p>
+      } @else if (plan()) {
+        @if (!plan()!.employees.length) {
+          <p class="loading-hint">No active employees found for this organization.</p>
+        } @else {
+          <div class="monthly-off-scroll">
+            <table class="monthly-off-table">
+              <thead>
+                <tr>
+                  <th class="sticky-col">Employee</th>
+                  @for (h of visibleHeaders(); track h.date) {
+                    <th [class.sunday]="h.isSunday" [title]="h.date">
+                      <div>{{ h.day }}</div>
+                      <div class="weekday-label">{{ h.weekday }}</div>
+                    </th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (emp of plan()!.employees; track emp.userID) {
+                  <tr>
+                    <td class="sticky-col">
+                      {{ emp.name }}
+                      <span class="emp-code">{{ emp.employeeCode }}</span>
+                    </td>
+                    @for (h of visibleHeaders(); track h.date) {
+                      <td>
+                        <div
+                          [class]="cellClass(emp.userID, h.date)"
+                          [title]="h.date + (effectiveOff(emp.userID, h.date) ? ' · Off' : ' · Working')"
+                          (click)="toggleCell(emp, h.date)"
+                        ></div>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </aside>
+  </div>
+</section>

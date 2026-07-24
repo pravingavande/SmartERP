@@ -1,5 +1,11 @@
 import { AuthUser } from '../models/auth.model';
-import { resolveDefaultSansthaOrgId, resolveSansthaOrgs } from './org-access.util';
+import {
+  ATTENDANCE_ONLY_USER_ROLE_ID,
+  getDefaultHomeRoute,
+  isAttendanceOnlyUser,
+  resolveDefaultSansthaOrgId,
+  resolveSansthaOrgs
+} from './org-access.util';
 
 describe('org-access.util sanstha', () => {
   const sansthaOrgs = [
@@ -33,5 +39,20 @@ describe('org-access.util sanstha', () => {
 
   it('resolveDefaultSansthaOrgId falls back to first org', () => {
     expect(resolveDefaultSansthaOrgId(sansthaOrgs, null, null)).toBe(1);
+  });
+});
+
+describe('org-access.util attendance', () => {
+  it('isAttendanceOnlyUser returns true for role 4', () => {
+    expect(isAttendanceOnlyUser(ATTENDANCE_ONLY_USER_ROLE_ID)).toBeTrue();
+  });
+
+  it('isAttendanceOnlyUser returns false for school admin role', () => {
+    expect(isAttendanceOnlyUser(3)).toBeFalse();
+  });
+
+  it('getDefaultHomeRoute sends attendance-only users to attendance dashboard', () => {
+    expect(getDefaultHomeRoute(ATTENDANCE_ONLY_USER_ROLE_ID)).toBe('/attendance/dashboard');
+    expect(getDefaultHomeRoute(3)).toBe('/dashboard');
   });
 });

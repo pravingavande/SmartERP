@@ -1,0 +1,84 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Leave Requests</h1>
+      <p>Review and approve employee leave applications</p>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="leaveOrgID"
+      [orgs]="orgs()"
+      [value]="orgId()"
+      (valueChange)="onOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Status</span>
+      <select class="field-control" [ngModel]="filterStatus()" (ngModelChange)="onFilterChange($event)" name="filterStatus">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </label>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (loading()) {
+        <p class="loading-hint">Loading leave requests…</p>
+      }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Type</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of rows(); track r.leaveRequestID) {
+              <tr>
+                <td>
+                  <strong>{{ r.userName || '—' }}</strong>
+                  @if (r.employeeCode) {
+                    <div class="small-muted">{{ r.employeeCode }}</div>
+                  }
+                </td>
+                <td>{{ r.leaveType }}</td>
+                <td>{{ r.startDate }}</td>
+                <td>{{ r.endDate }}</td>
+                <td>{{ r.reason || '—' }}</td>
+                <td><span class="status-badge" [class]="statusClass(r.status)">{{ r.status }}</span></td>
+                <td class="actions">
+                  @if (r.status === 'pending') {
+                    <div class="action-group-inline">
+                      <button type="button" class="btn btn-primary btn-sm" [disabled]="busyId() === r.leaveRequestID" (click)="review(r.leaveRequestID, 'approved')">Approve</button>
+                      <button type="button" class="btn btn-outline btn-sm" [disabled]="busyId() === r.leaveRequestID" (click)="review(r.leaveRequestID, 'rejected')">Reject</button>
+                    </div>
+                  } @else {
+                    <span class="small-muted">{{ r.reviewComment || '—' }}</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              @if (!loading()) {
+                <tr><td colspan="7" class="empty">No leave requests found</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </aside>
+  </div>
+</section>

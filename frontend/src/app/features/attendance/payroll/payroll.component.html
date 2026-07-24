@@ -1,0 +1,68 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Team Payroll</h1>
+      <p>Monthly salary summary per employee</p>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="payrollOrgID"
+      [orgs]="orgs()"
+      [value]="orgId()"
+      (valueChange)="onOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Month</span>
+      <input type="month" class="field-control" [ngModel]="monthInput()" (ngModelChange)="onMonthChange($event)" name="monthInput" />
+    </label>
+  </div>
+
+  @if (errorMessage() && !rows().length) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (loading()) {
+        <p class="loading-hint">Loading payroll…</p>
+      }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Salary</th>
+              <th>Present</th>
+              <th>Leave</th>
+              <th>Absent</th>
+              <th>Weekly off</th>
+              <th>Payable</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of rows(); track p.employeeID) {
+              <tr>
+                <td>
+                  <strong>{{ p.employeeName }}</strong>
+                  <div class="small-muted">{{ p.employeeCode }}</div>
+                </td>
+                <td>{{ formatInr(p.monthlySalary) }}</td>
+                <td>{{ p.presentDays ?? 0 }}</td>
+                <td>{{ p.leaveDays ?? 0 }}</td>
+                <td>{{ p.absentDays ?? 0 }}</td>
+                <td>{{ p.weeklyOffDays ?? 0 }}</td>
+                <td><strong>{{ formatInr(p.payableSalary) }}</strong></td>
+              </tr>
+            } @empty {
+              @if (!loading()) {
+                <tr><td colspan="7" class="empty">No payroll rows found</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </aside>
+  </div>
+</section>

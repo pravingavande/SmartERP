@@ -104,6 +104,13 @@ export class SchoolDashboardComponent {
           icon: 'attendance',
           route: '/staff/leave-apply',
           tone: 'leave'
+        },
+        {
+          label: 'Attendance',
+          description: 'Shifts, records, leave requests, corrections and payroll',
+          icon: 'attendance',
+          route: '/attendance/dashboard',
+          tone: 'attendance'
         }
       ]
     }

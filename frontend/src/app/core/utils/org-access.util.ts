@@ -47,7 +47,7 @@ export function isAttendanceOnlyUser(userRoleId?: number | null): boolean {
 
 /** Default landing route after login. */
 export function getDefaultHomeRoute(userRoleId?: number | null): string {
-  return isAttendanceOnlyUser(userRoleId) ? '/attendance' : '/dashboard';
+  return isAttendanceOnlyUser(userRoleId) ? '/attendance/dashboard' : '/dashboard';
 }
 
 /** @deprecated Use isSansthaAdminUser — kept for callers that mean sanstha admin, not global all-schools. */

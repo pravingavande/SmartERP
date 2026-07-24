@@ -59,10 +59,11 @@ export class MainLayoutComponent {
     });
   }
 
-  private readonly attendanceNavSection: NavSection = {
-    title: 'Main',
-    items: [{ label: 'Attendance', icon: 'attendance', route: '/attendance' }]
-  };
+  // Attendance module — disabled in menu for now (routes/code kept for later).
+  // private readonly attendanceNavSection: NavSection = {
+  //   title: 'Main',
+  //   items: [{ label: 'Attendance', icon: 'attendance', route: '/attendance/dashboard' }]
+  // };
 
   private readonly baseNavSections: NavSection[] = [
     {
@@ -74,7 +75,7 @@ export class MainLayoutComponent {
           icon: 'school-dashboard',
           route: '/school-dashboard'
         },
-        { label: 'Attendance', icon: 'attendance', route: '/attendance' }
+        { label: 'Attendance', icon: 'attendance', route: '/attendance/dashboard' }
       ]
     },
     {
@@ -105,7 +106,12 @@ export class MainLayoutComponent {
     const userRoleId = this.auth.currentUser()?.userRoleId;
 
     if (isAttendanceOnlyUser(userRoleId)) {
-      return [this.attendanceNavSection];
+      return [
+        {
+          title: 'Main',
+          items: [{ label: 'Attendance', icon: 'attendance', route: '/attendance/dashboard' }]
+        }
+      ];
     }
 
     let sections = this.baseNavSections;

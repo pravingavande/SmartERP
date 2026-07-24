@@ -251,11 +251,49 @@ export const routes: Routes = [
           import('./features/employee/leave-apply/leave-apply.component').then((m) => m.LeaveApplyComponent)
       },
       {
-        path: 'attendance',
+        path: 'attendance/dashboard',
         loadComponent: () =>
-          import('./features/placeholder/coming-soon.component').then((m) => m.ComingSoonComponent),
-        data: { title: 'Attendance' }
+          import('./features/attendance/attendance-dashboard/attendance-dashboard.component').then(
+            (m) => m.AttendanceDashboardComponent
+          )
       },
+      {
+        path: 'attendance/shifts',
+        loadComponent: () =>
+          import('./features/attendance/shifts/shifts.component').then((m) => m.AttendanceShiftsComponent)
+      },
+      {
+        path: 'attendance/monthly-week-off',
+        loadComponent: () =>
+          import('./features/attendance/monthly-week-off/monthly-week-off.component').then(
+            (m) => m.AttendanceMonthlyWeekOffComponent
+          )
+      },
+      {
+        path: 'attendance/records',
+        loadComponent: () =>
+          import('./features/attendance/records/records.component').then((m) => m.AttendanceRecordsComponent)
+      },
+      {
+        path: 'attendance/corrections',
+        loadComponent: () =>
+          import('./features/attendance/corrections/corrections.component').then(
+            (m) => m.AttendanceCorrectionsComponent
+          )
+      },
+      {
+        path: 'attendance/leave-requests',
+        loadComponent: () =>
+          import('./features/attendance/leave-requests/leave-requests.component').then(
+            (m) => m.AttendanceLeaveRequestsComponent
+          )
+      },
+      {
+        path: 'attendance/payroll',
+        loadComponent: () =>
+          import('./features/attendance/payroll/payroll.component').then((m) => m.AttendancePayrollComponent)
+      },
+      { path: 'attendance', redirectTo: 'attendance/dashboard', pathMatch: 'full' },
       {
         path: 'notices',
         loadComponent: () =>
