@@ -5,11 +5,16 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, map } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { DocumentUploadService } from '../../core/services/document-upload.service';
 import { EventCalendarService } from '../../core/services/event-calendar.service';
 import { ToastService } from '../../core/services/toast.service';
-import { DashboardSummary } from '../../core/models/dashboard.model';
+import { DashboardDocumentItem, DashboardSummary } from '../../core/models/dashboard.model';
+import { isUpcomingNoticeDate } from '../../core/utils/notice-date.util';
+import { compareCreatedDateDesc } from '../../core/utils/document-sort.util';
 import { CalendarEvent, PendingEventReportingSummary } from '../../core/models/calendar.model';
 import { EventViewModalComponent } from '../../shared/components/event-view-modal/event-view-modal.component';
+
+type NoticePanelTab = 'notices' | 'documents';
 
 interface StatTile {
   label: string;
@@ -38,6 +43,7 @@ interface BreakdownCard {
 })
 export class DashboardComponent {
   private readonly dashboardService = inject(DashboardService);
+  private readonly documentUploadService = inject(DocumentUploadService);
   private readonly eventCalendarService = inject(EventCalendarService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -47,18 +53,23 @@ export class DashboardComponent {
   private readonly dashboardData = toSignal(
     forkJoin({
       summary: this.dashboardService.getSummary(),
-      notices: this.dashboardService.getNotices(10),
+      notices: this.dashboardService.getNotices(10, true),
+      documents: this.dashboardService.getDocuments(20),
       pendingReporting: this.eventCalendarService.getPendingReporting()
     }).pipe(map((data) => data)),
-    { initialValue: { summary: null, notices: [], pendingReporting: { pendingCount: 0, items: [] } as PendingEventReportingSummary } }
+    { initialValue: { summary: null, notices: [], documents: [], pendingReporting: { pendingCount: 0, items: [] } as PendingEventReportingSummary } }
   );
 
   readonly summary = () => this.dashboardData().summary;
   readonly notices = () =>
-    [...this.dashboardData().notices].sort(
-      (a, b) => new Date(a.noticeDate).getTime() - new Date(b.noticeDate).getTime()
-    );
+    [...this.dashboardData().notices]
+      .filter((n) => isUpcomingNoticeDate(n.noticeDate))
+      .sort((a, b) => new Date(a.noticeDate).getTime() - new Date(b.noticeDate).getTime());
+  readonly documents = () =>
+    [...this.dashboardData().documents].sort(compareCreatedDateDesc);
   readonly pendingReporting = () => this.dashboardData().pendingReporting;
+
+  readonly panelTab = signal<NoticePanelTab>('notices');
 
   readonly showEventModal = signal(false);
   readonly eventModalLoading = signal(false);
@@ -182,6 +193,31 @@ export class DashboardComponent {
     const el = this.noticeListRef()?.nativeElement;
     if (!el) return;
     el.scrollBy({ top: 120, behavior: 'smooth' });
+  }
+
+  setPanelTab(tab: NoticePanelTab): void {
+    this.panelTab.set(tab);
+  }
+
+  panelItemCount(): number {
+    return this.panelTab() === 'documents' ? this.documents().length : this.notices().length;
+  }
+
+  viewAllRoute(): string {
+    return this.panelTab() === 'documents' ? '/notices?tab=documents' : '/notices';
+  }
+
+  openDocument(doc: DashboardDocumentItem): void {
+    if (!doc.documentPath?.trim()) return;
+    const url = this.documentUploadService.fileUrl(doc.documentPath);
+    this.documentUploadService.downloadFile(url).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      },
+      error: () => this.toast.showError('Unable to open document.', 'View failed')
+    });
   }
 
   openNoticeEvent(eventId: number): void {

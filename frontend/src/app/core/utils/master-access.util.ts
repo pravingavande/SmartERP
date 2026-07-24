@@ -15,7 +15,8 @@ export const ADMIN_ONLY_MASTER_ROUTE_PATHS = [
   'audit/event-types-master',
   'audit/subject-master',
   'stock/item-group-master',
-  'stock/item-master'
+  'stock/item-master',
+  'document-upload-master'
 ] as const;
 
 export function canAccessAdminMasters(userRoleId?: number | null): boolean {

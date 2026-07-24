@@ -1,0 +1,75 @@
+@import '../../shared/styles/master-shared.scss';
+@import '../audit/party-master/party-master.component.scss';
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.panel-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: flex-end;
+}
+
+.panel-tab {
+  border: 1px solid #c9d5e6;
+  background: #fff;
+  color: #4a5f7a;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  &.active {
+    background: var(--epr-navy);
+    border-color: var(--epr-navy);
+    color: #fff;
+  }
+
+  &:hover:not(.active) {
+    border-color: #9eb0c9;
+    color: var(--epr-navy);
+  }
+}
+
+.doc-actions,
+.attachment-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.doc-link {
+  border: 0;
+  background: transparent;
+  color: var(--epr-navy);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--epr-orange);
+  }
+}
+
+.badge-new {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--epr-orange);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  vertical-align: middle;
+}

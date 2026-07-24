@@ -13,7 +13,7 @@
     </div>
   </header>
 
-  @for (section of sections; track section.id; let sIdx = $index) {
+  @for (section of visibleSections(); track section.id; let sIdx = $index) {
     <section class="dash-section" [style.--section-delay.ms]="sIdx * 80">
       <div class="section-heading">
         <div class="section-mark" [attr.data-section]="section.id" aria-hidden="true"></div>

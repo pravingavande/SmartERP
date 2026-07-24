@@ -73,9 +73,9 @@
 
           @if (activeReport().filterMode !== 'sanstha') {
             <label class="field">
-              <span class="field-label">School / Organization @if (activeReport().requireSchool || activeReport().filterMode === 'school-required' || activeReport().filterMode === 'school-and-item-group' || activeReport().filterMode === 'ledger-head') { <span class="req">*</span> }</span>
+              <span class="field-label">School / Organization @if (activeReport().requireSchool || activeReport().filterMode === 'school-required' || activeReport().filterMode === 'school-and-item-group' || activeReport().filterMode === 'ledger-head' || activeReport().filterMode === 'ledger-head-date-range') { <span class="req">*</span> }</span>
               <select class="field-control" [ngModel]="filter().orgId" (ngModelChange)="updateFilter('orgId', $event ? +$event : null)" name="orgId">
-                <option [ngValue]="null">{{ activeReport().requireSchool || activeReport().filterMode === 'school-required' || activeReport().filterMode === 'school-and-item-group' || activeReport().filterMode === 'ledger-head' ? '-- Select --' : 'All' }}</option>
+                <option [ngValue]="null">{{ activeReport().requireSchool || activeReport().filterMode === 'school-required' || activeReport().filterMode === 'school-and-item-group' || activeReport().filterMode === 'ledger-head' || activeReport().filterMode === 'ledger-head-date-range' ? '-- Select --' : 'All' }}</option>
                 @for (o of lookups()?.orgs ?? []; track o.orgID) {
                   <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
                 }
@@ -83,7 +83,7 @@
             </label>
           }
 
-          @if (activeReport().filterMode === 'ledger-head') {
+          @if (activeReport().filterMode === 'ledger-head' || activeReport().filterMode === 'ledger-head-date-range') {
             <label class="field field--checkbox field--full">
               <input type="checkbox" [ngModel]="filter().allLedgerHeads" (ngModelChange)="updateFilter('allLedgerHeads', $event)" name="allLedgerHeads">
               <span>All Ledger Heads (separate page per ledger in PDF)</span>
@@ -145,7 +145,7 @@
             </label>
           }
 
-          @if (activeReport().filterMode === 'date-range') {
+          @if (activeReport().filterMode === 'date-range' || activeReport().filterMode === 'ledger-head-date-range') {
             <label class="field">
               <span class="field-label">From Date <span class="req">*</span></span>
               <input class="field-control" type="date" required [ngModel]="filter().fromDate" (ngModelChange)="updateFilter('fromDate', $event)" name="fromDate">

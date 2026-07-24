@@ -26,6 +26,8 @@ public sealed class ModuleReportRepository : IModuleReportRepository
         p.Add("@OrgID", filter.OrgID);
         p.Add("@LedgerHeadID", filter.AllLedgerHeads ? null : filter.LedgerHeadID);
         p.Add("@AllLedgerHeads", filter.AllLedgerHeads);
+        p.Add("@FromDate", filter.FromDate?.Date);
+        p.Add("@ToDate", filter.ToDate?.Date);
 
         using var multi = await connection.QueryMultipleAsync(
             new CommandDefinition(

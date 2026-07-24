@@ -1,0 +1,38 @@
+@import '../../../shared/styles/master-shared.scss';
+@import '../../audit/party-master/party-master.component.scss';
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.doc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.doc-link {
+  border: 0;
+  background: transparent;
+  color: var(--epr-navy);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--epr-orange);
+  }
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+  color: var(--epr-muted);
+}

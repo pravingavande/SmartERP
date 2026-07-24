@@ -233,6 +233,14 @@ export const routes: Routes = [
           import('./features/teacher/teacher-entry/teacher-entry.component').then((m) => m.TeacherEntryComponent)
       },
       {
+        path: 'document-upload-master',
+        loadComponent: () =>
+          import('./features/school/document-upload-master/document-upload-master.component').then(
+            (m) => m.DocumentUploadMasterComponent
+          ),
+        canActivate: [adminMasterGuard]
+      },
+      {
         path: 'staff/leave-type-master',
         redirectTo: 'audit/leave-type-master',
         pathMatch: 'full'
@@ -251,8 +259,8 @@ export const routes: Routes = [
       {
         path: 'notices',
         loadComponent: () =>
-          import('./features/placeholder/coming-soon.component').then((m) => m.ComingSoonComponent),
-        data: { title: 'Notices' }
+          import('./features/notices-documents/notices-documents.component').then((m) => m.NoticesDocumentsComponent),
+        data: { title: 'Notices & Documents' }
       },
       {
         path: 'reports',

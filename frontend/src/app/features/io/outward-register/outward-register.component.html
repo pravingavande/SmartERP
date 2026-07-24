@@ -1,4 +1,4 @@
-<section class="audit-page">
+<section class="audit-page master-page">
   <header class="page-header">
     <div>
       <h1>Outward Register</h1>
@@ -11,56 +11,32 @@
     </div>
   </header>
 
-  <section class="io-filters" aria-label="Filter outward register">
-    <div class="io-filters-grid">
-      <label class="field">
-        <span class="field-label">Organization *</span>
-        <select class="field-control" [ngModel]="listOrgID()" (ngModelChange)="listOrgID.set($event ? +$event : null); onFilterChange()" name="listOrgID">
-          <option [ngValue]="null">-- Select --</option>
-          @for (o of lookups()?.orgs ?? []; track o.orgID) {
-            <option [ngValue]="o.orgID">{{ o.organizationName }}</option>
-          }
-        </select>
-      </label>
-      <label class="field">
-        <span class="field-label">Year</span>
-        <select class="field-control" [ngModel]="filterYioID()" (ngModelChange)="filterYioID.set($event ? +$event : null); onFilterChange()" name="filterYioID">
-          <option [ngValue]="null">-- All --</option>
-          @for (y of lookups()?.years ?? []; track y.yioID) {
-            <option [ngValue]="y.yioID">{{ y.yearName }}</option>
-          }
-        </select>
-      </label>
-      <label class="field">
-        <span class="field-label">Record No</span>
-        <input class="field-control" type="number" [ngModel]="filterRecordNo()" (ngModelChange)="filterRecordNo.set($event ? +$event : null); onFilterChange()" name="filterRecordNo">
-      </label>
-      <label class="field">
-        <span class="field-label">Date From</span>
-        <input class="field-control" type="date" [ngModel]="filterFromDate()" (ngModelChange)="filterFromDate.set($event); onFilterChange()" name="filterFromDate">
-      </label>
-      <label class="field">
-        <span class="field-label">Date To</span>
-        <input class="field-control" type="date" [ngModel]="filterToDate()" (ngModelChange)="filterToDate.set($event); onFilterChange()" name="filterToDate">
-      </label>
-      <label class="field">
-        <span class="field-label">File No</span>
-        <input class="field-control" [ngModel]="filterFileNo()" (ngModelChange)="filterFileNo.set($event); onFilterChange()" name="filterFileNo">
-      </label>
-      <label class="field">
-        <span class="field-label">Subject</span>
-        <input class="field-control" [ngModel]="filterSubject()" (ngModelChange)="filterSubject.set($event); onFilterChange()" name="filterSubject">
-      </label>
-      <label class="field">
-        <span class="field-label">Address</span>
-        <input class="field-control" [ngModel]="filterAddress()" (ngModelChange)="filterAddress.set($event); onFilterChange()" name="filterAddress">
-      </label>
-      <label class="field">
-        <span class="field-label">Search</span>
-        <input class="field-control" [ngModel]="searchText()" (ngModelChange)="searchText.set($event); onFilterChange()" name="search" placeholder="Search subject, address, file no">
-      </label>
-    </div>
-  </section>
+  <div class="list-filters">
+    <app-org-school-select
+      name="listOrgID"
+      [orgs]="lookups()?.orgs ?? []"
+      [value]="listOrgID()"
+      (valueChange)="onListOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Year</span>
+      <select class="field-control" [ngModel]="filterYioID()" (ngModelChange)="filterYioID.set($event ? +$event : null); onFilterChange()" name="filterYioID" required>
+        @for (y of lookups()?.years ?? []; track y.yioID) {
+          <option [ngValue]="y.yioID">{{ y.yearName }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">Search</span>
+      <input
+        class="field-control"
+        [ngModel]="searchText()"
+        (ngModelChange)="searchText.set($event); onFilterChange()"
+        name="search"
+        placeholder="Search subject, address, file no"
+      >
+    </label>
+  </div>
 
   @if (errorMessage()) {
     <p class="error list-error">{{ errorMessage() }}</p>

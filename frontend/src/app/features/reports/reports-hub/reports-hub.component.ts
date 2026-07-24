@@ -13,6 +13,7 @@ import { HubReportFilter } from '../../../core/models/hub-report-filter.model';
 import { DonationLookups } from '../../../core/models/donation.model';
 import { LedgerHeadOption, OrgOption } from '../../../core/models/audit.model';
 import { ItemGroupMasterItem } from '../../../core/models/master.model';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-reports-hub',
@@ -70,8 +71,10 @@ export class ReportsHubComponent {
 
   selectReport(report: HubReportDefinition): void {
     this.activeReport.set(report);
+    const dateRange = report.filterMode === 'ledger-head-date-range' ? this.defaultLedgerDateRange() : {};
     this.filter.update((f) => ({
       ...f,
+      ...dateRange,
       ledgerHeadId: null,
       allLedgerHeads: false,
       sansthaId: null,
@@ -106,10 +109,22 @@ export class ReportsHubComponent {
       return;
     }
 
-    if (report.filterMode === 'ledger-head') {
-      this.audit.getLookups(orgId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
-        this.ledgerHeads.set(data?.ledgerHeads ?? []);
-      });
+    if (report.filterMode === 'ledger-head' || report.filterMode === 'ledger-head-date-range') {
+      forkJoin({
+        receipt: this.audit.getLookups(orgId, 'R'),
+        payment: this.audit.getLookups(orgId, 'P'),
+        bank: this.audit.getLookups(orgId, 'BD')
+      })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(({ receipt, payment, bank }) => {
+          this.ledgerHeads.set(
+            this.mergeLedgerHeads(
+              receipt?.ledgerHeads ?? [],
+              payment?.ledgerHeads ?? [],
+              bank?.bankLedgerHeads ?? []
+            )
+          );
+        });
     }
 
     if (report.filterMode === 'school-and-item-group') {
@@ -154,8 +169,10 @@ export class ReportsHubComponent {
         if (current.orgId && current.sansthaId) return 'Specify either School or Sanstha, not both.';
         break;
       case 'ledger-head':
+      case 'ledger-head-date-range':
         if (!current.orgId) return 'School / Organization is required.';
         if (!current.allLedgerHeads && !current.ledgerHeadId) return 'Ledger Head is required when not selecting all ledger heads.';
+        if (!current.fromDate || !current.toDate) return 'From Date and To Date are required.';
         break;
       case 'date-range':
         if (!current.fromDate || !current.toDate) return 'From Date and To Date are required.';
@@ -169,6 +186,7 @@ export class ReportsHubComponent {
 
   private emptyFilter(): HubReportFilter {
     const today = new Date();
+    const fyRange = this.defaultLedgerDateRange();
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     return {
       orgId: null,
@@ -179,8 +197,29 @@ export class ReportsHubComponent {
       ledgerHeadId: null,
       allLedgerHeads: false,
       itemGroupId: null,
-      fromDate: monthStart.toISOString().slice(0, 10),
+      fromDate: fyRange.fromDate ?? monthStart.toISOString().slice(0, 10),
+      toDate: fyRange.toDate ?? today.toISOString().slice(0, 10)
+    };
+  }
+
+  private defaultLedgerDateRange(): Pick<HubReportFilter, 'fromDate' | 'toDate'> {
+    const today = new Date();
+    const fyYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+    const fyStart = new Date(fyYear, 3, 1);
+    return {
+      fromDate: fyStart.toISOString().slice(0, 10),
       toDate: today.toISOString().slice(0, 10)
     };
+  }
+
+  private mergeLedgerHeads(...lists: LedgerHeadOption[][]): LedgerHeadOption[] {
+    const byId = new Map<number, LedgerHeadOption>();
+    for (const list of lists) {
+      for (const head of list) {
+        if (!head.ledgerHeadID) continue;
+        byId.set(head.ledgerHeadID, head);
+      }
+    }
+    return [...byId.values()].sort((a, b) => a.ledgerHead.localeCompare(b.ledgerHead));
   }
 }

@@ -115,32 +115,100 @@ public sealed class StockRegisterLineDto
     public decimal ClosingQty { get; init; }
 }
 
-/// <summary>Shared RDLC row for tabular module reports.</summary>
-public sealed class TabularReportRow
+public abstract class ModuleReportRowBase
 {
     public string OrganizationHeader { get; init; } = string.Empty;
     public string Address { get; init; } = string.Empty;
     public string ReportTitle { get; init; } = string.Empty;
     public string FilterText { get; init; } = string.Empty;
     public string PrintedOn { get; init; } = string.Empty;
+}
+
+public sealed class VoucherLedgerReportRow : ModuleReportRowBase
+{
+    public string VDate { get; init; } = string.Empty;
+    public string VCode { get; init; } = string.Empty;
+    public string VType { get; init; } = string.Empty;
+    public string Narration { get; init; } = string.Empty;
+    public string Debit { get; init; } = string.Empty;
+    public string Credit { get; init; } = string.Empty;
+}
+
+public sealed class VoucherLedgerAllHeadsReportRow : ModuleReportRowBase
+{
     public string GroupKey { get; init; } = string.Empty;
     public string GroupTitle { get; init; } = string.Empty;
-    public string ColHeader1 { get; init; } = string.Empty;
-    public string ColHeader2 { get; init; } = string.Empty;
-    public string ColHeader3 { get; init; } = string.Empty;
-    public string ColHeader4 { get; init; } = string.Empty;
-    public string ColHeader5 { get; init; } = string.Empty;
-    public string ColHeader6 { get; init; } = string.Empty;
-    public string ColHeader7 { get; init; } = string.Empty;
-    public string ColHeader8 { get; init; } = string.Empty;
-    public string Col1 { get; init; } = string.Empty;
-    public string Col2 { get; init; } = string.Empty;
-    public string Col3 { get; init; } = string.Empty;
-    public string Col4 { get; init; } = string.Empty;
-    public string Col5 { get; init; } = string.Empty;
-    public string Col6 { get; init; } = string.Empty;
-    public string Col7 { get; init; } = string.Empty;
-    public string Col8 { get; init; } = string.Empty;
-    public string IsBold { get; init; } = "N";
-    public string ShowTopBorder { get; init; } = "N";
+    public string VDate { get; init; } = string.Empty;
+    public string VCode { get; init; } = string.Empty;
+    public string VType { get; init; } = string.Empty;
+    public string Narration { get; init; } = string.Empty;
+    public string Debit { get; init; } = string.Empty;
+    public string Credit { get; init; } = string.Empty;
+}
+
+public sealed class TrialBalanceReportRow : ModuleReportRowBase
+{
+    public string LedgerHead { get; init; } = string.Empty;
+    public string OpeningBalance { get; init; } = string.Empty;
+    public string Debit { get; init; } = string.Empty;
+    public string Credit { get; init; } = string.Empty;
+    public string ClosingBalance { get; init; } = string.Empty;
+}
+
+public sealed class SchoolCollegeReportRow : ModuleReportRowBase
+{
+    public string SrNo { get; init; } = string.Empty;
+    public string SchoolName { get; init; } = string.Empty;
+    public string Category { get; init; } = string.Empty;
+    public string City { get; init; } = string.Empty;
+    public string UDiseNo { get; init; } = string.Empty;
+    public string Mobile { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+}
+
+public sealed class EmployeeReportRow : ModuleReportRowBase
+{
+    public string SrNo { get; init; } = string.Empty;
+    public string EmployeeName { get; init; } = string.Empty;
+    public string Designation { get; init; } = string.Empty;
+    public string School { get; init; } = string.Empty;
+    public string Mobile { get; init; } = string.Empty;
+    public string JoiningDate { get; init; } = string.Empty;
+    public string StaffType { get; init; } = string.Empty;
+    public string Role { get; init; } = string.Empty;
+}
+
+public sealed class InwardRegisterReportRow : ModuleReportRowBase
+{
+    public string RecordNo { get; init; } = string.Empty;
+    public string InwardDate { get; init; } = string.Empty;
+    public string FileNo { get; init; } = string.Empty;
+    public string LetterNo { get; init; } = string.Empty;
+    public string FromWhom { get; init; } = string.Empty;
+    public string Subject { get; init; } = string.Empty;
+    public string School { get; init; } = string.Empty;
+    public string Remark { get; init; } = string.Empty;
+}
+
+public sealed class OutwardRegisterReportRow : ModuleReportRowBase
+{
+    public string RecordNo { get; init; } = string.Empty;
+    public string OutwardDate { get; init; } = string.Empty;
+    public string FileNo { get; init; } = string.Empty;
+    public string Subject { get; init; } = string.Empty;
+    public string AddressLine { get; init; } = string.Empty;
+    public string Enclosures { get; init; } = string.Empty;
+    public string School { get; init; } = string.Empty;
+    public string Remark { get; init; } = string.Empty;
+}
+
+public sealed class StockRegisterReportRow : ModuleReportRowBase
+{
+    public string ItemGroup { get; init; } = string.Empty;
+    public string ItemName { get; init; } = string.Empty;
+    public string OpeningQty { get; init; } = string.Empty;
+    public string InwardQty { get; init; } = string.Empty;
+    public string OutwardQty { get; init; } = string.Empty;
+    public string ClosingQty { get; init; } = string.Empty;
 }

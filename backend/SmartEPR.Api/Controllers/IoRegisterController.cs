@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SmartEPR.Core.Common;
 using SmartEPR.Core.DTOs.IoRegister;
 using SmartEPR.Core.Interfaces;
@@ -34,24 +35,45 @@ public sealed class IoRegisterController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Unauthorized(ApiResponse<IoLookupsDto>.Fail("Invalid token."));
 
-        var lookups = await _ioRegisterService.GetLookupsAsync(userId, cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<IoLookupsDto>.Ok(lookups));
+        try
+        {
+            var lookups = await _ioRegisterService.GetLookupsAsync(userId, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IoLookupsDto>.Ok(lookups));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IoLookupsDto>.Fail(DatabaseSetupMessage(ex)));
+        }
     }
 
     [HttpGet("inward/next-record-no")]
     public async Task<IActionResult> GetInwardNextRecordNo([FromQuery] long orgId, [FromQuery] long? yioId, CancellationToken cancellationToken)
     {
-        var row = await _ioRegisterService.GetInwardNextRecordNoAsync(orgId, yioId, cancellationToken).ConfigureAwait(false);
-        return row is null
-            ? Ok(ApiResponse<NextRecordNoDto>.Fail("Unable to get next record number."))
-            : Ok(ApiResponse<NextRecordNoDto>.Ok(row));
+        try
+        {
+            var row = await _ioRegisterService.GetInwardNextRecordNoAsync(orgId, yioId, cancellationToken).ConfigureAwait(false);
+            return row is null
+                ? Ok(ApiResponse<NextRecordNoDto>.Fail("Unable to get next record number."))
+                : Ok(ApiResponse<NextRecordNoDto>.Ok(row));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<NextRecordNoDto>.Fail(DatabaseSetupMessage(ex)));
+        }
     }
 
     [HttpGet("inward")]
     public async Task<IActionResult> GetInwardList([FromQuery] InwardListFilterDto filter, CancellationToken cancellationToken)
     {
-        var items = await _ioRegisterService.GetInwardListAsync(filter, cancellationToken).ConfigureAwait(false);
-        return Ok(ApiResponse<IReadOnlyList<InwardRegisterDto>>.Ok(items));
+        try
+        {
+            var items = await _ioRegisterService.GetInwardListAsync(filter, cancellationToken).ConfigureAwait(false);
+            return Ok(ApiResponse<IReadOnlyList<InwardRegisterDto>>.Ok(items));
+        }
+        catch (SqlException ex)
+        {
+            return Ok(ApiResponse<IReadOnlyList<InwardRegisterDto>>.Fail(DatabaseSetupMessage(ex)));
+        }
     }
 
     [HttpGet("inward/{irid:long}")]
@@ -255,6 +277,9 @@ public sealed class IoRegisterController : ControllerBase
     }
 
     private static string Encode(string? value) => System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
+
+    private static string DatabaseSetupMessage(SqlException ex)
+        => $"Inward/Outward database objects are missing or invalid. Run script 043_Inward_Outward_Register.sql on the API database. ({ex.Message})";
 
     private bool TryGetUserId(out long userId)
     {

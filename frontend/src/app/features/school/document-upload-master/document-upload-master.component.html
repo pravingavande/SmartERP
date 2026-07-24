@@ -1,0 +1,148 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Document Upload Master</h1>
+      <p>Upload and manage school documents</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-primary" (click)="newItem()">+ Add Document</button>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <app-org-school-select
+      name="listOrgID"
+      [orgs]="schoolOrgs()"
+      [value]="listOrgID()"
+      (valueChange)="onListOrgChange($event)"
+    />
+    <label class="field">
+      <span class="field-label">Search</span>
+      <input
+        class="field-control"
+        [ngModel]="searchText()"
+        (ngModelChange)="onSearchChange($event)"
+        name="search"
+        placeholder="Search document title"
+      >
+    </label>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error list-error">{{ errorMessage() }}</p>
+  }
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (lookupsLoading() || listLoading()) { <p class="loading-hint">Loading documents...</p> }
+      <div class="records-table-wrap">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('srNo')">Sr No</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('tDate')">Date</button></th>
+              <th><button type="button" class="sort-btn" (click)="toggleSort('documentTitle')">Document Title</button></th>
+              <th>Document</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of paginatedItems(); track item.documentUploadID) {
+              <tr>
+                <td>{{ item.srNo || '—' }}</td>
+                <td>{{ formatDate(item.tDate) }}</td>
+                <td>{{ item.documentTitle }}</td>
+                <td class="doc-actions">
+                  @if (item.documentPath) {
+                    <button type="button" class="doc-link" (click)="viewDocument(item.documentPath)">View</button>
+                    <button type="button" class="doc-link" (click)="downloadDocument(item.documentPath, item.documentTitle)">Download</button>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="actions">
+                  <app-list-action-btn action="edit" (clicked)="editItem(item)" />
+                  <app-list-action-btn action="delete" (clicked)="deleteItem(item)" />
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty">No documents for selected organization</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-master-list-pagination
+        [total]="filteredItems().length"
+        [pageIndex]="listPageIndex()"
+        [pageSize]="listPageSize()"
+        (pageIndexChange)="goToListPage($event)"
+        (pageSizeChange)="onListPageSizeChange($event)"
+      />
+    </aside>
+  </div>
+
+  @if (formVisible()) {
+    <div class="master-modal-overlay">
+      <div class="master-modal-box">
+        <header class="master-modal-header">
+          <h2>{{ isEditMode() ? 'Edit Document' : 'New Document' }}</h2>
+        </header>
+        <form class="master-modal-form voucher-form" (ngSubmit)="save()">
+          @if (saveError()) { <p class="form-save-error">{{ saveError() }}</p> }
+          <div class="form-grid">
+            <label class="field full">
+              <span class="field-label">Org / School</span>
+              <input class="field-control field-readonly" type="text" readonly [value]="selectedOrgName()">
+            </label>
+            <label class="field" [class.field-invalid]="fieldError('srNo')">
+              <span class="field-label">Sr No *</span>
+              <input
+                class="field-control"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                step="1"
+                required
+                [ngModel]="form().srNo"
+                (ngModelChange)="onSrNoChange($event)"
+                name="srNo"
+              >
+              @if (fieldError('srNo')) { <span class="field-error">{{ fieldError('srNo') }}</span> }
+            </label>
+            <label class="field" [class.field-invalid]="fieldError('tDate')">
+              <span class="field-label">Date *</span>
+              <input class="field-control" type="date" required [ngModel]="form().tDate" (ngModelChange)="updateForm('tDate', $event)" name="tDate">
+              @if (fieldError('tDate')) { <span class="field-error">{{ fieldError('tDate') }}</span> }
+            </label>
+            <label class="field full" [class.field-invalid]="fieldError('documentTitle')">
+              <span class="field-label">Document Title *</span>
+              <input class="field-control" required [ngModel]="form().documentTitle" (ngModelChange)="updateForm('documentTitle', $event)" name="documentTitle">
+              @if (fieldError('documentTitle')) { <span class="field-error">{{ fieldError('documentTitle') }}</span> }
+            </label>
+            <label class="field full" [class.field-invalid]="fieldError('documentPath')">
+              <span class="field-label">Upload Document {{ isEditMode() ? '' : '*' }}</span>
+              <input
+                class="field-control"
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                (change)="onFileSelected($event)"
+                [disabled]="fileUploading()"
+              >
+              @if (selectedFileName() || form().documentPath) {
+                <span class="field-hint">Selected: {{ selectedFileName() || displayFileName(form().documentPath) }}</span>
+              }
+              @if (isEditMode()) {
+                <span class="field-hint">Leave empty to keep the existing document.</span>
+              }
+              @if (fieldError('documentPath')) { <span class="field-error">{{ fieldError('documentPath') }}</span> }
+            </label>
+          </div>
+          <footer class="form-footer">
+            <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading() || fileUploading()">Save</button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</section>

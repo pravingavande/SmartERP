@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="ReportSource">
+      <ConnectionProperties><DataProvider>System.Data.DataSet</DataProvider><ConnectString /></ConnectionProperties>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="SchoolCollege">
+      <Query><DataSourceName>ReportSource</DataSourceName><CommandText /></Query>
+      <Fields>
+        <Field Name="OrganizationHeader"><DataField>OrganizationHeader</DataField></Field>
+        <Field Name="Address"><DataField>Address</DataField></Field>
+        <Field Name="ReportTitle"><DataField>ReportTitle</DataField></Field>
+        <Field Name="FilterText"><DataField>FilterText</DataField></Field>
+        <Field Name="PrintedOn"><DataField>PrintedOn</DataField></Field>
+        <Field Name="SrNo"><DataField>SrNo</DataField></Field>
+        <Field Name="SchoolName"><DataField>SchoolName</DataField></Field>
+        <Field Name="Category"><DataField>Category</DataField></Field>
+        <Field Name="City"><DataField>City</DataField></Field>
+        <Field Name="UDiseNo"><DataField>UDiseNo</DataField></Field>
+        <Field Name="Mobile"><DataField>Mobile</DataField></Field>
+        <Field Name="Email"><DataField>Email</DataField></Field>
+        <Field Name="Status"><DataField>Status</DataField></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="MainTablix">
+            <TablixBody>
+              <TablixColumns><TablixColumn><Width>1.2cm</Width></TablixColumn><TablixColumn><Width>4.5cm</Width></TablixColumn><TablixColumn><Width>2.5cm</Width></TablixColumn><TablixColumn><Width>2cm</Width></TablixColumn><TablixColumn><Width>2.5cm</Width></TablixColumn><TablixColumn><Width>2.5cm</Width></TablixColumn><TablixColumn><Width>2.5cm</Width></TablixColumn><TablixColumn><Width>1.5cm</Width></TablixColumn></TablixColumns>
+              <TablixRows>
+                <TablixRow><Height>0.55cm</Height><TablixCells>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Hdr_SrNo">
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Sr No</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>Solid</Style></Border><BackgroundColor>Gainsboro</BackgroundColor></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Hdr_SchoolCollege">
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>School / College</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>Solid</Style></Border><BackgroundColor>Gainsboro</BackgroundColor></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Hdr_Category">
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Category</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>Solid</Style></Border><BackgroundColor>Gainsboro</BackgroundColor></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Hdr_City">
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>City</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>Solid</Style></Border><BackgroundColor>Gainsboro</BackgroundColor></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Hdr_UDISENo">
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>UDISE No</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>Solid</Style></Border><BackgroundColor>Gainsboro</BackgroundColor></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Hdr_Mobile">
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Mobile</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>Solid</Style></Border><BackgroundColor>Gainsboro</BackgroundColor></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Hdr_Email">
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Email</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>Solid</Style></Border><BackgroundColor>Gainsboro</BackgroundColor></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Hdr_Status">
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Status</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>Solid</Style></Border><BackgroundColor>Gainsboro</BackgroundColor></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell></TablixCells></TablixRow>
+                
+                <TablixRow><Height>0.45cm</Height><TablixCells>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Det_SrNo">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!SrNo.Value</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Det_SchoolName">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!SchoolName.Value</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Det_Category">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Category.Value</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Det_City">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!City.Value</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Det_UDiseNo">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!UDiseNo.Value</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Det_Mobile">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Mobile.Value</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Det_Email">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Email.Value</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Det_Status">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Status.Value</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell></TablixCells></TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy><TablixMembers><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /></TablixMembers></TablixColumnHierarchy>
+            <TablixRowHierarchy><TablixMembers>                <TablixMember />
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember></TablixMembers></TablixRowHierarchy>
+            <DataSetName>SchoolCollege</DataSetName>
+            <Top>0cm</Top><Left>0cm</Left><Height>1.2cm</Height><Width>19.2cm</Width>
+          </Tablix>
+        </ReportItems>
+        <Height>1.5cm</Height>
+      </Body>
+      <Width>19.2cm</Width>
+      <Page>
+        <PageHeader>
+          <Height>2.4cm</Height>
+          <ReportItems>
+            <Textbox Name="TxtOrg"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=First(Fields!OrganizationHeader.Value, "SchoolCollege")</Value><Style><FontFamily>Calibri</FontFamily><FontSize>11pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs><Top>0cm</Top><Left>0cm</Left><Height>0.5cm</Height><Width>19.2cm</Width></Textbox>
+            <Textbox Name="TxtAddr"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=First(Fields!Address.Value, "SchoolCollege")</Value><Style><FontFamily>Calibri</FontFamily><FontSize>9pt</FontSize></Style></TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs><Top>0.5cm</Top><Left>0cm</Left><Height>0.4cm</Height><Width>19.2cm</Width></Textbox>
+            <Textbox Name="TxtTitle"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=First(Fields!ReportTitle.Value, "SchoolCollege")</Value><Style><FontFamily>Calibri</FontFamily><FontSize>12pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs><Top>0.95cm</Top><Left>0cm</Left><Height>0.45cm</Height><Width>19.2cm</Width></Textbox>
+            <Textbox Name="TxtFilter"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=First(Fields!FilterText.Value, "SchoolCollege")</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8.5pt</FontSize></Style></TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs><Top>1.45cm</Top><Left>0cm</Left><Height>0.35cm</Height><Width>19.2cm</Width></Textbox>
+          </ReportItems>
+        </PageHeader>
+        <PageFooter>
+          <Height>0.5cm</Height>
+          <ReportItems>
+            <Textbox Name="TxtPrint"><Paragraphs><Paragraph><TextRuns><TextRun><Value>="Print Date: " &amp; First(Fields!PrintedOn.Value, "SchoolCollege")</Value><Style><FontFamily>Calibri</FontFamily><FontSize>8pt</FontSize></Style></TextRun></TextRuns></Paragraph></Paragraphs><Top>0cm</Top><Left>0cm</Left><Height>0.4cm</Height><Width>19.2cm</Width></Textbox>
+          </ReportItems>
+        </PageFooter>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+</Report>

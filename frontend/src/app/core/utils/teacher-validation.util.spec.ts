@@ -11,6 +11,7 @@ function validForm(): TeacherFormState {
     userID: null,
     srNo: 1,
     orgID: 1,
+    sansthaID: 3,
     staffTypeID: TEACHER_STAFF_TYPE_ID,
     userRoleID: 3,
     designationCode: 1,

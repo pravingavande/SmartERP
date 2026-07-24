@@ -1,4 +1,5 @@
 import { ListActionBtnComponent } from '../../../shared/components/list-action-btn/list-action-btn.component';
+import { OrgSchoolSelectComponent } from '../../../shared/components/org-school-select/org-school-select.component';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { InwardFilter, InwardFormState, InwardRegisterItem, IoLookups } from '../../../core/models/io-register.model';
 import { UserProfile } from '../../../core/models/dashboard.model';
+import { AuditService } from '../../../core/services/audit.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { IoRegisterService } from '../../../core/services/io-register.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -19,19 +21,22 @@ import {
 } from '../../../core/utils/io-register-validation.util';
 import { toastOnSave } from '../../../core/utils/toast-save.util';
 import { todayIsoDate } from '../../../core/utils/date.util';
+import { resolveDefaultSchoolOrgId } from '../../../core/utils/org-access.util';
+import { resolveDefaultIoYear } from '../../../core/utils/io-register.util';
 import { MasterListPaginationComponent } from '../../../shared/components/master-list-pagination/master-list-pagination.component';
 
 type FormMode = 'new' | 'edit' | 'view';
 
 @Component({
   selector: 'app-inward-register',
-  imports: [FormsModule, DatePipe, MasterListPaginationComponent, ListActionBtnComponent],
+  imports: [FormsModule, DatePipe, MasterListPaginationComponent, ListActionBtnComponent, OrgSchoolSelectComponent],
   templateUrl: './inward-register.component.html',
   styleUrl: './inward-register.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InwardRegisterComponent {
   private readonly io = inject(IoRegisterService);
+  private readonly audit = inject(AuditService);
   private readonly toast = inject(ToastService);
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
@@ -50,13 +55,6 @@ export class InwardRegisterComponent {
   readonly formVisible = signal(false);
   readonly listOrgID = signal<number | null>(null);
   readonly filterYioID = signal<number | null>(null);
-  readonly filterRecordNo = signal<number | null>(null);
-  readonly filterFromDate = signal('');
-  readonly filterToDate = signal('');
-  readonly filterFileNo = signal('');
-  readonly filterLetterNo = signal('');
-  readonly filterSubject = signal('');
-  readonly filterFromWhom = signal('');
   readonly searchText = signal('');
   readonly sortKey = signal<keyof InwardRegisterItem>('recordNo');
   readonly sortDir = signal<SortDirection>('desc');
@@ -77,32 +75,51 @@ export class InwardRegisterComponent {
 
   loadLookups(): void {
     this.lookupsLoading.set(true);
-    forkJoin({ lookups: this.io.getLookups(), profile: this.dashboardService.getProfile() })
+    this.errorMessage.set(null);
+    forkJoin({
+      auditLookups: this.audit.getLookups(),
+      ioLookups: this.io.getLookups(),
+      profile: this.dashboardService.getProfile()
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ lookups: data, profile }) => {
-        this.lookupsLoading.set(false);
-        this.lookups.set(data);
-        if (!data?.orgs?.length) {
-          this.errorMessage.set('No schools found for your login.');
-          return;
+      .subscribe({
+        next: ({ auditLookups, ioLookups, profile }) => {
+          this.lookupsLoading.set(false);
+          if (ioLookups.error) {
+            this.errorMessage.set(ioLookups.error);
+            this.lookups.set(null);
+            return;
+          }
+          const orgs = auditLookups?.orgs ?? [];
+          if (!orgs.length) {
+            this.errorMessage.set('No schools found for your login.');
+            this.lookups.set(null);
+            return;
+          }
+          this.lookups.set({
+            orgs,
+            years: ioLookups.data?.years ?? [],
+            activeYear: ioLookups.data?.activeYear ?? null
+          });
+          const defaultYear = resolveDefaultIoYear(ioLookups.data?.years ?? [], ioLookups.data?.activeYear);
+          const orgId = resolveDefaultSchoolOrgId(orgs, profile as UserProfile);
+          this.listOrgID.set(orgId);
+          this.filterYioID.set(defaultYear?.yioID ?? null);
+          if (orgId) this.loadList();
+        },
+        error: () => {
+          this.lookupsLoading.set(false);
+          this.errorMessage.set('Unable to load organization list.');
         }
-        const orgId = this.resolveDefaultOrgId(data, profile);
-        this.listOrgID.set(orgId);
-        this.filterYioID.set(data.activeYear?.yioID ?? null);
-        if (orgId) this.loadList();
       });
   }
 
-  private resolveDefaultOrgId(data: IoLookups, profile: UserProfile | null): number | null {
-    if (profile?.schoolCode) {
-      const match = data.orgs.find((o) => o.schoolCode === profile.schoolCode);
-      if (match) return match.orgID;
-    }
-    if (profile?.orgId) {
-      const match = data.orgs.find((o) => o.orgID === profile.orgId);
-      if (match) return match.orgID;
-    }
-    return data.orgs.length === 1 ? data.orgs[0].orgID : data.orgs[0]?.orgID ?? null;
+  onListOrgChange(orgId: number | null): void {
+    this.listOrgID.set(orgId);
+    this.listPageIndex.set(0);
+    this.formVisible.set(false);
+    if (orgId) this.loadList();
+    else this.items.set([]);
   }
 
   onFilterChange(): void {
@@ -117,13 +134,6 @@ export class InwardRegisterComponent {
     const filter: InwardFilter = {
       orgID: orgId,
       yioID: this.filterYioID(),
-      recordNo: this.filterRecordNo(),
-      fromDate: this.filterFromDate() || null,
-      toDate: this.filterToDate() || null,
-      fileNo: this.filterFileNo() || null,
-      letterNo: this.filterLetterNo() || null,
-      subject: this.filterSubject() || null,
-      fromWhomReceived: this.filterFromWhom() || null,
       search: this.searchText() || null
     };
     this.io.getInwardList(filter).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((rows) => {
@@ -139,11 +149,18 @@ export class InwardRegisterComponent {
       return;
     }
     this.formMode.set('new');
-    this.form.set({ ...this.emptyForm(), orgID: orgId, irDate: new Date().toISOString().slice(0, 10) });
+    const defaultYear = resolveDefaultIoYear(this.lookups()?.years ?? [], this.lookups()?.activeYear);
+    this.form.set({
+      ...this.emptyForm(),
+      orgID: orgId,
+      irDate: new Date().toISOString().slice(0, 10),
+      yioID: defaultYear?.yioID ?? null,
+      yearName: defaultYear?.yearName ?? null
+    });
     this.fieldErrors.set({});
     this.saveError.set(null);
     this.formVisible.set(true);
-    this.io.getInwardNextRecordNo(orgId, this.filterYioID()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((row) => {
+    this.io.getInwardNextRecordNo(orgId, this.form().yioID ?? this.filterYioID()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((row) => {
       if (!row) return;
       this.form.update((f) => ({ ...f, recordNo: row.nextRecordNo, yioID: row.yioID, yearName: this.lookups()?.years.find((y) => y.yioID === row.yioID)?.yearName ?? null }));
     });
@@ -275,13 +292,6 @@ export class InwardRegisterComponent {
     const filter: InwardFilter = {
       orgID: orgId,
       yioID: this.filterYioID(),
-      recordNo: this.filterRecordNo(),
-      fromDate: this.filterFromDate() || null,
-      toDate: this.filterToDate() || null,
-      fileNo: this.filterFileNo() || null,
-      letterNo: this.filterLetterNo() || null,
-      subject: this.filterSubject() || null,
-      fromWhomReceived: this.filterFromWhom() || null,
       search: this.searchText() || null
     };
     this.io.exportInward(filter, format).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

@@ -96,7 +96,7 @@
       </section>
     }
 
-    <section class="notice-widget" aria-label="Notices">
+    <section class="notice-widget" aria-label="Notices and documents">
       <div class="notice-tricolor" aria-hidden="true">
         <span class="stripe saffron"></span>
         <span class="stripe white"></span>
@@ -104,67 +104,116 @@
       </div>
       <div class="notice-header">
         <div class="notice-title-row">
-          <h3>Notices</h3>
-          @if (notices().length > 0) {
-            <span class="notice-count">{{ notices().length }}</span>
+          <div class="notice-tabs" role="tablist" aria-label="Notice panel tabs">
+            <button
+              type="button"
+              class="notice-tab"
+              role="tab"
+              [class.active]="panelTab() === 'notices'"
+              [attr.aria-selected]="panelTab() === 'notices'"
+              (click)="setPanelTab('notices')"
+            >
+              Notices
+            </button>
+            <button
+              type="button"
+              class="notice-tab"
+              role="tab"
+              [class.active]="panelTab() === 'documents'"
+              [attr.aria-selected]="panelTab() === 'documents'"
+              (click)="setPanelTab('documents')"
+            >
+              Documents
+            </button>
+          </div>
+          @if (panelItemCount() > 0) {
+            <span class="notice-count">{{ panelItemCount() }}</span>
           }
+          <a class="notice-view-all" [routerLink]="viewAllRoute()">View all</a>
         </div>
         <span class="notice-underline"></span>
       </div>
 
       <div class="notice-body">
         <div #noticeList class="notice-list">
-          @for (item of notices(); track item.tid) {
-            <div
-              class="notice-item"
-              role="button"
-              tabindex="0"
-              (click)="openNoticeEvent(item.tid)"
-              (keydown.enter)="openNoticeEvent(item.tid)"
-              (keydown.space)="$event.preventDefault(); openNoticeEvent(item.tid)"
-            >
-              <div class="notice-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="8" y1="13" x2="16" y2="13" />
-                  <line x1="8" y1="17" x2="13" y2="17" />
-                </svg>
+          @if (panelTab() === 'notices') {
+            @for (item of notices(); track item.tid) {
+              <div
+                class="notice-item"
+                role="button"
+                tabindex="0"
+                (click)="openNoticeEvent(item.tid)"
+                (keydown.enter)="openNoticeEvent(item.tid)"
+                (keydown.space)="$event.preventDefault(); openNoticeEvent(item.tid)"
+              >
+                <div class="notice-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="8" y1="13" x2="16" y2="13" />
+                    <line x1="8" y1="17" x2="13" y2="17" />
+                  </svg>
+                </div>
+                <div class="notice-content">
+                  <time class="notice-date">{{ formatDate(item.noticeDate) }}</time>
+                  <p class="notice-title">{{ item.title }}</p>
+                  @if (item.eventPhotoAttachment || item.eventNewsAttachment || item.attachment) {
+                    <div class="notice-attachments">
+                      @if (item.eventPhotoAttachment) {
+                        <button type="button" class="notice-attachment-link" (click)="$event.stopPropagation(); openAttachment(item.eventPhotoAttachment)">
+                          Photo: {{ attachmentLabel(item.eventPhotoAttachment) }}
+                        </button>
+                      }
+                      @if (item.eventNewsAttachment) {
+                        <button type="button" class="notice-attachment-link" (click)="$event.stopPropagation(); openAttachment(item.eventNewsAttachment)">
+                          News: {{ attachmentLabel(item.eventNewsAttachment) }}
+                        </button>
+                      }
+                      @if (!item.eventPhotoAttachment && !item.eventNewsAttachment && item.attachment) {
+                        <button type="button" class="notice-attachment-link" (click)="$event.stopPropagation(); openAttachment(item.attachment)">
+                          {{ attachmentLabel(item.attachment) }}
+                        </button>
+                      }
+                    </div>
+                  }
+                  @if (item.isNew) {
+                    <span class="notice-badge">NEW</span>
+                  }
+                </div>
               </div>
-              <div class="notice-content">
-                <time class="notice-date">{{ formatDate(item.noticeDate) }}</time>
-                <p class="notice-title">{{ item.title }}</p>
-                @if (item.eventPhotoAttachment || item.eventNewsAttachment || item.attachment) {
-                  <div class="notice-attachments">
-                    @if (item.eventPhotoAttachment) {
-                      <button type="button" class="notice-attachment-link" (click)="$event.stopPropagation(); openAttachment(item.eventPhotoAttachment)">
-                        Photo: {{ attachmentLabel(item.eventPhotoAttachment) }}
-                      </button>
-                    }
-                    @if (item.eventNewsAttachment) {
-                      <button type="button" class="notice-attachment-link" (click)="$event.stopPropagation(); openAttachment(item.eventNewsAttachment)">
-                        News: {{ attachmentLabel(item.eventNewsAttachment) }}
-                      </button>
-                    }
-                    @if (!item.eventPhotoAttachment && !item.eventNewsAttachment && item.attachment) {
-                      <button type="button" class="notice-attachment-link" (click)="$event.stopPropagation(); openAttachment(item.attachment)">
-                        {{ attachmentLabel(item.attachment) }}
-                      </button>
-                    }
-                  </div>
-                }
-                @if (item.isNew) {
-                  <span class="notice-badge">NEW</span>
-                }
+            } @empty {
+              <p class="notice-empty">No notices available.</p>
+            }
+          } @else {
+            @for (doc of documents(); track doc.documentUploadID) {
+              <div class="notice-item notice-item-doc">
+                <div class="notice-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                </div>
+                <div class="notice-content">
+                  <time class="notice-date">{{ formatDate(doc.createdDate) }}</time>
+                  <p class="notice-title">{{ doc.documentTitle }}</p>
+                  @if (doc.organizationName) {
+                    <span class="notice-org">{{ doc.organizationName }}</span>
+                  }
+                  @if (doc.documentPath) {
+                    <button type="button" class="notice-attachment-link" (click)="openDocument(doc)">
+                      View document
+                    </button>
+                  }
+                </div>
               </div>
-            </div>
-          } @empty {
-            <p class="notice-empty">No notices available.</p>
+            } @empty {
+              <p class="notice-empty">No documents available.</p>
+            }
           }
         </div>
 
-        @if (notices().length > 3) {
-          <button type="button" class="notice-scroll-btn" (click)="scrollNotices()" aria-label="Scroll notices">
+        @if (panelItemCount() > 3) {
+          <button type="button" class="notice-scroll-btn" (click)="scrollNotices()" [attr.aria-label]="panelTab() === 'documents' ? 'Scroll documents' : 'Scroll notices'">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polyline points="9 18 15 12 9 6" />
             </svg>

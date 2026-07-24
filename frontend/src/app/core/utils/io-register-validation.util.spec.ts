@@ -107,6 +107,23 @@ describe('io-register-validation.util', () => {
       const errors = validateInwardForm(form);
       expect(errors['attachmentPath']).toBeUndefined();
     });
+
+    it('accepts edit inward form with existing id', () => {
+      const form = validInwardForm();
+      form.irid = 42;
+      const errors = validateInwardForm(form);
+      expect(Object.keys(errors).length).toBe(0);
+    });
+
+    it('rejects edit inward form when mandatory fields cleared', () => {
+      const form = validInwardForm();
+      form.irid = 42;
+      form.subject = '';
+      form.fromWhomReceived = '';
+      const errors = validateInwardForm(form);
+      expect(errors['subject']).toBe('Subject is required.');
+      expect(errors['fromWhomReceived']).toBe('From whom received is required.');
+    });
   });
 
   describe('validateOutwardForm', () => {
@@ -162,6 +179,29 @@ describe('io-register-validation.util', () => {
       form.expensesAmt = null;
       const errors = validateOutwardForm(form);
       expect(errors['expensesAmt']).toBeUndefined();
+    });
+
+    it('accepts edit outward form with existing id', () => {
+      const form = validOutwardForm();
+      form.orid = 55;
+      const errors = validateOutwardForm(form);
+      expect(Object.keys(errors).length).toBe(0);
+    });
+
+    it('rejects edit outward form when address cleared', () => {
+      const form = validOutwardForm();
+      form.orid = 55;
+      form.address = '';
+      const errors = validateOutwardForm(form);
+      expect(errors['address']).toBe('Address is required.');
+    });
+
+    it('allows optional attachment on outward edit', () => {
+      const form = validOutwardForm();
+      form.orid = 55;
+      form.attachmentPath = '';
+      const errors = validateOutwardForm(form);
+      expect(errors['attachmentPath']).toBeUndefined();
     });
   });
 

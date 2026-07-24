@@ -1,0 +1,142 @@
+<section class="audit-page master-page">
+  <header class="page-header">
+    <div>
+      <h1>Notices &amp; Documents</h1>
+      <p>All event notices and uploaded documents for your organization</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/dashboard" class="btn btn-outline">Back to Dashboard</a>
+    </div>
+  </header>
+
+  <div class="list-filters">
+    <div class="panel-tabs" role="tablist" aria-label="Notices and documents tabs">
+      <button
+        type="button"
+        class="panel-tab"
+        role="tab"
+        [class.active]="panelTab() === 'notices'"
+        [attr.aria-selected]="panelTab() === 'notices'"
+        (click)="setPanelTab('notices')"
+      >
+        Notices ({{ notices().length }})
+      </button>
+      <button
+        type="button"
+        class="panel-tab"
+        role="tab"
+        [class.active]="panelTab() === 'documents'"
+        [attr.aria-selected]="panelTab() === 'documents'"
+        (click)="setPanelTab('documents')"
+      >
+        Documents ({{ documents().length }})
+      </button>
+    </div>
+    <label class="field">
+      <span class="field-label">Search</span>
+      <input
+        class="field-control"
+        [ngModel]="searchText()"
+        (ngModelChange)="onSearchChange($event)"
+        name="search"
+        [placeholder]="panelTab() === 'documents' ? 'Search document title or organization' : 'Search notice title or date'"
+      >
+    </label>
+  </div>
+
+  <div class="audit-layout list-only">
+    <aside class="list-panel">
+      @if (panelTab() === 'notices') {
+        <div class="records-table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>Event Date</th>
+                <th>Title</th>
+                <th>Attachments</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of filteredNotices(); track item.tid) {
+                <tr>
+                  <td>{{ formatDate(item.noticeDate) }}</td>
+                  <td>
+                    {{ item.title }}
+                    @if (item.isNew) {
+                      <span class="badge-new">NEW</span>
+                    }
+                  </td>
+                  <td class="attachment-cell">
+                    @if (item.eventPhotoAttachment) {
+                      <button type="button" class="doc-link" (click)="openAttachment(item.eventPhotoAttachment)">
+                        Photo
+                      </button>
+                    }
+                    @if (item.eventNewsAttachment) {
+                      <button type="button" class="doc-link" (click)="openAttachment(item.eventNewsAttachment)">
+                        News
+                      </button>
+                    }
+                    @if (!item.eventPhotoAttachment && !item.eventNewsAttachment && item.attachment) {
+                      <button type="button" class="doc-link" (click)="openAttachment(item.attachment)">
+                        {{ attachmentLabel(item.attachment) }}
+                      </button>
+                    }
+                    @if (!item.eventPhotoAttachment && !item.eventNewsAttachment && !item.attachment) {
+                      —
+                    }
+                  </td>
+                  <td class="actions">
+                    <button type="button" class="doc-link" (click)="openNoticeEvent(item.tid)">View</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty">No notices available.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="records-table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>Created Date</th>
+                <th>Document Title</th>
+                <th>Organization</th>
+                <th>Document</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (doc of filteredDocuments(); track doc.documentUploadID) {
+                <tr>
+                  <td>{{ formatDate(doc.createdDate) }}</td>
+                  <td>{{ doc.documentTitle }}</td>
+                  <td>{{ doc.organizationName || '—' }}</td>
+                  <td class="doc-actions">
+                    @if (doc.documentPath) {
+                      <button type="button" class="doc-link" (click)="openDocument(doc)">View</button>
+                    } @else {
+                      —
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty">No documents available.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </aside>
+  </div>
+</section>
+
+@if (showEventModal()) {
+  <app-event-view-modal
+    [event]="selectedEvent()"
+    [loading]="eventModalLoading()"
+    (closed)="closeEventModal()"
+  />
+}

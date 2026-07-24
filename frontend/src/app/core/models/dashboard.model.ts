@@ -47,3 +47,11 @@ export interface NoticeItem {
   eventNewsAttachment?: string;
   isNew: boolean;
 }
+
+export interface DashboardDocumentItem {
+  documentUploadID: number;
+  documentTitle: string;
+  createdDate: string;
+  documentPath?: string | null;
+  organizationName?: string | null;
+}

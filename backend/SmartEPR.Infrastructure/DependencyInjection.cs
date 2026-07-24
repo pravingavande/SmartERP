@@ -46,6 +46,8 @@ public static class DependencyInjection
         services.AddScoped<IIoRegisterService, IoRegisterService>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IOrganizationService, OrganizationService>();
+        services.AddScoped<IDocumentUploadRepository, DocumentUploadRepository>();
+        services.AddScoped<IDocumentUploadService, DocumentUploadService>();
         services.AddScoped<ISettingsRepository, SettingsRepository>();
         services.AddScoped<ISettingsService, SettingsService>();
         services.AddScoped<ISuperAdminRepository, SuperAdminRepository>();

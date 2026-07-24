@@ -161,6 +161,30 @@ public sealed class IoRegisterServiceValidationTests
     }
 
     [Fact]
+    public async Task SaveInwardAsync_UpdatesExistingRecordWhenIridProvided()
+    {
+        SaveInwardRequestDto? captured = null;
+        _repository
+            .Setup(r => r.SaveInwardAsync(It.IsAny<SaveInwardRequestDto>(), It.IsAny<long?>(), It.IsAny<CancellationToken>()))
+            .Callback<SaveInwardRequestDto, long?, CancellationToken>((dto, _, _) => captured = dto)
+            .ReturnsAsync(10);
+        _repository
+            .Setup(r => r.GetInwardByIdAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SampleInward());
+
+        var request = ValidInwardRequest();
+        request.IRID = 10;
+        request.Subject = "Updated inspection letter";
+
+        var (data, error) = await CreateService().SaveInwardAsync(request, 5);
+
+        Assert.NotNull(data);
+        Assert.Null(error);
+        Assert.Equal(10, captured?.IRID);
+        Assert.Equal("Updated inspection letter", captured?.Subject);
+    }
+
+    [Fact]
     public async Task SaveInwardAsync_ReturnsErrorWhenReloadFails()
     {
         _repository
@@ -331,6 +355,30 @@ public sealed class IoRegisterServiceValidationTests
         Assert.Null(error);
         Assert.Equal(20, data.ORID);
         Assert.Equal(2, data.RecordNo);
+    }
+
+    [Fact]
+    public async Task SaveOutwardAsync_UpdatesExistingRecordWhenOridProvided()
+    {
+        SaveOutwardRequestDto? captured = null;
+        _repository
+            .Setup(r => r.SaveOutwardAsync(It.IsAny<SaveOutwardRequestDto>(), It.IsAny<long?>(), It.IsAny<CancellationToken>()))
+            .Callback<SaveOutwardRequestDto, long?, CancellationToken>((dto, _, _) => captured = dto)
+            .ReturnsAsync(20);
+        _repository
+            .Setup(r => r.GetOutwardByIdAsync(20, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SampleOutward());
+
+        var request = ValidOutwardRequest();
+        request.ORID = 20;
+        request.Subject = "Updated dispatch letter";
+
+        var (data, error) = await CreateService().SaveOutwardAsync(request, 1);
+
+        Assert.NotNull(data);
+        Assert.Null(error);
+        Assert.Equal(20, captured?.ORID);
+        Assert.Equal("Updated dispatch letter", captured?.Subject);
     }
 
     [Theory]

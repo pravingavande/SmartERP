@@ -14,7 +14,7 @@ import {
   OutwardRegisterItem,
   YearIoOption
 } from '../models/io-register.model';
-import { apiData, apiMessage, apiSuccess } from '../utils/api-response.util';
+import { apiData, apiMessage, apiSuccess, apiUploadHttpError } from '../utils/api-response.util';
 import { encodeRelativeStoragePath } from '../utils/local-file-url.util';
 import { trimText } from '../utils/master-validation.util';
 
@@ -24,10 +24,18 @@ export class IoRegisterService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getLookups(): Observable<IoLookups | null> {
+  getLookups(): Observable<{ data: IoLookups | null; error: string | null }> {
     return this.http.get<ApiResponse<IoLookups>>(`${this.base}/lookups`).pipe(
-      map((r) => (apiSuccess(r) && apiData(r) ? this.normalizeLookups(apiData(r)!) : null)),
-      catchError(() => of(null))
+      map((r) => {
+        if (apiSuccess(r) && apiData(r)) {
+          return {
+            data: this.normalizeLookups(apiData(r)! as IoLookups & Record<string, unknown>),
+            error: null
+          };
+        }
+        return { data: null, error: apiMessage(r) ?? 'Unable to load IO lookups.' };
+      }),
+      catchError((err) => of({ data: null, error: apiUploadHttpError(err, 'Unable to load IO lookups.') }))
     );
   }
 
@@ -207,16 +215,19 @@ export class IoRegisterService {
     return params;
   }
 
-  private normalizeLookups(raw: IoLookups): IoLookups {
+  private normalizeLookups(raw: IoLookups & Record<string, unknown>): IoLookups {
+    const rawOrgs = (raw.orgs ?? raw['Orgs'] ?? []) as unknown as Array<Record<string, unknown>>;
+    const rawYears = (raw.years ?? raw['Years'] ?? []) as unknown as Array<Record<string, unknown>>;
+    const rawActive = raw.activeYear ?? raw['ActiveYear'];
     return {
-      orgs: (raw.orgs ?? []).map((o) => ({
-        orgID: Number((o as { orgID?: number; OrgID?: number }).orgID ?? (o as { OrgID?: number }).OrgID ?? 0),
-        organizationName: String((o as { organizationName?: string; OrganizationName?: string }).organizationName ?? (o as { OrganizationName?: string }).OrganizationName ?? ''),
-        schoolCode: (o as { schoolCode?: number }).schoolCode,
-        underOrgID: (o as { underOrgID?: number }).underOrgID
+      orgs: rawOrgs.map((o) => ({
+        orgID: Number(o['orgID'] ?? o['OrgID'] ?? 0),
+        organizationName: String(o['organizationName'] ?? o['OrganizationName'] ?? ''),
+        schoolCode: (o['schoolCode'] ?? o['SchoolCode']) as number | null | undefined,
+        underOrgID: (o['underOrgID'] ?? o['UnderOrgID']) as number | null | undefined
       })),
-      years: (raw.years ?? []).map((y) => this.normalizeYear(y as unknown as Record<string, unknown>)),
-      activeYear: raw.activeYear ? this.normalizeYear(raw.activeYear as unknown as Record<string, unknown>) : null
+      years: rawYears.map((y) => this.normalizeYear(y)),
+      activeYear: rawActive ? this.normalizeYear(rawActive as Record<string, unknown>) : null
     };
   }
 

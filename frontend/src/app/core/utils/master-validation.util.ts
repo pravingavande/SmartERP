@@ -1,4 +1,5 @@
 import { FieldErrors } from './form-field-errors';
+import { DocumentUploadFormState } from '../models/document-upload.model';
 import { AccountRegisterFormState, PartyFormState, LedgerHeadFormState } from '../models/audit.model';
 import { DRHeadFormState } from '../models/donation.model';
 import { LeaveTypeFormState } from '../models/leave.model';
@@ -139,6 +140,23 @@ export function validateLeaveTypeForm(form: LeaveTypeFormState): FieldErrors {
   return errors;
 }
 
+export function validateDocumentUploadForm(form: DocumentUploadFormState, isEdit: boolean): FieldErrors {
+  const errors: FieldErrors = {
+    ...requireId(form.orgID, 'orgID', 'Organization'),
+    ...requireText(form.documentTitle, 'documentTitle', 'Document title')
+  };
+  if (form.srNo == null || !Number.isFinite(form.srNo) || form.srNo <= 0 || !Number.isInteger(form.srNo)) {
+    errors['srNo'] = 'Sr No is required and must be a positive whole number.';
+  }
+  if (!form.tDate?.trim()) {
+    errors['tDate'] = 'Date is required.';
+  }
+  if (!isEdit && !form.documentPath?.trim()) {
+    errors['documentPath'] = 'Document file is required.';
+  }
+  return errors;
+}
+
 export function validateOrgSelection(orgId: number | null | undefined): FieldErrors {
   return requireId(orgId, 'orgID', 'School');
 }
@@ -205,6 +223,8 @@ export function mapBackendMessageToFieldErrors(message?: string | null): FieldEr
   if (text.includes('leave type')) return { leaveTypeName: message };
   if (text.includes('school') || text.includes('organization') || text.includes('org')) return { orgID: message };
   if (text.includes('under org') || text.includes('sanstha')) return { underOrgID: message };
+  if (text.includes('document title')) return { documentTitle: message };
+  if (text.includes('document file')) return { documentPath: message };
   if (text.includes('title')) return { title: message };
   if (text.includes('quantity')) return { qty: message };
   if (text.includes('rate')) return { rate: message };
@@ -212,6 +232,6 @@ export function mapBackendMessageToFieldErrors(message?: string | null): FieldEr
   if (text.includes('subject')) return { subjectID: message };
   if (text.includes('week')) return { weekID: message };
   if (text.includes('month')) return { tMonth: message };
-  if (text.includes('academic year')) return { ayID: message };
+  if (text.includes('date')) return { tDate: message };
   return {};
 }

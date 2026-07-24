@@ -56,7 +56,11 @@ export const adminMasterGuard: CanActivateFn = (route) => {
 
   toast.showError('You do not have permission to access this master.', 'Access Denied');
   const routePath = route.routeConfig?.path ?? '';
-  const fallback = routePath.startsWith('stock/') ? '/stock/dashboard' : '/audit/masters';
+  const fallback = routePath.startsWith('stock/')
+    ? '/stock/dashboard'
+    : routePath === 'document-upload-master'
+      ? '/school-dashboard'
+      : '/audit/masters';
   return router.createUrlTree([fallback]);
 };
 

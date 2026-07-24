@@ -9,6 +9,7 @@ export type HubReportFilterMode =
   | 'sanstha'
   | 'school-or-sanstha'
   | 'ledger-head'
+  | 'ledger-head-date-range'
   | 'date-range'
   | 'school-and-item-group';
 
@@ -50,7 +51,7 @@ export const AUDIT_REPORTS: HubReportDefinition[] = [
     titleMr: 'व्हाऊचर लेजर रिपोर्ट',
     description: 'Voucher transactions by ledger head, sorted by voucher date and number.',
     endpoint: '/reports/audit/voucher-ledger/pdf',
-    filterMode: 'ledger-head',
+    filterMode: 'ledger-head-date-range',
     requireSchool: true,
     showDonationHead: false,
     showPaymentType: false,

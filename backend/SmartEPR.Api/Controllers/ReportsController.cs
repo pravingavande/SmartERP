@@ -102,12 +102,16 @@ public sealed class ReportsController : ControllerBase
         [FromQuery] long? orgId,
         [FromQuery] long? ledgerHeadId,
         [FromQuery] bool allLedgerHeads,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
         CancellationToken cancellationToken)
     {
         if (orgId is null or <= 0)
             return BadRequest(ApiResponse<bool>.Fail("School / Organization is required."));
         if (!allLedgerHeads && ledgerHeadId is null or <= 0)
             return BadRequest(ApiResponse<bool>.Fail("Ledger Head is required when not selecting all ledger heads."));
+        if (fromDate is null || toDate is null)
+            return BadRequest(ApiResponse<bool>.Fail("From Date and To Date are required."));
 
         return await RenderModulePdfAsync(
             _moduleReportService.RenderVoucherLedgerPdfAsync(
@@ -115,7 +119,9 @@ public sealed class ReportsController : ControllerBase
                 {
                     OrgID = orgId,
                     LedgerHeadID = ledgerHeadId,
-                    AllLedgerHeads = allLedgerHeads
+                    AllLedgerHeads = allLedgerHeads,
+                    FromDate = fromDate,
+                    ToDate = toDate
                 },
                 cancellationToken),
             "VoucherLedgerReport.pdf").ConfigureAwait(false);

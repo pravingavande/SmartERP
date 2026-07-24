@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 interface SchoolDashTile {
   label: string;
@@ -7,6 +8,7 @@ interface SchoolDashTile {
   icon: string;
   route: string;
   tone: string;
+  adminOnly?: boolean;
 }
 
 interface SchoolDashSection {
@@ -24,7 +26,9 @@ interface SchoolDashSection {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SchoolDashboardComponent {
-  readonly sections: SchoolDashSection[] = [
+  private readonly auth = inject(AuthService);
+
+  private readonly sections: SchoolDashSection[] = [
     {
       id: 'school',
       title: 'School',
@@ -57,6 +61,28 @@ export class SchoolDashboardComponent {
           icon: 'ticket',
           route: '/tickets',
           tone: 'ticket'
+        },
+        {
+          label: 'Document Upload Master',
+          description: 'Upload and manage school documents',
+          icon: 'document-upload',
+          route: '/document-upload-master',
+          tone: 'document-upload',
+          adminOnly: true
+        },
+        {
+          label: 'Inward Register',
+          description: 'Record incoming letters and official correspondence',
+          icon: 'inward-register',
+          route: '/io/inward',
+          tone: 'inward'
+        },
+        {
+          label: 'Outward Register',
+          description: 'Record outgoing letters and dispatch details',
+          icon: 'outward-register',
+          route: '/io/outward',
+          tone: 'outward'
         }
       ]
     },
@@ -82,4 +108,14 @@ export class SchoolDashboardComponent {
       ]
     }
   ];
+
+  readonly visibleSections = computed(() => {
+    const canAccessAdminMasters = this.auth.isSansthaAdmin();
+    return this.sections
+      .map((section) => ({
+        ...section,
+        tiles: section.tiles.filter((tile) => !tile.adminOnly || canAccessAdminMasters)
+      }))
+      .filter((section) => section.tiles.length > 0);
+  });
 }

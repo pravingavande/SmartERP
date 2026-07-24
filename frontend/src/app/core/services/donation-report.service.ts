@@ -36,7 +36,9 @@ export class DonationReportService {
     if (filter.allLedgerHeads) params = params.set('allLedgerHeads', 'true');
     if (filter.itemGroupId) params = params.set('itemGroupId', filter.itemGroupId.toString());
 
-    const includeDates = !report || report.filterMode === 'date-range';
+    const includeDates = !report
+      || report.filterMode === 'date-range'
+      || report.filterMode === 'ledger-head-date-range';
     if (includeDates && filter.fromDate) params = params.set('fromDate', filter.fromDate);
     if (includeDates && filter.toDate) params = params.set('toDate', filter.toDate);
 

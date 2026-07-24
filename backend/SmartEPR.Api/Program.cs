@@ -93,8 +93,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
-app.MapHub<TicketHub>("/api/hubs/ticket");
-app.MapHub<TicketHub>("/hubs/ticket");
+app.MapControllers().RequireCors("Frontend");
+app.MapHub<TicketHub>("/api/hubs/ticket").RequireCors("Frontend");
+app.MapHub<TicketHub>("/hubs/ticket").RequireCors("Frontend");
 
 app.Run();
